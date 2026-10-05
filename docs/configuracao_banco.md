@@ -30,3 +30,7 @@ O teste executa apenas `SELECT 1`; não instala tabelas e não modifica dados. I
 TLS fica ativo e a validação do certificado é obrigatória por padrão. Se conectar por IP, o certificado precisa validar esse endereço; preferir hostname que corresponda ao certificado. Não desativar validação automaticamente. Erros de driver são tratados sem imprimir strings de conexão ou credenciais.
 
 A sessão deste ambiente não possui SDK Dart nem acesso configurado à rede interna. Conexão ainda não validada. Não considerar o banco instalado ou acessível até executar o teste no ambiente de destino.
+
+## Parâmetros no Driver 18
+
+O projeto usa uma cópia local do dart_odbc 6.2.1 com correção de ColumnSize em SQLBindParameter. Veja backend/vendor/dart_odbc/PATCH.md. Após atualizar: execute dart pub get e dart run bin/check_parameters.dart. O teste executa apenas SELECTs e verifica textos curtos, vazios, acentos, apóstrofos e inteiro. Nenhuma alteração de tabelas é necessária para esta correção.

@@ -1,0 +1,156 @@
+part of '../base.dart';
+
+extension on DartOdbcBlockingClient {
+  Future<List<Map<String, dynamic>>> _execute(
+    String query, {
+    List<dynamic>? params,
+  }) async {
+    if (_hEnv == nullptr || _hConn == nullptr) {
+      throw ODBCException('Not connected to the database');
+    }
+
+    final hStmt = _execStatement(query, params);
+
+    return _getResultBulk(hStmt);
+  }
+
+  Future<OdbcCursor> _executeCursor(
+    String query, {
+    List<dynamic>? params,
+  }) async {
+    if (_hEnv == nullptr || _hConn == nullptr) {
+      throw ODBCException('Not connected to the database');
+    }
+
+    final hStmt = _execStatement(query, params);
+
+    return _getResult(hStmt);
+  }
+
+  Pointer<Void> _execStatement(String query, List<dynamic>? params) {
+    final pointers = <OdbcPointer<dynamic>>[];
+    final strLenPointers = <Pointer<Long>>[];
+    final pHStmt = calloc<SQLHSTMT>();
+    _tryOdbc(
+      _sql.SQLAllocHandle(SQL_HANDLE_STMT, _hConn, pHStmt),
+      handle: _hConn,
+      onException: HandleException(),
+      beforeThrow: () {
+        calloc.free(pHStmt);
+      },
+    );
+
+    // hstatement will be freed by the cursor
+    final hStmt = pHStmt.value;
+
+    final cQuery = query.toNativeUtf16();
+
+    // binding sanitized params
+    if (params != null) {
+      _tryOdbc(
+        _sql.SQLPrepareW(hStmt, cQuery.cast(), SQL_NTS),
+        handle: hStmt,
+        onException: QueryException(),
+        beforeThrow: () {
+          calloc
+            ..free(cQuery)
+            ..free(pHStmt);
+          _freeSqlStmtHandle(hStmt);
+        },
+      );
+
+      for (var i = 0; i < params.length; i++) {
+        final param = params[i];
+        final cParam = OdbcConversions.toPointer(param);
+
+        // if the param is a string or binary data, set the length pointer
+        final pStrLen = cParam.actualSize != null
+            ? (calloc<SQLLEN>()..value = cParam.actualSize!)
+            : nullptr;
+        strLenPointers.add(pStrLen);
+
+        _tryOdbc(
+          _sql.SQLBindParameter(
+            hStmt,
+            i + 1,
+            SQL_PARAM_INPUT,
+            OdbcConversions.getCtypeFromType(param.runtimeType),
+            OdbcConversions.getSqlTypeFromType(param.runtimeType),
+            // SQL Server Driver 18 rejects zero precision for text (HY104).
+            param is String
+                ? (param.isEmpty ? 1 : param.length)
+                : param is int
+                    ? 10
+                    : param is double
+                        ? 15
+                        : param is DateTime
+                            ? 26
+                            : param is bool
+                                ? 1
+                                : (cParam.length > 0 ? cParam.length : 1),
+            OdbcConversions.getDecimalDigitsFromType(
+              param.runtimeType,
+            ),
+            cParam.ptr,
+            cParam.length,
+            pStrLen,
+          ),
+          handle: hStmt,
+          beforeThrow: () {
+            calloc
+              ..free(cQuery)
+              ..free(pStrLen)
+              ..free(pHStmt);
+            cParam.free();
+            _freeSqlStmtHandle(hStmt);
+
+            for (final p in pointers) {
+              p.free();
+            }
+          },
+        );
+
+        pointers.add(cParam);
+      }
+    }
+
+    if (params == null) {
+      _tryOdbc(
+        _sql.SQLExecDirectW(hStmt, cQuery.cast(), SQL_NTS),
+        handle: hStmt,
+        beforeThrow: () {
+          calloc
+            ..free(cQuery)
+            ..free(pHStmt);
+          _freeSqlStmtHandle(hStmt);
+        },
+      );
+    } else {
+      _tryOdbc(
+        _sql.SQLExecute(hStmt),
+        handle: hStmt,
+        beforeThrow: () {
+          calloc
+            ..free(cQuery)
+            ..free(pHStmt);
+          _freeSqlStmtHandle(hStmt);
+        },
+      );
+    }
+
+    // free memory
+    for (final ptr in pointers) {
+      ptr.free();
+    }
+    for (final p in strLenPointers) {
+      if (p != nullptr) {
+        calloc.free(p);
+      }
+    }
+    calloc
+      ..free(cQuery)
+      ..free(pHStmt);
+
+    return hStmt;
+  }
+}
