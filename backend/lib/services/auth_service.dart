@@ -26,13 +26,13 @@ class AuthService {
       throw ApiError(401, 'E-mail ou token inválido');
     }
     final rows = await db.query('SELECT id_usuario FROM dbo.usuario WHERE email=? AND sin_ativo=?',
-      params: ['pg@setic.ro.gov.br', 'S']);
+      params: ['pg@setic.ro.gov.br', 'S'],operation:'login_buscar_usuario');
     if (rows.isEmpty) throw ApiError(403, 'Usuário não cadastrado ou inativo');
     final userId = int.parse(rows.first['id_usuario'].toString());
     final random = Random.secure();
     final token = base64UrlEncode(List.generate(32, (_) => random.nextInt(256)));
     _sessions.removeWhere((_, s) => !s.expires.isAfter(DateTime.now().toUtc()));
-    await db.query('INSERT dbo.auditoria(id_usuario,evento) VALUES(?,?)', params: [userId,'LOGIN_DEV']);
+    await db.query('INSERT dbo.auditoria(id_usuario,evento) VALUES(?,?)', params: [userId,'LOGIN_DEV'],operation:'login_gravar_auditoria');
     for (final c in request.cookies.where((c) => c.name == 'sei_session')) { _sessions.remove(c.value); }
     _sessions[token] = (userId: userId, expires: DateTime.now().toUtc().add(const Duration(hours: 8)));
     request.response.cookies.add(cookie(token));
@@ -57,6 +57,6 @@ class AuthService {
     final userId = await authorize(request);
     for (final c in request.cookies.where((c) => c.name == 'sei_session')) { _sessions.remove(c.value); }
     request.response.cookies.add(cookie('', expired: true));
-    await db.query('INSERT dbo.auditoria(id_usuario,evento) VALUES(?,?)',params:[userId,'LOGOUT']);
+    await db.query('INSERT dbo.auditoria(id_usuario,evento) VALUES(?,?)',params:[userId,'LOGOUT'],operation:'logout_gravar_auditoria');
   }
 }
