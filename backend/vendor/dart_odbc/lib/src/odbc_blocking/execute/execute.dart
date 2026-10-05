@@ -29,7 +29,7 @@ extension on DartOdbcBlockingClient {
 
   Pointer<Void> _execStatement(String query, List<dynamic>? params) {
     final pointers = <OdbcPointer<dynamic>>[];
-    final strLenPointers = <Pointer<Long>>[];
+    final strLenPointers = <Pointer<SQLLEN>>[];
     final pHStmt = calloc<SQLHSTMT>();
     _tryOdbc(
       _sql.SQLAllocHandle(SQL_HANDLE_STMT, _hConn, pHStmt),

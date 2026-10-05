@@ -1,10 +1,17 @@
 import 'dart:io';
+import 'dart:ffi';
+import 'package:dart_odbc/dart_odbc.dart';
 import '../lib/config/database_config.dart';
 import '../lib/models/database_failure.dart';
 import '../lib/repositories/database_repository.dart';
 
 Future<void> main() async {
   try {
+    stdout.writeln('Patch carregado: $seiOdbcPatch');
+    stdout.writeln('Ponteiro: ${sizeOf<IntPtr>()}; SQLLEN: ${sizeOf<SQLLEN>()}; SQLULEN: ${sizeOf<SQLULEN>()} bytes');
+    if(sizeOf<SQLLEN>()!=sizeOf<IntPtr>() || sizeOf<SQLULEN>()!=sizeOf<UintPtr>()) {
+      throw StateError('Largura dos tipos ODBC incompatível');
+    }
     final db=DatabaseRepository(DatabaseConfig.fromEnvironment());
     const values=['pg@setic.ro.gov.br','S','',"D'Ávila",'Gestão documental'];
     for(var i=0;i<values.length;i++) {

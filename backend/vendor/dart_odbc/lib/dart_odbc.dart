@@ -5,3 +5,6 @@ export 'src/odbc_blocking/base.dart';
 export 'src/odbc_blocking/helper.dart';
 export 'src/odbc_cursor/cursor.dart';
 export 'src/odbc_non_blocking/base.dart';
+
+/// Identifies the local SEI ODBC compatibility patch.
+const String seiOdbcPatch = 'sei-odbc-2-pointer-width';

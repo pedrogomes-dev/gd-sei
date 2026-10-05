@@ -9,3 +9,11 @@ Mudança restrita a lib/src/odbc_blocking/execute/execute.dart: SQLBindParameter
 Copiado apenas código lib/, pubspec.yaml e LICENSE. Dependência local para manter a correção reproduzível em Git. Rever esta cópia quando o pacote publicar correção upstream. Não alterar o cache global do Dart.
 
 Validação de integração: dart run bin/check_parameters.dart. Teste ainda deve ser executado na rede do banco; o ambiente de criação não possui SDK Dart/SQL Server.
+
+## Patch 2 — tipos nativos no Windows x64
+
+SQLLEN e SQLULEN eram definidos como ffi.Long/UnsignedLong, que têm 32 bits no Windows mesmo em processo x64. O ODBC x64 exige tipos de 64 bits. Definições alteradas para ffi.IntPtr/UintPtr; SQLSETPOSIROW também usa UintPtr. Lista de ponteiros de indicadores atualizada para Pointer<SQLLEN>. Correção abrange chamadas e buffers que utilizam esses typedefs, inclusive SQLBindParameter/SQLGetData.
+
+Referência: https://learn.microsoft.com/en-us/sql/odbc/reference/odbc-64-bit-information
+
+check_parameters imprime o marcador sei-odbc-2-pointer-width e valida os tamanhos antes dos SELECTs. Em Windows x64, ponteiro/SQLLEN/SQLULEN devem ter 8 bytes. A compilação falha se carregar a dependência original sem o marcador, evitando testar uma cópia antiga por engano.
