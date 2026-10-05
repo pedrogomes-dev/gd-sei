@@ -20,7 +20,7 @@ dart analyze
 dart run bin/server.dart
 ```
 
-O processo lê variáveis do ambiente; `.env.example` é somente um modelo e não é carregado automaticamente. Configure pelo terminal ou serviço. Não versionar `.env`, senhas, certificados ou strings de conexão. Banco e SMTP estão reservados para a próxima etapa; ainda não existe driver SQL nem envio de e-mail.
+O processo lê variáveis do ambiente e carrega o arquivo local `backend/.env` quando executado a partir de `backend`; o ambiente do sistema tem precedência. Copie `.env.example` para `.env` e configure os valores. Não versionar `.env`, senhas, certificados ou strings de conexão. A conexão SQL Server está preparada com ODBC; veja `docs/configuracao_banco.md` e execute `dart run bin/check_database.dart`. SMTP e autenticação ainda não implementados.
 
 Em outro terminal:
 

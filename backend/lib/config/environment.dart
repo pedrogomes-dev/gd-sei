@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'settings.dart';
 
 class Environment {
   final String host;
@@ -6,7 +6,7 @@ class Environment {
   final String allowedOrigin;
   Environment({required this.host, required this.port, required this.allowedOrigin});
   factory Environment.fromEnvironment() {
-    final env = Platform.environment;
+    final env = loadSettings();
     final port = int.tryParse(env['PORT'] ?? '8080');
     if (port == null || port < 1 || port > 65535) {
       throw FormatException('PORT inválida');
