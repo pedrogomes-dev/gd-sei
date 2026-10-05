@@ -1,0 +1,17 @@
+**/.dart_tool/
+**/build/
+**/.flutter-plugins*
+**/coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.pem
+*.key
+*.pfx
+*.bak
+*.mdf
+*.ldf
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,6 @@
+name: sei_validacao_backend
+description: API inicial do Sistema de Validação de Tipos e Assuntos do SEI.
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: '>=3.4.0 <4.0.0'
