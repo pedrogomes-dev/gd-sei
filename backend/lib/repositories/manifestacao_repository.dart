@@ -24,13 +24,16 @@ class ManifestacaoRepository {
     final tipo=data['tipo'] as Map<String,dynamic>;
     final escaped=text.replaceAll('~','~~').replaceAll('%','~%').replaceAll('_','~_').replaceAll('[','~[');
     final pattern='%$escaped%';
+    final parsedId=int.tryParse(text);
+    final subjectId=parsedId!=null && parsedId>=-2147483648 && parsedId<=2147483647?parsedId:null;
+    final idFilter=subjectId==null?'':' OR s.id_assunto=?';
     final rows=await db.query("SELECT s.* FROM dbo.assunto s WHERE s.versao=? AND s.sin_ativo='S' "
       "AND (s.codigo_estruturado LIKE ? ESCAPE '~' OR s.descricao LIKE ? ESCAPE '~' "
-      "OR s.observacao LIKE ? ESCAPE '~' OR s.idx_assunto LIKE ? ESCAPE '~') "
+      "OR s.observacao LIKE ? ESCAPE '~' OR s.idx_assunto LIKE ? ESCAPE '~'$idFilter) "
       'AND NOT EXISTS(SELECT 1 FROM dbo.rel_tipo_procedimento_assunto r '
       'WHERE r.versao=s.versao AND r.id_tipo_procedimento=? AND r.id_assunto_proxy=s.id_assunto) '
       'ORDER BY s.codigo_estruturado,s.id_assunto OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY',
-      params:[number(tipo['versao']),pattern,pattern,pattern,pattern,number(tipo['id_tipo_procedimento']),offset],operation:'pesquisar_assuntos');
+      params:[number(tipo['versao']),pattern,pattern,pattern,pattern,if(subjectId!=null)subjectId,number(tipo['id_tipo_procedimento']),offset],operation:'pesquisar_assuntos');
     return {'itens':rows.take(50).toList(),'mais':rows.length>50,'offset':offset};
   }
 
@@ -92,7 +95,7 @@ class ManifestacaoRepository {
       'FROM dbo.consulta_orgao_tipo a JOIN dbo.tipo_procedimento t ON t.versao=a.versao AND t.id_tipo_procedimento=a.id_tipo_procedimento '
       'LEFT JOIN dbo.manifestacao_tipo m ON m.id_atribuicao=a.id_atribuicao LEFT JOIN dbo.visualizacao_tipo v ON v.id_atribuicao=a.id_atribuicao '
       'WHERE a.id_consulta=? AND a.id_orgao=? ORDER BY t.nome',params:[consulta,orgao]);
-    final decisions=await db.query('SELECT a.id_atribuicao,s.codigo_estruturado,s.descricao,m.acao,m.justificativa '
+    final decisions=await db.query('SELECT a.id_atribuicao,s.id_assunto,s.codigo_estruturado,s.descricao,m.acao,m.justificativa '
       'FROM dbo.consulta_orgao_tipo a JOIN dbo.manifestacao_vinculo m ON m.id_atribuicao=a.id_atribuicao '
       'JOIN dbo.assunto s ON s.versao=m.versao AND s.id_assunto=m.id_assunto '
       'WHERE a.id_consulta=? AND a.id_orgao=? ORDER BY a.id_atribuicao,s.codigo_estruturado',params:[consulta,orgao]);

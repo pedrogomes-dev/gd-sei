@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/display_fields.dart';
 
 class TipoScreen extends StatefulWidget {
   final String id;
@@ -28,7 +29,7 @@ class _TipoScreenState extends State<TipoScreen> {
     if(!mounted)return value;
     for(final controller in reasons.values){controller.dispose();}
     reasons.clear();actions.clear();additions.clear();
-    data=value;
+    data=value;viewed=value['tipo']['visualizado']=='S';
     final manifest=value['manifestacao'] as Map<String,dynamic>;
     revision=id(manifest['revisao']);observation.text=(manifest['observacao']??'').toString();
     for(final subject in value['assuntos'] as List<dynamic>) {
@@ -96,12 +97,13 @@ class _TipoScreenState extends State<TipoScreen> {
     final key=id(subject['id_assunto']);
     return Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(
       crossAxisAlignment:CrossAxisAlignment.start,children:[
-      Text('${subject['codigo_estruturado']} — ${subject['descricao']}',style:Theme.of(context).textTheme.titleMedium),
+      StatusTag(actions[key]??'PENDENTE'),
+      Text('ID $key • ${subject['codigo_estruturado']} — ${subject['descricao']}',style:Theme.of(context).textTheme.titleMedium),
       ExpansionTile(title:const Text('Propriedades do Assunto'),children:
-        subject.entries.where((e)=>!['versao','sin_ultima'].contains(e.key)).map((e)=>ListTile(dense:true,title:Text(e.key),subtitle:Text('${e.value??'—'}'))).toList()),
-      RadioListTile<String>(title:const Text('Manter'),value:'MANTER',groupValue:actions[key],
+        subject.entries.where((e)=>!['versao','sin_ultima'].contains(e.key)).map(propertyTile).toList()),
+      RadioListTile<String>(secondary:const Icon(Icons.check_circle_outline,color:Colors.blue),activeColor:Colors.blue,title:const Text('Manter'),value:'MANTER',groupValue:actions[key],
         onChanged:locked||busy?null:(value)=>choose(key,value)),
-      RadioListTile<String>(title:const Text('Remover'),value:'REMOVER',groupValue:actions[key],
+      RadioListTile<String>(secondary:const Icon(Icons.remove_circle_outline,color:Colors.red),activeColor:Colors.red,title:const Text('Remover'),value:'REMOVER',groupValue:actions[key],
         onChanged:locked||busy?null:(value)=>choose(key,value)),
       if(actions.containsKey(key))reason(key),
       if(!locked)TextButton(onPressed:busy?null:()=>choose(key,null),child:const Text('Deixar pendente')),
@@ -125,35 +127,38 @@ class _TipoScreenState extends State<TipoScreen> {
       final subjects=snapshot.data!['assuntos'] as List<dynamic>;
       return ListView(padding:const EdgeInsets.all(24),children:[
         Text(tipo['nome'].toString(),style:Theme.of(context).textTheme.headlineSmall),
+        Wrap(spacing:8,children:[StatusTag(tipo['status'].toString()),StatusTag(viewed?'VISUALIZADO':'PENDENTE',label:viewed?'Visualizado':'Visualização pendente')]),
         Text(locked?'Manifestação finalizada — somente leitura.':'Rascunho compartilhado pelo órgão.'),
         ExpansionTile(title:const Text('Propriedades do Tipo'),children:tipo.entries
-          .where((e)=>!['id_atribuicao','id_consulta','id_orgao','status','versao','sin_ultima'].contains(e.key))
-          .map((e)=>ListTile(dense:true,title:Text(e.key),subtitle:Text('${e.value??'—'}'))).toList()),
+          .where((e)=>!['id_atribuicao','id_consulta','id_orgao','status','visualizado','versao','sin_ultima'].contains(e.key))
+          .map(propertyTile).toList()),
         const SizedBox(height:16),const Text('Assuntos atualmente vinculados'),
         if(subjects.isEmpty)const Text('Nenhum vínculo existente.'),
         ...subjects.map((s)=>subjectCard(Map<String,dynamic>.from(s as Map))),
         const SizedBox(height:24),const Text('Inclusões propostas'),
         ...additions.entries.map((e)=>Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(
           crossAxisAlignment:CrossAxisAlignment.start,children:[
-          Text('${e.value['codigo_estruturado']} — ${e.value['descricao']}'),reason(e.key),
+          const StatusTag('ADICIONAR'),
+          Text('ID ${e.key} • ${e.value['codigo_estruturado']} — ${e.value['descricao']}'),reason(e.key),
           if(!locked)TextButton(onPressed:busy?null:()=>setState((){actions.remove(e.key);additions.remove(e.key);dirty=true;}),
             child:const Text('Retirar proposta de inclusão')),
         ])))),
         if(!locked)...[
-          TextField(controller:query,maxLength:250,decoration:const InputDecoration(labelText:'Pesquisar código, descrição, observação ou índice'),
+          TextField(controller:query,maxLength:250,decoration:const InputDecoration(labelText:'Pesquisar ID, código, descrição, observação ou índice'),
             onSubmitted:(_){if(!searching&&!busy)search();}),
           ElevatedButton(onPressed:searching||busy?null:()=>search(),child:Text(searching?'Pesquisando…':'Pesquisar Assuntos ativos')),
           if(searchError!=null)Text(searchError!),
           ...results.map((s)=>Card(child:Column(children:[
-            ListTile(title:Text('${s['codigo_estruturado']} — ${s['descricao']}'),
-              subtitle:Text('${s['observacao']??''}'),trailing:ElevatedButton(
+            ListTile(title:Text('ID ${s['id_assunto']} • ${s['codigo_estruturado']} — ${s['descricao']}'),
+              subtitle:Text('${s['observacao']??''}'),trailing:ElevatedButton.icon(
+                icon:const Icon(Icons.add_circle_outline,color:Colors.green),
                 onPressed:busy||additions.containsKey(id(s['id_assunto']))?null:()=>setState((){
                   final key=id(s['id_assunto']);additions[key]=Map<String,dynamic>.from(s as Map);
                   actions[key]='ADICIONAR';reasons.putIfAbsent(key,()=>TextEditingController());dirty=true;
-                }),child:const Text('Propor inclusão'))),
+                }),label:const Text('Propor inclusão'))),
             ExpansionTile(title:const Text('Propriedades do Assunto'),children:
               (s as Map<String,dynamic>).entries.where((e)=>!['versao','sin_ultima'].contains(e.key))
-                .map((e)=>ListTile(dense:true,title:Text(e.key),subtitle:Text('${e.value??'—'}'))).toList()),
+                .map(propertyTile).toList()),
           ]))),
           if(more)TextButton(onPressed:searching||busy?null:()=>search(next:true),child:const Text('Próxima página')),
           if(results.isEmpty && searchText.isNotEmpty && !searching)const Text('Nenhum Assunto encontrado.'),
@@ -167,8 +172,8 @@ class _TipoScreenState extends State<TipoScreen> {
           const SizedBox(width:16),Text(dirty?'Alterações não salvas':'Sem alterações pendentes'),
         ]),
         const SizedBox(height:16),
-        ElevatedButton(onPressed:busy||viewed||locked?null:markViewed,
-          child:Text(viewed?'Visualização registrada':'Confirmar visualização deste Tipo')),
+        ElevatedButton.icon(icon:const Icon(Icons.visibility_outlined),onPressed:busy||viewed||locked?null:markViewed,
+          label:Text(viewed?'Visualização registrada':'Confirmar visualização deste Tipo')),
       ]);
     })));
 }

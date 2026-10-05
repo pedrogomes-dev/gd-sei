@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/display_fields.dart';
 
 class TiposScreen extends StatefulWidget {
   const TiposScreen({super.key});
@@ -7,6 +8,8 @@ class TiposScreen extends StatefulWidget {
 }
 class _TiposScreenState extends State<TiposScreen> {
   late Future<List<dynamic>> future;
+  String searchText='',filter='TODOS';
+  int pending(dynamic row)=>int.parse(row['pendentes'].toString());
   @override void initState(){super.initState();future=ApiService().tipos();}
   Future<void> open(String id) async {
     await Navigator.pushNamed(context,'/tipos/$id');
@@ -33,14 +36,53 @@ class _TiposScreenState extends State<TiposScreen> {
       if(rows.isEmpty)return const Center(child:Text('Nenhum Tipo atribuído. Cadastre os vínculos no banco.'));
       final groups=<String,Map<String,dynamic>>{};
       for(final r in rows){groups['${r['id_consulta']}/${r['id_orgao']}']=Map<String,dynamic>.from(r as Map);}
-      return ListView(children:[
-        ...groups.values.map((g)=>Card(child:ListTile(
-          title:Text('${g['sigla']} — ${g['consulta']}'),subtitle:Text(g['status'].toString()),
-          trailing:ElevatedButton(onPressed:()=>openSummary(g),child:const Text('Resumo e submissão'))))),
-        ...rows.map((r)=>Card(child:ListTile(
-        title:Text(r['nome'].toString()),
-        subtitle:Text('${r['sigla']} • ${r['consulta']} • ${r['status']}'),
-        trailing:Text(r['visualizado']=='S'?'Visualizado':'Pendente de visualização'),
-        onTap:()=>open(r['id_atribuicao'].toString()),))),]);
+      final visible=rows.where((r){
+        final text='${r['nome']} ${r['id_tipo_procedimento']} ${r['sigla']} ${r['consulta']}'.toLowerCase();
+        if(!text.contains(searchText.trim().toLowerCase()))return false;
+        return switch(filter){
+          'PENDENTES'=>r['status']=='RASCUNHO' && (r['visualizado']!='S'||pending(r)>0),
+          'VISUALIZADOS'=>r['visualizado']=='S',
+          'FINALIZADAS'=>r['status']=='FINALIZADA',
+          _=>true,
+        };
+      }).toList();
+      return ListView(padding:const EdgeInsets.all(24),children:[
+        ...groups.values.map((g){
+          final groupRows=rows.where((r)=>r['id_consulta']==g['id_consulta']&&r['id_orgao']==g['id_orgao']).toList();
+          final viewed=groupRows.where((r)=>r['visualizado']=='S').length;
+          final outstanding=groupRows.fold<int>(0,(total,r)=>total+pending(r));
+          return Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(
+            crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Text('${g['sigla']} — ${g['consulta']}',style:Theme.of(context).textTheme.titleMedium),
+            Wrap(spacing:8,children:[StatusTag(g['status'].toString()),
+              StatusTag('VISUALIZADO',label:'$viewed/${groupRows.length} Tipos visualizados'),
+              StatusTag(outstanding==0?'MANTER':'PENDENTE',label:'$outstanding vínculos sem decisão')]),
+            LinearProgressIndicator(value:viewed/groupRows.length),
+            const SizedBox(height:12),
+            ElevatedButton(onPressed:()=>openSummary(g),child:const Text('Resumo e submissão')),
+          ])));
+        }),
+        const SizedBox(height:16),
+        TextField(decoration:const InputDecoration(labelText:'Buscar Tipo por nome ou ID, órgão ou consulta',prefixIcon:Icon(Icons.search)),
+          onChanged:(value)=>setState((){searchText=value;})),
+        const SizedBox(height:12),
+        Wrap(spacing:8,children:[
+          for(final option in const {'TODOS':'Todos','PENDENTES':'Pendentes','VISUALIZADOS':'Visualizados','FINALIZADAS':'Finalizadas'}.entries)
+            ChoiceChip(label:Text(option.value),selected:filter==option.key,onSelected:(_)=>setState((){filter=option.key;})),
+        ]),
+        Text('${visible.length} de ${rows.length} Tipos'),
+        if(visible.isEmpty)const Padding(padding:EdgeInsets.all(16),child:Text('Nenhum Tipo corresponde à busca e ao filtro.')),
+        ...visible.map((r)=>Card(child:ListTile(
+          title:Text('ID ${r['id_tipo_procedimento']} • ${r['nome']}'),
+          subtitle:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Text('${r['sigla']} • ${r['consulta']}'),
+            Wrap(spacing:8,children:[StatusTag(r['status'].toString()),
+              StatusTag(r['visualizado']=='S'?'VISUALIZADO':'PENDENTE',label:r['visualizado']=='S'?'Visualizado':'Visualização pendente'),
+              StatusTag(pending(r)==0?'MANTER':'PENDENTE',label:'${pending(r)} vínculos sem decisão')]),
+          ]),
+          trailing:const Icon(Icons.chevron_right),
+          onTap:()=>open(r['id_atribuicao'].toString()),
+        ))),
+      ]);
     }));
 }

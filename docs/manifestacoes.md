@@ -32,3 +32,11 @@ Em homologação, `database/tests/manifestacoes.sql` testa salvar/editar, audito
 Verificação manual adicional: mesma tela aberta em dois navegadores; primeiro salva, segundo deve receber conflito. Pesquisar código, descrição, observação e índice; propor inclusão com e sem justificativa; confirmar bloqueio após finalizar em outra aba. Histórico antes/depois deve permanecer consultável no banco.
 
 Autenticação por e-mail e sessões persistentes continuam pendentes; o acesso de desenvolvimento atual é preservado.
+
+## Identificação visual e pesquisa
+
+As decisões usam etiquetas com texto e ícone: manter azul, remover vermelho e incluir verde. Pendências são amarelas; visualização usa o ícone de olho e finalização usa cadeado. A lista permite buscar Tipos por nome/ID e filtrar pendentes, visualizados ou finalizados. O progresso por órgão considera todos os Tipos atribuídos, mesmo ao filtrar a lista; os vínculos sem decisão consideram somente decisões salvas.
+
+A pesquisa de Assuntos também compara o ID exato quando o texto é um inteiro válido, além da busca textual nos campos existentes. Os resultados continuam restritos a Assuntos ativos da versão da consulta, excluindo vínculos já existentes no Tipo. O ID aparece nos vínculos, resultados e resumo. As propriedades recebem rótulos legíveis; códigos do SEI não recebem significados presumidos.
+
+Para atualizar, execute `git pull` e reinicie backend e frontend. Esta alteração não requer novo script SQL. O acesso temporário permanece habilitado conforme a configuração de desenvolvimento. Verifique localmente com `dart analyze` no backend e `flutter analyze` no frontend; valide a busca por ID e os filtros no navegador.

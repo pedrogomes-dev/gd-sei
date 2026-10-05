@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/display_fields.dart';
 
 class ResumoScreen extends StatefulWidget {
   final String consulta,orgao;
@@ -40,16 +41,20 @@ class _ResumoScreenState extends State<ResumoScreen> {
       final types=data['tipos'] as List<dynamic>;final decisions=data['decisoes'] as List<dynamic>;
       return ListView(padding:const EdgeInsets.all(24),children:[
         Text('${header['sigla']} — ${header['consulta']}',style:Theme.of(context).textTheme.headlineSmall),
-        Text('Status: ${header['status']}'),
+        Wrap(spacing:8,children:[StatusTag(header['status'].toString()),
+          for(final action in ['REMOVER','ADICIONAR','MANTER'])
+            StatusTag(action,label:'${action=='ADICIONAR'?'Incluir':action=='REMOVER'?'Remover':'Manter'}: ${decisions.where((d)=>d['acao']==action).length}')]),
         if(header['data_finalizacao']!=null)Text('Finalização (UTC): ${header['data_finalizacao']}'),
         const Text('O resumo considera somente os preenchimentos salvos.'),
         ...types.map((t)=>Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(
           crossAxisAlignment:CrossAxisAlignment.start,children:[
           TextButton(onPressed:busy?null:()=>open(t['id_atribuicao'].toString()),child:Text(t['nome'].toString())),
-          Text('Visualizado: ${t['visualizado']} • Vínculos sem decisão: ${t['pendentes']}'),
+          Wrap(spacing:8,children:[StatusTag(t['visualizado']=='S'?'VISUALIZADO':'PENDENTE',label:t['visualizado']=='S'?'Visualizado':'Visualização pendente'),
+            StatusTag(t['pendentes'].toString()=='0'?'MANTER':'PENDENTE',label:'${t['pendentes']} vínculos sem decisão')]),
           if((t['observacao']??'').toString().isNotEmpty)Text('Observação: ${t['observacao']}'),
           ...decisions.where((d)=>d['id_atribuicao'].toString()==t['id_atribuicao'].toString()).map((d)=>ListTile(
-            title:Text('${d['acao']}: ${d['codigo_estruturado']} — ${d['descricao']}'),
+            leading:StatusTag(d['acao'].toString()),
+            title:Text('ID ${d['id_assunto']} • ${d['codigo_estruturado']} — ${d['descricao']}'),
             subtitle:Text((d['justificativa']??'').toString()))),
         ])))),
         if(error!=null)Text(error!,style:TextStyle(color:Theme.of(context).colorScheme.error)),
