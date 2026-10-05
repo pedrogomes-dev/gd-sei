@@ -9,11 +9,13 @@ import '../lib/services/auth_service.dart';
 import '../lib/models/api_error.dart';
 import '../lib/models/database_failure.dart';
 import '../lib/config/settings.dart';
+import '../lib/repositories/manifestacao_repository.dart';
 
 Future<void> main() async {
   final config = Environment.fromEnvironment();
   final db = DatabaseRepository(DatabaseConfig.fromEnvironment());
-  final router = Router(AuthService(db), ConsultaRepository(db));
+  final consultas = ConsultaRepository(db);
+  final router = Router(AuthService(db), consultas, ManifestacaoRepository(db, consultas));
   final server = await HttpServer.bind(config.host, config.port);
   stdout.writeln('API iniciada em ${config.host}:${config.port}');
   await for (final request in server) {

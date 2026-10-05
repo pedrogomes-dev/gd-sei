@@ -19,4 +19,13 @@ class ApiService {
   Future<List<dynamic>> tipos() async => await request('/api/tipos') as List<dynamic>;
   Future<Map<String,dynamic>> tipo(String id) async => await request('/api/tipos/$id') as Map<String,dynamic>;
   Future<void> visualizar(String id) async { await request('/api/tipos/$id/visualizar',data:{}); }
+  Future<Map<String,dynamic>> save(String id,Map<String,dynamic> data) async =>
+    await request('/api/tipos/$id/manifestacao',data:data) as Map<String,dynamic>;
+  Future<Map<String,dynamic>> search(String id,String text,int offset) async =>
+    await request('/api/tipos/$id/assuntos?q=${Uri.encodeQueryComponent(text)}&offset=$offset') as Map<String,dynamic>;
+  Future<Map<String,dynamic>> summary(String consulta,String orgao) async =>
+    await request('/api/consultas/$consulta/orgaos/$orgao/resumo') as Map<String,dynamic>;
+  Future<void> finish(String consulta,String orgao,int revision) async {
+    await request('/api/consultas/$consulta/orgaos/$orgao/finalizar',data:{'revisao':revision});
+  }
 }

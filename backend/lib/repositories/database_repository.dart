@@ -17,6 +17,10 @@ class DatabaseRepository {
     try { final value=detail.sqlState; if(value is String && RegExp(r'^[A-Z0-9]{5}$').hasMatch(value)) state=value; } catch(_) {}
     try { final value=detail.nativeError; if(value is int)code=value; } catch(_) {}
     if(code==null) { try { final value=detail.code; if(value is int)code=value; } catch(_) {} }
+    // O isolate upstream pode transportar a exceção somente como texto.
+    final raw=error.toString();
+    state ??= RegExp(r'SQLState:\s*([A-Z0-9]{5})',caseSensitive:false).firstMatch(raw)?.group(1)?.toUpperCase();
+    code ??= int.tryParse(RegExp(r'NativeError:\s*(-?\d+)',caseSensitive:false).firstMatch(raw)?.group(1)??'');
     String? message;
     if(loadSettings()['APP_ENV']=='development') {
       message=error.toString();

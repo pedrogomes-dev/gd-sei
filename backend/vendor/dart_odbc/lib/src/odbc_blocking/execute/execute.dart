@@ -75,7 +75,9 @@ extension on DartOdbcBlockingClient {
             i + 1,
             SQL_PARAM_INPUT,
             OdbcConversions.getCtypeFromType(param.runtimeType),
-            OdbcConversions.getSqlTypeFromType(param.runtimeType),
+            param is String && param.length > 4000
+                ? SQL_WLONGVARCHAR
+                : OdbcConversions.getSqlTypeFromType(param.runtimeType),
             // SQL Server Driver 18 rejects zero precision for text (HY104).
             param is String
                 ? (param.isEmpty ? 1 : param.length)

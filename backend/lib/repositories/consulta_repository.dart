@@ -18,10 +18,11 @@ class ConsultaRepository {
     'ORDER BY c.nome,o.sigla,t.nome', params:[userId]);
 
   Future<Map<String,dynamic>> detail(int userId, int id) async {
-    final rows = await db.query('SELECT t.*,a.id_atribuicao,a.id_consulta,a.id_orgao '
+    final rows = await db.query('SELECT t.*,a.id_atribuicao,a.id_consulta,a.id_orgao,co.status '
       'FROM dbo.consulta_orgao_tipo a '
       'JOIN dbo.usuario_orgao u ON u.id_orgao=a.id_orgao AND u.id_usuario=? '
       'JOIN dbo.tipo_procedimento t ON t.versao=a.versao AND t.id_tipo_procedimento=a.id_tipo_procedimento '
+      'JOIN dbo.consulta_orgao co ON co.id_consulta=a.id_consulta AND co.id_orgao=a.id_orgao '
       'WHERE a.id_atribuicao=?',params:[userId,id]);
     if (rows.isEmpty) throw ApiError(404,'Tipo não encontrado para seus órgãos');
     final row=rows.first;

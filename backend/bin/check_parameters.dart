@@ -13,9 +13,9 @@ Future<void> main() async {
       throw StateError('Largura dos tipos ODBC incompatível');
     }
     final db=DatabaseRepository(DatabaseConfig.fromEnvironment());
-    const values=['pg@setic.ro.gov.br','S','',"D'Ávila",'Gestão documental'];
+    final values=['pg@setic.ro.gov.br','S','',"D'Ávila",'Gestão documental',String.fromCharCode(0x1F9EA),List.filled(5001,'a').join()];
     for(var i=0;i<values.length;i++) {
-      final rows=await db.query('SELECT CAST(? AS nvarchar(250)) AS valor',
+      final rows=await db.query('SELECT CAST(? AS nvarchar(max)) AS valor',
         params:[values[i]],operation:'teste_texto_$i');
       if(rows.isEmpty || rows.first['valor']!=values[i]) {
         throw StateError('Parâmetro de texto $i não foi preservado');

@@ -17,3 +17,7 @@ SQLLEN e SQLULEN eram definidos como ffi.Long/UnsignedLong, que têm 32 bits no 
 Referência: https://learn.microsoft.com/en-us/sql/odbc/reference/odbc-64-bit-information
 
 check_parameters imprime o marcador sei-odbc-2-pointer-width e valida os tamanhos antes dos SELECTs. Em Windows x64, ponteiro/SQLLEN/SQLULEN devem ter 8 bytes. A compilação falha se carregar a dependência original sem o marcador, evitando testar uma cópia antiga por engano.
+
+## Suporte às manifestações
+
+Textos acima de 4000 unidades UTF-16 usam SQL_WLONGVARCHAR (JSON de vínculos). Cursores com zero colunas retornam sem SQLFetch; erros de SQLFetch são propagados em vez de serem confundidos com fim dos dados. check_parameters inclui texto longo e caractere fora do BMP.

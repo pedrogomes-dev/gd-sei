@@ -139,8 +139,16 @@ class _OdbcCursorImpl implements OdbcCursor {
       return const CursorDone();
     }
 
+    // DML has no result columns and must not be fetched as a rowset.
+    if (pColumnCount.value == 0) {
+      _close();
+      return const CursorDone();
+    }
     final rc = sql.SQLFetch(hStmt);
-    if (rc < 0 || rc == SQL_NO_DATA) {
+    if (rc < 0) {
+      tryOdbc(rc, handle: hStmt, onException: FetchException(), beforeThrow: _close);
+    }
+    if (rc == SQL_NO_DATA) {
       // implicit close on done or error
       _close();
       return const CursorDone();

@@ -1,17 +1,9 @@
-# Próxima etapa
+# Próximas etapas
 
-Implementar `usuario`, `orgao`, `usuario_orgao`; `token_acesso` e `sessao` separados; `consulta`, `consulta_orgao`, `consulta_orgao_tipo`; `manifestacao_tipo`, `manifestacao_vinculo` e auditoria. Não criar administração por interface.
+Já implementados: base versionada, publicação transacional, usuários/órgãos/atribuições, acesso temporário, listagem/detalhe, visualização, pesquisa de Assuntos ativos, manifestação compartilhada, rascunhos, resumo, submissão por órgão e auditoria.
 
-Conexão inicial implementada com dart_odbc e Microsoft ODBC Driver 18; validar em ambiente local antes de implementar as consultas. Usar parâmetros SQL e transações; nunca concatenar dados do usuário. Configurar TLS no banco e SMTP.
+Pendente: autenticação real pelo servidor de e-mail; token_acesso de uso único separado de sessao persistente; limite de solicitações/tentativas e expiração configurável. Manter autorização por órgão no backend. Cookie HttpOnly/Secure/SameSite e proteção de origem permanecem.
 
-Autenticação: token aleatório temporário de uso único, armazenado como hash, limite de tentativas e solicitações, resposta genérica para e-mail não cadastrado. Sessão independente, revogável no logout, com expiração e cookie HttpOnly/Secure/SameSite. Não registrar tokens em logs. Proteger operações mutáveis contra CSRF.
+Antes de habilitar produção: desativar DEV_AUTH_ENABLED, configurar HTTPS, SMTP e usuário SQL com permissões mínimas. Validar compilação e testes em homologação. A conexão ODBC foi validada pelo responsável; novas operações de manifestação ainda precisam de validação integrada.
 
-Autorizar no backend cada consulta, Tipo e manifestação pelo vínculo usuário × órgão × consulta. Fixar versão da base na consulta e usar chaves estrangeiras compostas para impedir vínculos entre versões. A autorização não depende de esconder componentes no frontend.
-
-Vínculo existente: MANTER (justificativa opcional), REMOVER (obrigatória). Novo vínculo: ADICIONAR (obrigatória). Pesquisa apenas de assuntos ativos da versão da consulta por código, descrição, observação e índice. Tipo tem apenas observação geral.
-
-RASCUNHO permite alterações. FINALIZADA bloqueia alterações normais, sem reabertura. Gravação e finalização devem bloquear a mesma manifestação na transação, evitando alterações concorrentes após finalizar. Auditoria append-only de login, logout, alterações, propostas e finalização, sem sobrescrever histórico.
-
-Definido: manifestação compartilhada por órgão. A submissão finaliza a consulta inteira do órgão e bloqueia seus Tipos. Só permitir finalização após visualizar todos os Tipos atribuídos. Registrar a primeira visualização de cada Tipo no backend, com data e usuário, após autorização. Uma visualização por qualquer usuário autorizado do órgão atende ao preenchimento compartilhado. A condição será implementada no backend, nunca apenas na tela.
-
-Rotas de tela preparadas: /login, /verificar-token, /inicio, /tipos, /tipos/{id}, /resumo. /tipos/{id} concentrará propriedades, vínculos, pesquisa, justificativas, observação e salvar.
+Fora do MVP: importação por interface, cadastros administrativos, associação órgão/Tipo por interface, exportação, reabertura, decisão SETIC, integração SEI, dashboards, mobile ou múltiplos níveis de aprovação.

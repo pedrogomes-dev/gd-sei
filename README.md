@@ -1,6 +1,6 @@
 # Sistema de Validação de Tipos e Assuntos do SEI
 
-Primeira etapa: backend Dart, frontend Flutter Web e base SQL versionada. Não altera o SEI oficial. Acesso temporário de desenvolvimento, listagem autorizada por órgão, detalhe dos Tipos e registro de visualização implementados. Manifestações e autenticação por e-mail ainda não implementadas.
+MVP em desenvolvimento: backend Dart, frontend Flutter Web e base SQL versionada. Não altera o SEI oficial. Acesso temporário de desenvolvimento, consulta por órgão, pesquisa de Assuntos, rascunhos, resumo e submissão implementados. Autenticação por e-mail ainda pendente.
 
 ## Organização
 
@@ -20,7 +20,7 @@ dart analyze
 dart run bin/server.dart
 ```
 
-O processo lê variáveis do ambiente e carrega o arquivo local `backend/.env` quando executado a partir de `backend`; o ambiente do sistema tem precedência. Copie `.env.example` para `.env` e configure os valores. Não versionar `.env`, senhas, certificados ou strings de conexão. A conexão SQL Server está preparada com ODBC; veja `docs/configuracao_banco.md` e execute `dart run bin/check_database.dart`. SMTP e autenticação por e-mail ainda não implementados. Para acesso temporário, execute `database/004_consultas.sql` e siga `docs/acesso_temporario.md`.
+O processo lê variáveis do ambiente e carrega o arquivo local `backend/.env` quando executado a partir de `backend`; o ambiente do sistema tem precedência. Copie `.env.example` para `.env` e configure os valores. Não versionar `.env`, senhas, certificados ou strings de conexão. A conexão SQL Server está preparada com ODBC; veja `docs/configuracao_banco.md` e execute `dart run bin/check_database.dart`. SMTP e autenticação por e-mail ainda não implementados. Para acesso temporário, execute `database/004_consultas.sql` e siga `docs/acesso_temporario.md`. Para manifestações, execute `database/005_manifestacoes.sql` e siga `docs/manifestacoes.md`.
 
 Em outro terminal:
 

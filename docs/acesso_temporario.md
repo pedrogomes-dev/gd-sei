@@ -20,7 +20,7 @@ Cadastre manualmente órgão, vínculo usuario_orgao, consulta apontando à vers
 
 As chaves estrangeiras exigem a mesma versão em consulta e Tipo. Todos os acessos são autorizados no backend por usuario_orgao. As URLs de detalhe usam id_atribuicao (identifica consulta, órgão e Tipo), evitando ambiguidade quando um Tipo aparece em mais de uma consulta/órgão.
 
-A confirmação de visualização é explícita após abrir o detalhe. O backend registra o primeiro usuário e data, por atribuição, sem sobrescrever. A futura finalização por órgão exigirá todas as visualizações. Ainda não há salvar manifestação, pesquisa de Assuntos ou finalização.
+A confirmação de visualização é explícita após abrir o detalhe. O backend registra o primeiro usuário e data, por atribuição, sem sobrescrever. A futura finalização por órgão exigirá todas as visualizações. Salvar manifestação, pesquisar Assuntos e finalizar por órgão estão disponíveis após executar 005_manifestacoes.sql; veja docs/manifestacoes.md.
 
 Login e logout registram auditoria sem tokens. GET não altera visualização; POST exige origem autorizada. Instalação e teste de compilação/execução permanecem pendentes no ambiente de destino.
 
