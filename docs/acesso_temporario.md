@@ -23,3 +23,7 @@ As chaves estrangeiras exigem a mesma versão em consulta e Tipo. Todos os acess
 A confirmação de visualização é explícita após abrir o detalhe. O backend registra o primeiro usuário e data, por atribuição, sem sobrescrever. A futura finalização por órgão exigirá todas as visualizações. Ainda não há salvar manifestação, pesquisa de Assuntos ou finalização.
 
 Login e logout registram auditoria sem tokens. GET não altera visualização; POST exige origem autorizada. Instalação e teste de compilação/execução permanecem pendentes no ambiente de destino.
+
+## Diagnosticar falhas
+
+Execute `dart run bin/check_schema.dart` a partir de backend. Verifica as oito tabelas operacionais e o usuário de teste, apenas com SELECT. OBJECT_ID nulo também pode significar falta de permissão. Em APP_ENV=development, falhas de banco mostram etapa, SQLSTATE e código, sem mensagens brutas, parâmetros ou credenciais. Falhas de desconexão não escondem a falha original.

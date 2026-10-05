@@ -7,6 +7,8 @@ import '../lib/repositories/database_repository.dart';
 import '../lib/repositories/consulta_repository.dart';
 import '../lib/services/auth_service.dart';
 import '../lib/models/api_error.dart';
+import '../lib/models/database_failure.dart';
+import '../lib/config/settings.dart';
 
 Future<void> main() async {
   final config = Environment.fromEnvironment();
@@ -46,11 +48,18 @@ Future<void> handle(HttpRequest request, Environment config, Router router) asyn
     request.response.statusCode = error.status;
     request.response.headers.contentType = ContentType.json;
     request.response.write(jsonEncode({'error': error.message}));
-  } catch (_) {
+  } on DatabaseFailure catch (error) {
+    request.response.statusCode = HttpStatus.internalServerError;
+    request.response.headers.contentType = ContentType.json;
+    final development = loadSettings()['APP_ENV'] == 'development';
+    request.response.write(jsonEncode({'error': development ? error.diagnostic : 'Erro interno'}));
+    stderr.writeln('${request.method} ${request.uri.path}: ${error.diagnostic}');
+  } catch (error, stack) {
     request.response.statusCode = HttpStatus.internalServerError;
     request.response.headers.contentType = ContentType.json;
     request.response.write(jsonEncode({'error': 'Erro interno'}));
-    stderr.writeln('Falha ao tratar requisição.');
+    stderr.writeln('${request.method} ${request.uri.path}: ${error.runtimeType}');
+    if (loadSettings()['APP_ENV'] == 'development') stderr.writeln(stack);
   } finally {
     await request.response.close();
   }
