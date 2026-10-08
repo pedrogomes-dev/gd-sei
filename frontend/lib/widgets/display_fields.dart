@@ -53,6 +53,7 @@ const propertyLabels = <String, String>{
 };
 
 Widget propertyTile(MapEntry<String, dynamic> entry) {
+  if(entry.key=='sta_destinacao')return destinationTile(entry.value);
   final raw = entry.value?.toString() ?? '—';
   final value = entry.key.startsWith('sin_')
       ? switch (raw) { 'S' => 'Sim', 'N' => 'Não', _ => raw }
@@ -61,3 +62,16 @@ Widget propertyTile(MapEntry<String, dynamic> entry) {
     title: Text(propertyLabels[entry.key] ?? entry.key), subtitle: Text(value));
 }
 
+
+// SEI: E = Eliminação; G = Guarda Permanente (IBICT/Arquivo Nacional).
+// https://hipatia.ibict.br/wp-content/uploads/tainacan-items/1362/3292/META-2-Entrega-1-RELATORIO-METADADOS_SEI_v5-AN.pdf
+Widget destinationTile(dynamic raw) {
+  final code=raw?.toString().trim().toUpperCase()??'';
+  final (label,icon)=switch(code) {
+    'E'=>('Eliminação',Icons.delete_outline),
+    'G'=>('Guarda permanente',Icons.archive_outlined),
+    ''=>('Não informada',Icons.help_outline),
+    _=>('Código $code',Icons.help_outline),
+  };
+  return ListTile(leading:Icon(icon),title:const Text('Destinação final'),subtitle:Text(label));
+}
