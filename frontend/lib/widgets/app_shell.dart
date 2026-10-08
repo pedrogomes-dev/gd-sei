@@ -32,12 +32,12 @@ class _AppShellState extends State<AppShell> {
   Widget menu()=>SizedBox(width:230,child:ColoredBox(color:Colors.white,child:ListView(
     padding:const EdgeInsets.symmetric(horizontal:16,vertical:24),children:[
       const Padding(padding:EdgeInsets.all(12),child:Text('VALIDAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
-      item('Meus Tipos',Icons.fact_check_outlined,'tipos','/tipos'),
+      item('Tipos de Processo atribuídos',Icons.fact_check_outlined,'tipos','/tipos'),
       item('Resumo e submissão',Icons.assignment_outlined,'resumos','/resumos'),
       const SizedBox(height:24),
       const Padding(padding:EdgeInsets.all(12),child:Text('CATÁLOGO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
       item('Assuntos',Icons.topic_outlined,'assuntos','/catalogo/assuntos'),
-      item('Tipos',Icons.folder_outlined,'catalogo-tipos','/catalogo/tipos'),
+      item('Tipos de Processo',Icons.folder_outlined,'catalogo-tipos','/catalogo/tipos'),
     ])));
   Widget item(String label,IconData icon,String section,String path)=>Padding(
     padding:const EdgeInsets.only(bottom:6),child:ListTile(
@@ -72,7 +72,7 @@ class _AppShellState extends State<AppShell> {
           Padding(padding:EdgeInsets.fromLTRB(wide?32:20,24,wide?32:20,20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Wrap(crossAxisAlignment:WrapCrossAlignment.center,children:[
               TextButton(onPressed:()=>go(widget.section=='assuntos'||widget.section=='catalogo-tipos'?'/catalogo/assuntos':'/tipos'),child:Text(widget.section=='assuntos'||widget.section=='catalogo-tipos'?'Catálogo':'Validação')),
-              for(final label in widget.trail)...[const Icon(Icons.chevron_right,size:16,color:Colors.blueGrey),if(label=='Meus Tipos'||label=='Resumo e submissão')TextButton(onPressed:()=>go(label=='Meus Tipos'?'/tipos':'/resumos'),child:Text(label))else Text(label,style:const TextStyle(fontSize:13,color:Colors.blueGrey))],
+              for(final label in widget.trail)...[const Icon(Icons.chevron_right,size:16,color:Colors.blueGrey),if(label=='Tipos de Processo atribuídos'||label=='Resumo e submissão')TextButton(onPressed:()=>go(label=='Tipos de Processo atribuídos'?'/tipos':'/resumos'),child:Text(label))else Text(label,style:const TextStyle(fontSize:13,color:Colors.blueGrey))],
             ]),const SizedBox(height:8),
             Row(children:[Expanded(child:Text(widget.title,style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w600))),...widget.actions]),
           ])),

@@ -8,6 +8,8 @@ class StatusTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (text, color, icon) = switch (status) {
+      'ATIVO' => ('Ativo', Colors.green, Icons.check_circle_outline),
+      'INATIVO' => ('Inativo', Colors.red, Icons.block),
       'MANTER' => ('Manter', Colors.blue, Icons.check_circle_outline),
       'REMOVER' => ('Remover', Colors.red, Icons.remove_circle_outline),
       'ADICIONAR' => ('Incluir', Colors.green, Icons.add_circle_outline),
@@ -40,7 +42,7 @@ const propertyLabels = <String, String>{
   'sin_estrutural': 'Estrutural',
   'id_tabela_assuntos': 'ID da tabela de Assuntos',
   'sequencia': 'Sequência',
-  'id_tipo_procedimento': 'ID do Tipo',
+  'id_tipo_procedimento': 'ID do Tipo de Processo',
   'nome': 'Nome',
   'sta_nivel_acesso_sugestao': 'Nível de acesso sugerido (código)',
   'sin_interno': 'Interno',

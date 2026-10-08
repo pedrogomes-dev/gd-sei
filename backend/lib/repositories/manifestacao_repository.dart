@@ -37,9 +37,11 @@ class ManifestacaoRepository {
     return {'itens':rows.take(50).toList(),'mais':rows.length>50,'offset':offset};
   }
 
-  Future<Map<String,dynamic>> catalog(int user,int assignment,String kind,String text,int offset) async {
-    final detailData=await consultas.detail(user,assignment);
-    final version=number(detailData['tipo']['versao']);
+  Future<Map<String,dynamic>> catalog(String kind,String text,int offset,int? requestedVersion) async {
+    final versions=await db.query('SELECT MAX(versao) AS versao FROM dbo.versao_base');
+    if(versions.first['versao']==null)throw ApiError(404,'Nenhuma base publicada.');
+    final version=requestedVersion??number(versions.first['versao']);
+    if(requestedVersion!=null && (await db.query('SELECT versao FROM dbo.versao_base WHERE versao=?',params:[version])).isEmpty)throw ApiError(404,'Versão inexistente.');
     final subjects=kind=='assuntos';
     final table=subjects?'assunto':'tipo_procedimento';
     final key=subjects?'id_assunto':'id_tipo_procedimento';
@@ -57,16 +59,16 @@ class ManifestacaoRepository {
 
   ApiError business(DatabaseFailure error) {
     final message=switch(error.code) {
-      51030=>'Consulta, órgão ou Tipo não autorizado.',
+      51030=>'Consulta, órgão ou Tipo de Processo não autorizado.',
       51031=>'A manifestação já foi finalizada e não permite alterações.',
       51032=>'Outro usuário alterou os dados. Recarregue antes de salvar ou finalizar.',
       51033=>'Lista de vínculos inválida ou duplicada.',
       51034=>'A decisão não corresponde ao vínculo original.',
       51035=>'Assunto inexistente ou inativo para inclusão.',
       51036=>'Informe justificativa para remover ou adicionar.',
-      51037=>'Visualize todos os Tipos antes de finalizar.',
+      51037=>'Visualize todos os Tipos de Processo antes de finalizar.',
       51038=>'Marque manter ou remover em todos os vínculos existentes.',
-      51039=>'O órgão não tem Tipos atribuídos nesta consulta.',
+      51039=>'O órgão não tem Tipos de Processo atribuídos nesta consulta.',
       51040=>'Observação ou justificativa excede o limite de caracteres.',
       _=>null,
     };

@@ -26,8 +26,8 @@ class ApiService {
     await request('/api/tipos/$id/assuntos?q=${Uri.encodeQueryComponent(text)}&offset=$offset') as Map<String,dynamic>;
   Future<Map<String,dynamic>> summary(String consulta,String orgao) async =>
     await request('/api/consultas/$consulta/orgaos/$orgao/resumo') as Map<String,dynamic>;
-  Future<Map<String,dynamic>> catalog(String kind,String assignment,String text,int offset) async =>
-    await request('/api/catalogo/$kind?atribuicao=$assignment&q=${Uri.encodeQueryComponent(text)}&offset=$offset') as Map<String,dynamic>;
+  Future<Map<String,dynamic>> catalog(String kind,String text,int offset,{int? version}) async =>
+    await request('/api/catalogo/$kind?q=${Uri.encodeQueryComponent(text)}&offset=$offset${version==null?'':'&versao=$version'}') as Map<String,dynamic>;
   Future<void> finish(String consulta,String orgao,int revision) async {
     await request('/api/consultas/$consulta/orgaos/$orgao/finalizar',data:{'revisao':revision});
   }
