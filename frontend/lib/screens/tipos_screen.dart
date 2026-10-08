@@ -50,14 +50,13 @@ class _TiposScreenState extends State<TiposScreen> {
           final reviewed=items.where((r)=>r['visualizado']=='S'&&pending(r)==0).length;
           final finalized=g['status']=='FINALIZADA';
           return SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-            Wrap(spacing:16,runSpacing:12,crossAxisAlignment:WrapCrossAlignment.center,children:[
-              Text(g['sigla'].toString(),style:Theme.of(context).textTheme.titleLarge),StatusTag(g['status'].toString())]),
+            Row(children:[Expanded(child:Text(g['sigla'].toString(),style:Theme.of(context).textTheme.titleLarge)),StatusTag(g['status'].toString())]),
             const SizedBox(height:12),Text(g['consulta'].toString()),const SizedBox(height:20),
             Text('$viewed de ${items.length} Tipos visualizados · $reviewed de ${items.length} revisados'),
             const SizedBox(height:10),LinearProgressIndicator(value:reviewed/items.length,minHeight:6,borderRadius:BorderRadius.circular(4)),
-            const SizedBox(height:20),OutlinedButton.icon(icon:Icon(finalized?Icons.assignment_outlined:Icons.send_outlined),
+            const SizedBox(height:20),Align(alignment:Alignment.centerRight,child:OutlinedButton.icon(icon:Icon(finalized?Icons.assignment_outlined:Icons.send_outlined),
               onPressed:()=>open('/resumo?consulta=${g['id_consulta']}&orgao=${g['id_orgao']}'),
-              label:Text(finalized?'Consultar resumo':'Resumo e submissão')),
+              label:Text(finalized?'Consultar resumo':'Resumo e submissão'))),
           ]));
         }),
         if(!widget.summaries)...[

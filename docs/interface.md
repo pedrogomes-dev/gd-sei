@@ -23,3 +23,7 @@ Nenhuma migração SQL necessária. Mantidos acesso temporário, publicação tr
 7. Conferir data de finalização no fuso do navegador e textos longos.
 
 Limite da validação nesta alteração: ambiente de edição sem Dart/Flutter ou SQL Server; não houve execução de analyze, build ou integração. Fazer essas verificações antes do merge.
+
+## Ajustes após homologação visual
+
+Login utiliza o tema anterior isolado, com separação entre campos. Estados e ações nos cartões de órgão são alinhados à direita. Totais do resumo recebem ícones azul/vermelho/verde. Cada tabela de Assuntos possui rolagem própria vertical e horizontal; o nome do Tipo e o estado de revisão ficam fora dessa área. A ação Informações abre as propriedades do Assunto obtidas da versão autorizada no resumo, incluindo prazos e código de destinação, sem inferir unidades ou significados de códigos.

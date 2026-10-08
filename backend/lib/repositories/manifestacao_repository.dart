@@ -113,7 +113,7 @@ class ManifestacaoRepository {
       'FROM dbo.consulta_orgao_tipo a JOIN dbo.tipo_procedimento t ON t.versao=a.versao AND t.id_tipo_procedimento=a.id_tipo_procedimento '
       'LEFT JOIN dbo.manifestacao_tipo m ON m.id_atribuicao=a.id_atribuicao LEFT JOIN dbo.visualizacao_tipo v ON v.id_atribuicao=a.id_atribuicao '
       'WHERE a.id_consulta=? AND a.id_orgao=? ORDER BY t.nome',params:[consulta,orgao]);
-    final decisions=await db.query('SELECT a.id_atribuicao,s.id_assunto,s.codigo_estruturado,s.descricao,m.acao,m.justificativa '
+    final decisions=await db.query('SELECT a.id_atribuicao,s.*,m.acao,m.justificativa '
       'FROM dbo.consulta_orgao_tipo a JOIN dbo.manifestacao_vinculo m ON m.id_atribuicao=a.id_atribuicao '
       'JOIN dbo.assunto s ON s.versao=m.versao AND s.id_assunto=m.id_assunto '
       'WHERE a.id_consulta=? AND a.id_orgao=? ORDER BY a.id_atribuicao,s.codigo_estruturado',params:[consulta,orgao]);
