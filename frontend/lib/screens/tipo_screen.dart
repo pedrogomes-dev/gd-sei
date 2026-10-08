@@ -127,7 +127,7 @@ class _TipoScreenState extends State<TipoScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)Navigator.pop(context);});
       }
     },
-    child:AppShell(title:'Revisão do Tipo',beforeLogout:()=>busy?Future.value(false):confirmDiscard(),trail:['Meus Tipos',data?['tipo']['nome']?.toString()??'Revisão'],actions:[
+    child:AppShell(title:'Revisão do Tipo de Processo',beforeLogout:()=>busy?Future.value(false):confirmDiscard(),trail:['Meus Tipos',data?['tipo']['nome']?.toString()??'Revisão'],actions:[
       IconButton(onPressed:busy?null:reload,tooltip:'Recarregar',icon:const Icon(Icons.refresh))],
     footer:Row(children:[
       if(data!=null&&!locked&&!loading)FilledButton.icon(onPressed:busy?null:save,icon:const Icon(Icons.save_outlined),label:Text(busy?'Salvando…':'Salvar rascunho')),

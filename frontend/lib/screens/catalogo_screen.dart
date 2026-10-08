@@ -34,8 +34,8 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
     title:Text(subjects?'Propriedades do Assunto':'Propriedades do Tipo'),
     content:SizedBox(width:600,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:row.entries.where((e)=>!['versao','sin_ultima'].contains(e.key)).map(propertyTile).toList()))),
     actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Fechar'))]));
-  @override Widget build(BuildContext context)=>AppShell(title:subjects?'Catálogo de Assuntos':'Catálogo de Tipos',
-    section:subjects?'assuntos':'catalogo-tipos',trail:['Catálogo',subjects?'Assuntos':'Tipos'],
+  @override Widget build(BuildContext context)=>AppShell(title:subjects?'Catálogo de Assuntos':'Catálogo de Tipos de Processos',
+    section:subjects?'assuntos':'catalogo-tipos',trail:['Catálogo',subjects?'Assuntos':'Tipos de Processos'],
     child:FutureBuilder<List<dynamic>>(future:assignments,builder:(context,snapshot){
       if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
       if(snapshot.hasError)return Center(child:Text(snapshot.error.toString()));

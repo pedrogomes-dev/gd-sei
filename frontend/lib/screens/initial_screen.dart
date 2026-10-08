@@ -14,7 +14,7 @@ class _InitialScreenState extends State<InitialScreen> {
   void initState() { super.initState(); _health = ApiService().health(); }
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Validação de Tipos e Assuntos do SEI')),
+    appBar: AppBar(title: const Text('Validação dos Assuntos Vinculados aos Tipos de Processos')),
     body: Center(child: SizedBox(width: 720, child: Card(
       child: Padding(padding: const EdgeInsets.all(24), child: Column(
         mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start,
