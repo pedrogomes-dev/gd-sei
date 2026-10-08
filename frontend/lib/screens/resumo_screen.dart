@@ -17,7 +17,7 @@ class _ResumoScreenState extends State<ResumoScreen> {
   Future<void> finalize(Map<String,dynamic> data) async {
     final confirmed=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
       title:const Text('Finalizar manifestação do órgão?'),
-      content:const Text('A submissão abrangerá todos os Tipos desta consulta. Após finalizar, não será possível alterar ou reabrir.'),
+      content:const Text('A submissão abrangerá todos os Tipos de Processo desta consulta. Após finalizar, não será possível alterar ou reabrir.'),
       actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('Cancelar')),
         FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('Finalizar'))]));
     if(confirmed!=true||!mounted)return;
@@ -115,14 +115,14 @@ class _ResumoScreenState extends State<ResumoScreen> {
               ])),
             if((t['observacao']??'').toString().isNotEmpty)...[
               const SizedBox(height:20),const Divider(),const SizedBox(height:12),
-              const Text('Observação sobre o Tipo',style:TextStyle(fontWeight:FontWeight.w600)),const SizedBox(height:8),Text(t['observacao'].toString())],
-            const SizedBox(height:16),Align(alignment:Alignment.centerRight,child:TextButton.icon(onPressed:busy?null:()=>open(t['id_atribuicao'].toString()),icon:const Icon(Icons.open_in_new,size:18),label:Text(finalized?'Consultar Tipo':'Revisar Tipo'))),
+              const Text('Observação sobre o Tipo de Processo',style:TextStyle(fontWeight:FontWeight.w600)),const SizedBox(height:8),Text(t['observacao'].toString())],
+            const SizedBox(height:16),Align(alignment:Alignment.centerRight,child:TextButton.icon(onPressed:busy?null:()=>open(t['id_atribuicao'].toString()),icon:const Icon(Icons.open_in_new,size:18),label:Text(finalized?'Consultar Tipo de Processo':'Revisar Tipo de Processo'))),
           ]));
         }),
         if(error!=null)Padding(padding:const EdgeInsets.only(bottom:16),child:Text(error!)),
         if(!finalized)SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           const Text('Submissão do órgão',style:TextStyle(fontWeight:FontWeight.w600)),const SizedBox(height:12),
-          Text(data['pode_finalizar']==true?'Todos os Tipos estão revisados. Você pode finalizar a manifestação.':'Visualize todos os Tipos e salve uma decisão para cada vínculo existente.'),
+          Text(data['pode_finalizar']==true?'Todos os Tipos de Processo estão revisados. Você pode finalizar a manifestação.':'Visualize todos os Tipos de Processo e salve uma decisão para cada vínculo existente.'),
           const SizedBox(height:20),Align(alignment:Alignment.centerRight,child:FilledButton.icon(onPressed:busy||data['pode_finalizar']!=true?null:()=>finalize(data),icon:const Icon(Icons.send_outlined),label:Text(busy?'Finalizando…':'Finalizar manifestação'))),
         ])),
       ]);

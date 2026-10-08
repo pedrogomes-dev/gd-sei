@@ -19,14 +19,14 @@ class _TiposScreenState extends State<TiposScreen> {
     if(mounted)refresh();
   }
   @override Widget build(BuildContext context)=>AppShell(
-    title:widget.summaries?'Resumo e submissão':'Meus Tipos',
-    section:widget.summaries?'resumos':'tipos',trail:[widget.summaries?'Resumo e submissão':'Meus Tipos'],
+    title:widget.summaries?'Resumo e submissão':'Tipos de Processo atribuídos',
+    section:widget.summaries?'resumos':'tipos',trail:[widget.summaries?'Resumo e submissão':'Tipos de Processo atribuídos'],
     actions:[IconButton(onPressed:refresh,tooltip:'Atualizar',icon:const Icon(Icons.refresh))],
     child:FutureBuilder<List<dynamic>>(future:future,builder:(context,snapshot){
       if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
       if(snapshot.hasError)return Center(child:Column(mainAxisSize:MainAxisSize.min,children:[Text(snapshot.error.toString()),TextButton(onPressed:refresh,child:const Text('Tentar novamente'))]));
       final rows=snapshot.data!;
-      if(rows.isEmpty)return const Center(child:Text('Nenhum Tipo atribuído aos seus órgãos.'));
+      if(rows.isEmpty)return const Center(child:Text('Nenhum Tipo de Processo atribuído aos seus órgãos.'));
       final organs=<String,String>{for(final r in rows)r['id_orgao'].toString():r['sigla'].toString()};
       final scoped=rows.where((r)=>organ=='TODOS'||r['id_orgao'].toString()==organ).toList();
       final groups=<String,dynamic>{for(final r in scoped)'${r['id_consulta']}/${r['id_orgao']}':r};
@@ -38,7 +38,7 @@ class _TiposScreenState extends State<TiposScreen> {
           'FINALIZADAS'=>r['status']=='FINALIZADA',_=>true};
       }).toList();
       return ListView(padding:const EdgeInsets.fromLTRB(32,0,32,32),children:[
-        const Text('Revise os Tipos e seus vínculos. A manifestação é compartilhada pelo órgão.',style:TextStyle(color:Colors.blueGrey)),
+        const Text('Revise os Tipos de Processo e seus vínculos. A manifestação é compartilhada pelo órgão.',style:TextStyle(color:Colors.blueGrey)),
         const SizedBox(height:24),
         if(organs.length>1)Padding(padding:const EdgeInsets.only(bottom:24),child:DropdownButtonFormField<String>(
           value:organ,decoration:const InputDecoration(labelText:'Órgão'),
@@ -52,7 +52,7 @@ class _TiposScreenState extends State<TiposScreen> {
           return SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Row(children:[Expanded(child:Text(g['sigla'].toString(),style:Theme.of(context).textTheme.titleLarge)),StatusTag(g['status'].toString())]),
             const SizedBox(height:12),Text(g['consulta'].toString()),const SizedBox(height:20),
-            Text('$viewed de ${items.length} Tipos visualizados · $reviewed de ${items.length} revisados'),
+            Text('$viewed de ${items.length} Tipos de Processo visualizados · $reviewed de ${items.length} revisados'),
             const SizedBox(height:10),LinearProgressIndicator(value:reviewed/items.length,minHeight:6,borderRadius:BorderRadius.circular(4)),
             const SizedBox(height:20),Align(alignment:Alignment.centerRight,child:OutlinedButton.icon(icon:Icon(finalized?Icons.assignment_outlined:Icons.send_outlined),
               onPressed:()=>open('/resumo?consulta=${g['id_consulta']}&orgao=${g['id_orgao']}'),
@@ -61,13 +61,13 @@ class _TiposScreenState extends State<TiposScreen> {
         }),
         if(!widget.summaries)...[
           SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-            TextField(decoration:const InputDecoration(labelText:'Buscar por nome ou ID do Tipo',prefixIcon:Icon(Icons.search)),onChanged:(v)=>setState((){searchText=v;})),
+            TextField(decoration:const InputDecoration(labelText:'Buscar por nome ou ID do Tipo de Processo',prefixIcon:Icon(Icons.search)),onChanged:(v)=>setState((){searchText=v;})),
             const SizedBox(height:16),Wrap(spacing:8,runSpacing:8,children:[
               for(final option in const {'TODOS':'Todos','PENDENTES':'Pendentes','VISUALIZADOS':'Visualizados','FINALIZADAS':'Finalizadas'}.entries)
                 ChoiceChip(label:Text(option.value),selected:filter==option.key,onSelected:(_)=>setState((){filter=option.key;}))]),
-            const SizedBox(height:20),Text('${visible.length} de ${scoped.length} Tipos',style:const TextStyle(color:Colors.blueGrey)),
+            const SizedBox(height:20),Text('${visible.length} de ${scoped.length} Tipos de Processo',style:const TextStyle(color:Colors.blueGrey)),
             const SizedBox(height:12),
-            if(visible.isEmpty)const Text('Nenhum Tipo corresponde à busca e ao filtro.')
+            if(visible.isEmpty)const Text('Nenhum Tipo de Processo corresponde à busca e ao filtro.')
             else SingleChildScrollView(scrollDirection:Axis.horizontal,child:DataTable(
               headingRowColor:const WidgetStatePropertyAll(Color(0xfff5f7fa)),dataRowMinHeight:68,dataRowMaxHeight:88,columnSpacing:24,
               columns:const [DataColumn(label:Text('ID')),DataColumn(label:Text('Tipo de Processo')),DataColumn(label:Text('Órgão')),DataColumn(label:Text('Revisão')),DataColumn(label:Text(''))],

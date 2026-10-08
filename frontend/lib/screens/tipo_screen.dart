@@ -127,7 +127,7 @@ class _TipoScreenState extends State<TipoScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)Navigator.pop(context);});
       }
     },
-    child:AppShell(title:'Revisão do Tipo de Processo',beforeLogout:()=>busy?Future.value(false):confirmDiscard(),trail:['Meus Tipos',data?['tipo']['nome']?.toString()??'Revisão'],actions:[
+    child:AppShell(title:'Revisão do Tipo de Processo',beforeLogout:()=>busy?Future.value(false):confirmDiscard(),trail:['Tipos de Processo atribuídos',data?['tipo']['nome']?.toString()??'Revisão'],actions:[
       IconButton(onPressed:busy?null:reload,tooltip:'Recarregar',icon:const Icon(Icons.refresh))],
     footer:Row(children:[
       if(data!=null&&!locked&&!loading)FilledButton.icon(onPressed:busy?null:save,icon:const Icon(Icons.save_outlined),label:Text(busy?'Salvando…':'Salvar rascunho')),
@@ -145,7 +145,7 @@ class _TipoScreenState extends State<TipoScreen> {
         Wrap(spacing:12,runSpacing:8,children:[StatusTag(tipo['status'].toString()),StatusTag(viewed?'VISUALIZADO':'PENDENTE',label:viewed?'Visualizado':'Visualização pendente')]),
         const SizedBox(height:16),
         Text(locked?'Manifestação finalizada — somente leitura.':'Rascunho compartilhado pelo órgão.'),
-        ExpansionTile(title:const Text('Propriedades do Tipo'),children:tipo.entries
+        ExpansionTile(title:const Text('Propriedades do Tipo de Processo'),children:tipo.entries
           .where((e)=>!['id_atribuicao','id_consulta','id_orgao','status','visualizado','versao','sin_ultima'].contains(e.key))
           .map(propertyTile).toList()),
         const SizedBox(height:16),
@@ -190,9 +190,9 @@ class _TipoScreenState extends State<TipoScreen> {
         ],
         ])),
         SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        const Text('Observação geral sobre o Tipo',style:TextStyle(fontWeight:FontWeight.w600)),const SizedBox(height:16),
+        const Text('Observação geral sobre o Tipo de Processo',style:TextStyle(fontWeight:FontWeight.w600)),const SizedBox(height:16),
         TextField(controller:observation,maxLength:5000,maxLines:4,enabled:!locked&&!busy,
-          onChanged:(_)=>setState((){dirty=true;}),decoration:const InputDecoration(labelText:'Observação geral sobre o Tipo')),
+          onChanged:(_)=>setState((){dirty=true;}),decoration:const InputDecoration(labelText:'Observação geral sobre o Tipo de Processo')),
         if(error!=null)Text(error!,style:TextStyle(color:Theme.of(context).colorScheme.error)),
         ])),
       ]);

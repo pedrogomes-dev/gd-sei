@@ -48,11 +48,12 @@ class Router {
     }
     final catalog=RegExp(r'^/api/catalogo/(assuntos|tipos)$').firstMatch(path);
     if(request.method=='GET' && catalog!=null) {
-      final assignment=int.tryParse(request.uri.queryParameters['atribuicao']??'');
+      final rawVersion=request.uri.queryParameters['versao'];
+      final version=rawVersion==null?null:int.tryParse(rawVersion);
       final text=(request.uri.queryParameters['q']??'').trim();
       final offset=int.tryParse(request.uri.queryParameters['offset']??'0');
-      if(assignment==null || assignment<1 || assignment>2147483647 || text.length>250 || offset==null || offset<0 || offset>1000000)throw ApiError(400,'Pesquisa inválida');
-      json(request,await manifestacoes.catalog(userId,assignment,catalog.group(1)!,text,offset));return;
+      if((rawVersion!=null&&(version==null||version<0||version>2147483647)) || text.length>250 || offset==null || offset<0 || offset>1000000)throw ApiError(400,'Pesquisa inválida');
+      json(request,await manifestacoes.catalog(catalog.group(1)!,text,offset,version));return;
     }
     final match=RegExp(r'^/api/tipos/(\d+)(/visualizar|/manifestacao|/assuntos)?$').firstMatch(path);
     if(match!=null) {
