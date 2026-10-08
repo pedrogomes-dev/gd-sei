@@ -37,6 +37,24 @@ class ManifestacaoRepository {
     return {'itens':rows.take(50).toList(),'mais':rows.length>50,'offset':offset};
   }
 
+  Future<Map<String,dynamic>> catalog(int user,int assignment,String kind,String text,int offset) async {
+    final detailData=await consultas.detail(user,assignment);
+    final version=number(detailData['tipo']['versao']);
+    final subjects=kind=='assuntos';
+    final table=subjects?'assunto':'tipo_procedimento';
+    final key=subjects?'id_assunto':'id_tipo_procedimento';
+    final fields=subjects?['codigo_estruturado','descricao','observacao','idx_assunto']:['nome','descricao'];
+    final escaped=text.replaceAll('~','~~').replaceAll('%','~%').replaceAll('_','~_').replaceAll('[','~[');
+    final parsed=int.tryParse(text);
+    final exactId=parsed!=null && parsed>=-2147483648 && parsed<=2147483647?parsed:null;
+    final conditions=fields.map((f)=>"$f LIKE ? ESCAPE '~'").join(' OR ');
+    // Table/column names come exclusively from the fixed whitelist above.
+    final rows=await db.query('SELECT * FROM dbo.$table WHERE versao=? AND ($conditions'
+      '${exactId==null?'':' OR $key=?'}) ORDER BY $key OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY',
+      params:[version,for(final _ in fields)'%$escaped%',if(exactId!=null)exactId,offset],operation:'consultar_catalogo');
+    return {'itens':rows.take(50).toList(),'mais':rows.length>50,'versao':version};
+  }
+
   ApiError business(DatabaseFailure error) {
     final message=switch(error.code) {
       51030=>'Consulta, órgão ou Tipo não autorizado.',
@@ -111,3 +129,4 @@ class ManifestacaoRepository {
     } on DatabaseFailure catch(error){throw business(error);}
   }
 }
+

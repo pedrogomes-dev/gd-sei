@@ -1,88 +1,87 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/display_fields.dart';
+import '../widgets/app_shell.dart';
 
 class TiposScreen extends StatefulWidget {
-  const TiposScreen({super.key});
+  final bool summaries;
+  const TiposScreen({super.key,this.summaries=false});
   @override State<TiposScreen> createState()=>_TiposScreenState();
 }
 class _TiposScreenState extends State<TiposScreen> {
   late Future<List<dynamic>> future;
-  String searchText='',filter='TODOS';
+  String searchText='',filter='TODOS',organ='TODOS';
   int pending(dynamic row)=>int.parse(row['pendentes'].toString());
   @override void initState(){super.initState();future=ApiService().tipos();}
-  Future<void> open(String id) async {
-    await Navigator.pushNamed(context,'/tipos/$id');
-    if(mounted)setState((){future=ApiService().tipos();});
+  void refresh()=>setState((){future=ApiService().tipos();});
+  Future<void> open(String path) async {
+    await Navigator.pushNamed(context,path);
+    if(mounted)refresh();
   }
-  Future<void> openSummary(Map<String,dynamic> group) async {
-    await Navigator.pushNamed(context,'/resumo?consulta=${group['id_consulta']}&orgao=${group['id_orgao']}');
-    if(mounted)setState((){future=ApiService().tipos();});
-  }
-  Future<void> logout() async {
-    try {
-      await ApiService().logout();
-      if(mounted)Navigator.pushNamedAndRemoveUntil(context,'/login',(_)=>false);
-    } catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString())));}
-  }
-  @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('Tipos atribuídos aos seus órgãos'),actions:[
-      TextButton(onPressed:logout,child:const Text('Sair'))]),
-    body:FutureBuilder<List<dynamic>>(future:future,builder:(context,snapshot){
+  @override Widget build(BuildContext context)=>AppShell(
+    title:widget.summaries?'Resumo e submissão':'Meus Tipos',
+    section:widget.summaries?'resumos':'tipos',trail:[widget.summaries?'Resumo e submissão':'Meus Tipos'],
+    actions:[IconButton(onPressed:refresh,tooltip:'Atualizar',icon:const Icon(Icons.refresh))],
+    child:FutureBuilder<List<dynamic>>(future:future,builder:(context,snapshot){
       if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
-      if(snapshot.hasError)return Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
-        Text(snapshot.error.toString()),TextButton(onPressed:()=>Navigator.pushReplacementNamed(context,'/login'),child:const Text('Voltar ao login'))]));
+      if(snapshot.hasError)return Center(child:Column(mainAxisSize:MainAxisSize.min,children:[Text(snapshot.error.toString()),TextButton(onPressed:refresh,child:const Text('Tentar novamente'))]));
       final rows=snapshot.data!;
-      if(rows.isEmpty)return const Center(child:Text('Nenhum Tipo atribuído. Cadastre os vínculos no banco.'));
-      final groups=<String,Map<String,dynamic>>{};
-      for(final r in rows){groups['${r['id_consulta']}/${r['id_orgao']}']=Map<String,dynamic>.from(r as Map);}
-      final visible=rows.where((r){
-        final text='${r['nome']} ${r['id_tipo_procedimento']} ${r['sigla']} ${r['consulta']}'.toLowerCase();
-        if(!text.contains(searchText.trim().toLowerCase()))return false;
+      if(rows.isEmpty)return const Center(child:Text('Nenhum Tipo atribuído aos seus órgãos.'));
+      final organs=<String,String>{for(final r in rows)r['id_orgao'].toString():r['sigla'].toString()};
+      final scoped=rows.where((r)=>organ=='TODOS'||r['id_orgao'].toString()==organ).toList();
+      final groups=<String,dynamic>{for(final r in scoped)'${r['id_consulta']}/${r['id_orgao']}':r};
+      final visible=scoped.where((r){
+        if(!'${r['nome']} ${r['id_tipo_procedimento']} ${r['sigla']} ${r['consulta']}'.toLowerCase().contains(searchText.trim().toLowerCase()))return false;
         return switch(filter){
-          'PENDENTES'=>r['status']=='RASCUNHO' && (r['visualizado']!='S'||pending(r)>0),
+          'PENDENTES'=>r['status']=='RASCUNHO'&&(r['visualizado']!='S'||pending(r)>0),
           'VISUALIZADOS'=>r['visualizado']=='S',
-          'FINALIZADAS'=>r['status']=='FINALIZADA',
-          _=>true,
-        };
+          'FINALIZADAS'=>r['status']=='FINALIZADA',_=>true};
       }).toList();
-      return ListView(padding:const EdgeInsets.all(24),children:[
+      return ListView(padding:const EdgeInsets.fromLTRB(32,0,32,32),children:[
+        const Text('Revise os Tipos e seus vínculos. A manifestação é compartilhada pelo órgão.',style:TextStyle(color:Colors.blueGrey)),
+        const SizedBox(height:24),
+        if(organs.length>1)Padding(padding:const EdgeInsets.only(bottom:24),child:DropdownButtonFormField<String>(
+          value:organ,decoration:const InputDecoration(labelText:'Órgão'),
+          items:[const DropdownMenuItem(value:'TODOS',child:Text('Todos os meus órgãos')),...organs.entries.map((e)=>DropdownMenuItem(value:e.key,child:Text(e.value)))],
+          onChanged:(v)=>setState((){organ=v!;}))),
         ...groups.values.map((g){
-          final groupRows=rows.where((r)=>r['id_consulta']==g['id_consulta']&&r['id_orgao']==g['id_orgao']).toList();
-          final viewed=groupRows.where((r)=>r['visualizado']=='S').length;
-          final outstanding=groupRows.fold<int>(0,(total,r)=>total+pending(r));
-          return Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(
-            crossAxisAlignment:CrossAxisAlignment.start,children:[
-            Text('${g['sigla']} — ${g['consulta']}',style:Theme.of(context).textTheme.titleMedium),
-            Wrap(spacing:8,children:[StatusTag(g['status'].toString()),
-              StatusTag('VISUALIZADO',label:'$viewed/${groupRows.length} Tipos visualizados'),
-              StatusTag(outstanding==0?'MANTER':'PENDENTE',label:'$outstanding vínculos sem decisão')]),
-            LinearProgressIndicator(value:viewed/groupRows.length),
-            const SizedBox(height:12),
-            ElevatedButton(onPressed:()=>openSummary(g),child:const Text('Resumo e submissão')),
-          ])));
+          final items=scoped.where((r)=>r['id_consulta']==g['id_consulta']&&r['id_orgao']==g['id_orgao']).toList();
+          final viewed=items.where((r)=>r['visualizado']=='S').length;
+          final reviewed=items.where((r)=>r['visualizado']=='S'&&pending(r)==0).length;
+          final finalized=g['status']=='FINALIZADA';
+          return SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Wrap(spacing:16,runSpacing:12,crossAxisAlignment:WrapCrossAlignment.center,children:[
+              Text(g['sigla'].toString(),style:Theme.of(context).textTheme.titleLarge),StatusTag(g['status'].toString())]),
+            const SizedBox(height:12),Text(g['consulta'].toString()),const SizedBox(height:20),
+            Text('$viewed de ${items.length} Tipos visualizados · $reviewed de ${items.length} revisados'),
+            const SizedBox(height:10),LinearProgressIndicator(value:reviewed/items.length,minHeight:6,borderRadius:BorderRadius.circular(4)),
+            const SizedBox(height:20),OutlinedButton.icon(icon:Icon(finalized?Icons.assignment_outlined:Icons.send_outlined),
+              onPressed:()=>open('/resumo?consulta=${g['id_consulta']}&orgao=${g['id_orgao']}'),
+              label:Text(finalized?'Consultar resumo':'Resumo e submissão')),
+          ]));
         }),
-        const SizedBox(height:16),
-        TextField(decoration:const InputDecoration(labelText:'Buscar Tipo por nome ou ID, órgão ou consulta',prefixIcon:Icon(Icons.search)),
-          onChanged:(value)=>setState((){searchText=value;})),
-        const SizedBox(height:12),
-        Wrap(spacing:8,children:[
-          for(final option in const {'TODOS':'Todos','PENDENTES':'Pendentes','VISUALIZADOS':'Visualizados','FINALIZADAS':'Finalizadas'}.entries)
-            ChoiceChip(label:Text(option.value),selected:filter==option.key,onSelected:(_)=>setState((){filter=option.key;})),
-        ]),
-        Text('${visible.length} de ${rows.length} Tipos'),
-        if(visible.isEmpty)const Padding(padding:EdgeInsets.all(16),child:Text('Nenhum Tipo corresponde à busca e ao filtro.')),
-        ...visible.map((r)=>Card(child:ListTile(
-          title:Text('ID ${r['id_tipo_procedimento']} • ${r['nome']}'),
-          subtitle:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-            Text('${r['sigla']} • ${r['consulta']}'),
-            Wrap(spacing:8,children:[StatusTag(r['status'].toString()),
-              StatusTag(r['visualizado']=='S'?'VISUALIZADO':'PENDENTE',label:r['visualizado']=='S'?'Visualizado':'Visualização pendente'),
-              StatusTag(pending(r)==0?'MANTER':'PENDENTE',label:'${pending(r)} vínculos sem decisão')]),
-          ]),
-          trailing:const Icon(Icons.chevron_right),
-          onTap:()=>open(r['id_atribuicao'].toString()),
-        ))),
+        if(!widget.summaries)...[
+          SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            TextField(decoration:const InputDecoration(labelText:'Buscar por nome ou ID do Tipo',prefixIcon:Icon(Icons.search)),onChanged:(v)=>setState((){searchText=v;})),
+            const SizedBox(height:16),Wrap(spacing:8,runSpacing:8,children:[
+              for(final option in const {'TODOS':'Todos','PENDENTES':'Pendentes','VISUALIZADOS':'Visualizados','FINALIZADAS':'Finalizadas'}.entries)
+                ChoiceChip(label:Text(option.value),selected:filter==option.key,onSelected:(_)=>setState((){filter=option.key;}))]),
+            const SizedBox(height:20),Text('${visible.length} de ${scoped.length} Tipos',style:const TextStyle(color:Colors.blueGrey)),
+            const SizedBox(height:12),
+            if(visible.isEmpty)const Text('Nenhum Tipo corresponde à busca e ao filtro.')
+            else SingleChildScrollView(scrollDirection:Axis.horizontal,child:DataTable(
+              headingRowColor:const WidgetStatePropertyAll(Color(0xfff5f7fa)),dataRowMinHeight:68,dataRowMaxHeight:88,columnSpacing:24,
+              columns:const [DataColumn(label:Text('ID')),DataColumn(label:Text('Tipo de Processo')),DataColumn(label:Text('Órgão')),DataColumn(label:Text('Revisão')),DataColumn(label:Text(''))],
+              rows:visible.map((r)=>DataRow(cells:[
+                DataCell(Text(r['id_tipo_procedimento'].toString())),
+                DataCell(SizedBox(width:340,child:Text(r['nome'].toString(),maxLines:3,overflow:TextOverflow.ellipsis))),
+                DataCell(Text(r['sigla'].toString())),
+                DataCell(r['status']=='FINALIZADA'?const StatusTag('FINALIZADA'):StatusTag(r['visualizado']=='S'&&pending(r)==0?'MANTER':'PENDENTE',
+                  label:r['visualizado']!='S'?'Não visualizado':pending(r)==0?'Revisão completa':'${pending(r)} vínculos pendentes')),
+                DataCell(TextButton(onPressed:()=>open('/tipos/${r['id_atribuicao']}'),child:const Text('Abrir'))),
+              ])).toList())),
+          ])),
+        ],
       ]);
     }));
 }

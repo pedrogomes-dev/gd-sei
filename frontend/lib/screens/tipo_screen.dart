@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/display_fields.dart';
+import '../widgets/app_shell.dart';
 
 class TipoScreen extends StatefulWidget {
   final String id;
@@ -17,7 +18,7 @@ class _TipoScreenState extends State<TipoScreen> {
   late Future<Map<String,dynamic>> future;
   Map<String,dynamic>? data;
   List<dynamic> results=[];
-  bool busy=false,searching=false,dirty=false,viewed=false,more=false;
+  bool loading=true,busy=false,searching=false,dirty=false,viewed=false,more=false;
   String? error,searchError;
   String searchText='';
   int offset=0,revision=0;
@@ -40,7 +41,7 @@ class _TipoScreenState extends State<TipoScreen> {
       reasons.putIfAbsent(key,()=>TextEditingController()).text=(item['justificativa']??'').toString();
       if(item['acao']=='ADICIONAR')additions[key]=Map<String,dynamic>.from(item as Map);
     }
-    dirty=false;return value;
+    setState((){dirty=false;loading=false;});return value;
   }
   @override void dispose(){observation.dispose();query.dispose();for(final c in reasons.values){c.dispose();}super.dispose();}
   Future<bool> confirmDiscard() async {
@@ -53,7 +54,7 @@ class _TipoScreenState extends State<TipoScreen> {
   }
   Future<void> reload() async {
     if(!await confirmDiscard() || !mounted)return;
-    setState((){error=null;future=load();});
+    setState((){error=null;loading=true;future=load();});
   }
   Future<void> save() async {
     final items=actions.entries.map((e)=>{'id_assunto':e.key,'acao':e.value,
@@ -90,24 +91,32 @@ class _TipoScreenState extends State<TipoScreen> {
   void choose(int key,String? action) {
     setState((){if(action==null){actions.remove(key);}else{actions[key]=action;}dirty=true;});
   }
-  Widget reason(int key) => TextField(controller:reasons[key],enabled:!locked&&!busy,
+  Widget reason(int key) => locked
+    ? Text(reasons[key]?.text.isNotEmpty==true?reasons[key]!.text:'Sem justificativa informada.',style:const TextStyle(color:Colors.blueGrey))
+    : TextField(controller:reasons[key],enabled:!busy,
     maxLength:2000,maxLines:2,onChanged:(_)=>setState((){dirty=true;}),
     decoration:InputDecoration(labelText:actions[key]=='MANTER'?'Justificativa (opcional)':'Justificativa (obrigatória)'));
   Widget subjectCard(Map<String,dynamic> subject) {
     final key=id(subject['id_assunto']);
-    return Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(
-      crossAxisAlignment:CrossAxisAlignment.start,children:[
-      StatusTag(actions[key]??'PENDENTE'),
-      Text('ID $key • ${subject['codigo_estruturado']} — ${subject['descricao']}',style:Theme.of(context).textTheme.titleMedium),
-      ExpansionTile(title:const Text('Propriedades do Assunto'),children:
-        subject.entries.where((e)=>!['versao','sin_ultima'].contains(e.key)).map(propertyTile).toList()),
-      RadioListTile<String>(secondary:const Icon(Icons.check_circle_outline,color:Colors.blue),activeColor:Colors.blue,title:const Text('Manter'),value:'MANTER',groupValue:actions[key],
-        onChanged:locked||busy?null:(value)=>choose(key,value)),
-      RadioListTile<String>(secondary:const Icon(Icons.remove_circle_outline,color:Colors.red),activeColor:Colors.red,title:const Text('Remover'),value:'REMOVER',groupValue:actions[key],
-        onChanged:locked||busy?null:(value)=>choose(key,value)),
-      if(actions.containsKey(key))reason(key),
-      if(!locked)TextButton(onPressed:busy?null:()=>choose(key,null),child:const Text('Deixar pendente')),
-    ])));
+    return Padding(padding:const EdgeInsets.only(bottom:20),child:Container(
+      padding:const EdgeInsets.all(20),decoration:BoxDecoration(border:Border.all(color:const Color(0xffe2e8f0)),borderRadius:BorderRadius.circular(8)),
+      child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('ID $key · ${subject['codigo_estruturado']}',style:const TextStyle(fontSize:12,color:Colors.blueGrey)),
+        const SizedBox(height:8),Text(subject['descricao'].toString(),style:Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height:16),
+        if(locked)StatusTag(actions[key]??'PENDENTE')
+        else Wrap(spacing:12,runSpacing:8,children:[
+          ChoiceChip(label:const Text('Manter'),avatar:const Icon(Icons.check_circle_outline,size:18,color:Colors.blue),
+            selected:actions[key]=='MANTER',onSelected:busy?null:(selected)=>choose(key,selected?'MANTER':null)),
+          ChoiceChip(label:const Text('Remover'),avatar:const Icon(Icons.remove_circle_outline,size:18,color:Colors.red),
+            selected:actions[key]=='REMOVER',onSelected:busy?null:(selected)=>choose(key,selected?'REMOVER':null)),
+          if(!actions.containsKey(key))const StatusTag('PENDENTE'),
+        ]),
+        if(actions[key]=='REMOVER'||(locked&&reasons[key]?.text.isNotEmpty==true))Padding(padding:const EdgeInsets.only(top:16),child:reason(key)),
+        if(!locked&&actions[key]=='MANTER')ExpansionTile(tilePadding:EdgeInsets.zero,title:const Text('Adicionar justificativa opcional',style:TextStyle(fontSize:14)),children:[reason(key)]),
+        const SizedBox(height:8),ExpansionTile(tilePadding:EdgeInsets.zero,title:const Text('Consultar propriedades',style:TextStyle(fontSize:14)),children:
+          subject.entries.where((e)=>!['versao','sin_ultima'].contains(e.key)).map(propertyTile).toList()),
+      ])));
   }
   @override Widget build(BuildContext context)=>PopScope<Object?>(
     canPop:!dirty&&!busy,
@@ -118,34 +127,50 @@ class _TipoScreenState extends State<TipoScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)Navigator.pop(context);});
       }
     },
-    child:Scaffold(appBar:AppBar(title:const Text('Tipo de Processo'),actions:[
-      TextButton(onPressed:busy?null:reload,child:const Text('Recarregar'))]),
-    body:FutureBuilder<Map<String,dynamic>>(future:future,builder:(context,snapshot){
+    child:AppShell(title:'Revisão do Tipo',beforeLogout:()=>busy?Future.value(false):confirmDiscard(),trail:['Meus Tipos',data?['tipo']['nome']?.toString()??'Revisão'],actions:[
+      IconButton(onPressed:busy?null:reload,tooltip:'Recarregar',icon:const Icon(Icons.refresh))],
+    footer:Row(children:[
+      if(data!=null&&!locked&&!loading)FilledButton.icon(onPressed:busy?null:save,icon:const Icon(Icons.save_outlined),label:Text(busy?'Salvando…':'Salvar rascunho')),
+      const SizedBox(width:16),Expanded(child:Text(locked?'Manifestação finalizada · somente leitura':dirty?'Alterações não salvas':'Sem alterações pendentes',style:const TextStyle(color:Colors.blueGrey))),
+    ]),
+    child:FutureBuilder<Map<String,dynamic>>(future:future,builder:(context,snapshot){
       if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
       if(snapshot.hasError)return Center(child:Text(snapshot.error.toString()));
       final tipo=snapshot.data!['tipo'] as Map<String,dynamic>;
       final subjects=snapshot.data!['assuntos'] as List<dynamic>;
-      return ListView(padding:const EdgeInsets.all(24),children:[
+      return ListView(padding:const EdgeInsets.fromLTRB(32,0,32,32),children:[
+        SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text(tipo['nome'].toString(),style:Theme.of(context).textTheme.headlineSmall),
-        Wrap(spacing:8,children:[StatusTag(tipo['status'].toString()),StatusTag(viewed?'VISUALIZADO':'PENDENTE',label:viewed?'Visualizado':'Visualização pendente')]),
+        const SizedBox(height:16),
+        Wrap(spacing:12,runSpacing:8,children:[StatusTag(tipo['status'].toString()),StatusTag(viewed?'VISUALIZADO':'PENDENTE',label:viewed?'Visualizado':'Visualização pendente')]),
+        const SizedBox(height:16),
         Text(locked?'Manifestação finalizada — somente leitura.':'Rascunho compartilhado pelo órgão.'),
         ExpansionTile(title:const Text('Propriedades do Tipo'),children:tipo.entries
           .where((e)=>!['id_atribuicao','id_consulta','id_orgao','status','visualizado','versao','sin_ultima'].contains(e.key))
           .map(propertyTile).toList()),
-        const SizedBox(height:16),const Text('Assuntos atualmente vinculados'),
+        const SizedBox(height:16),
+        OutlinedButton.icon(icon:const Icon(Icons.visibility_outlined),onPressed:busy||viewed||locked?null:markViewed,label:Text(viewed?'Visualização registrada':'Confirmar visualização')),
+        ])),
+        SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('Assuntos atualmente vinculados',style:Theme.of(context).textTheme.titleMedium),const SizedBox(height:20),
         if(subjects.isEmpty)const Text('Nenhum vínculo existente.'),
         ...subjects.map((s)=>subjectCard(Map<String,dynamic>.from(s as Map))),
-        const SizedBox(height:24),const Text('Inclusões propostas'),
+        ])),
+        SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('Inclusões propostas',style:Theme.of(context).textTheme.titleMedium),const SizedBox(height:20),
+        if(additions.isEmpty)const Padding(padding:EdgeInsets.only(bottom:20),child:Text('Nenhuma inclusão proposta.')),
         ...additions.entries.map((e)=>Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(
           crossAxisAlignment:CrossAxisAlignment.start,children:[
-          const StatusTag('ADICIONAR'),
-          Text('ID ${e.key} • ${e.value['codigo_estruturado']} — ${e.value['descricao']}'),reason(e.key),
+          const StatusTag('ADICIONAR'),const SizedBox(height:12),
+          Text('ID ${e.key} • ${e.value['codigo_estruturado']} — ${e.value['descricao']}'),const SizedBox(height:16),reason(e.key),
           if(!locked)TextButton(onPressed:busy?null:()=>setState((){actions.remove(e.key);additions.remove(e.key);dirty=true;}),
             child:const Text('Retirar proposta de inclusão')),
         ])))),
         if(!locked)...[
+          const SizedBox(height:20),
           TextField(controller:query,maxLength:250,decoration:const InputDecoration(labelText:'Pesquisar ID, código, descrição, observação ou índice'),
             onSubmitted:(_){if(!searching&&!busy)search();}),
+          const SizedBox(height:12),
           ElevatedButton(onPressed:searching||busy?null:()=>search(),child:Text(searching?'Pesquisando…':'Pesquisar Assuntos ativos')),
           if(searchError!=null)Text(searchError!),
           ...results.map((s)=>Card(child:Column(children:[
@@ -163,17 +188,14 @@ class _TipoScreenState extends State<TipoScreen> {
           if(more)TextButton(onPressed:searching||busy?null:()=>search(next:true),child:const Text('Próxima página')),
           if(results.isEmpty && searchText.isNotEmpty && !searching)const Text('Nenhum Assunto encontrado.'),
         ],
-        const SizedBox(height:24),
+        ])),
+        SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        const Text('Observação geral sobre o Tipo',style:TextStyle(fontWeight:FontWeight.w600)),const SizedBox(height:16),
         TextField(controller:observation,maxLength:5000,maxLines:4,enabled:!locked&&!busy,
           onChanged:(_)=>setState((){dirty=true;}),decoration:const InputDecoration(labelText:'Observação geral sobre o Tipo')),
         if(error!=null)Text(error!,style:TextStyle(color:Theme.of(context).colorScheme.error)),
-        if(!locked)Row(children:[
-          ElevatedButton(onPressed:busy?null:save,child:Text(busy?'Aguarde…':'Salvar rascunho')),
-          const SizedBox(width:16),Text(dirty?'Alterações não salvas':'Sem alterações pendentes'),
-        ]),
-        const SizedBox(height:16),
-        ElevatedButton.icon(icon:const Icon(Icons.visibility_outlined),onPressed:busy||viewed||locked?null:markViewed,
-          label:Text(viewed?'Visualização registrada':'Confirmar visualização deste Tipo')),
+        ])),
       ]);
     })));
 }
+

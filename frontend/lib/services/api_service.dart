@@ -13,6 +13,7 @@ class ApiService {
     if(response.statusCode!=200) throw Exception(decoded is Map ? decoded['error'] : 'Falha na API');
     return decoded;
   }
+  Future<Map<String,dynamic>> profile() async => await request('/api/auth/me') as Map<String,dynamic>;
   Future<String> health() async => (await request('/api/health'))['status'] as String;
   Future<void> login(String email,String token) async { await request('/api/auth/dev',data:{'email':email,'token':token}); }
   Future<void> logout() async { await request('/api/auth/logout',data:{}); }
@@ -25,7 +26,10 @@ class ApiService {
     await request('/api/tipos/$id/assuntos?q=${Uri.encodeQueryComponent(text)}&offset=$offset') as Map<String,dynamic>;
   Future<Map<String,dynamic>> summary(String consulta,String orgao) async =>
     await request('/api/consultas/$consulta/orgaos/$orgao/resumo') as Map<String,dynamic>;
+  Future<Map<String,dynamic>> catalog(String kind,String assignment,String text,int offset) async =>
+    await request('/api/catalogo/$kind?atribuicao=$assignment&q=${Uri.encodeQueryComponent(text)}&offset=$offset') as Map<String,dynamic>;
   Future<void> finish(String consulta,String orgao,int revision) async {
     await request('/api/consultas/$consulta/orgaos/$orgao/finalizar',data:{'revisao':revision});
   }
 }
+

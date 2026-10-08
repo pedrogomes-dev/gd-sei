@@ -53,6 +53,13 @@ class AuthService {
     return session.userId;
   }
 
+  Future<Map<String, dynamic>> profile(int userId) async {
+    final users = await db.query('SELECT id_usuario,email FROM dbo.usuario WHERE id_usuario=? AND sin_ativo=?', params:[userId,'S']);
+    if (users.isEmpty) throw ApiError(401, 'Usuário inativo');
+    final organs = await db.query('SELECT o.id_orgao,o.sigla FROM dbo.orgao o JOIN dbo.usuario_orgao u ON u.id_orgao=o.id_orgao WHERE u.id_usuario=? ORDER BY o.sigla', params:[userId]);
+    return {...users.first, 'orgaos': organs};
+  }
+
   Future<void> logout(HttpRequest request) async {
     final userId = await authorize(request);
     for (final c in request.cookies.where((c) => c.name == 'sei_session')) { _sessions.remove(c.value); }
@@ -60,3 +67,4 @@ class AuthService {
     await db.query('INSERT dbo.auditoria(id_usuario,evento) VALUES(?,?)',params:[userId,'LOGOUT'],operation:'logout_gravar_auditoria');
   }
 }
+
