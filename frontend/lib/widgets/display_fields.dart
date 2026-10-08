@@ -17,6 +17,8 @@ class StatusTag extends StatelessWidget {
       _ => ('Pendente', Colors.amber, Icons.pending_outlined),
     };
     return Chip(
+      visualDensity:VisualDensity.compact,
+      materialTapTargetSize:MaterialTapTargetSize.shrinkWrap,
       avatar: Icon(icon, size: 18, color: color.shade800),
       label: Text(label ?? text, style: TextStyle(color: color.shade900)),
       backgroundColor: color.shade50,
@@ -26,12 +28,12 @@ class StatusTag extends StatelessWidget {
 }
 
 const propertyLabels = <String, String>{
+  'sin_ativo': 'Ativo',
   'id_assunto': 'ID do Assunto',
   'codigo_estruturado': 'Código estruturado',
   'descricao': 'Descrição',
   'observacao': 'Observação',
   'idx_assunto': 'Índice de pesquisa',
-  'sin_ativo': 'Ativo',
   'prazo_intermediario': 'Prazo intermediário',
   'prazo_corrente': 'Prazo corrente',
   'sta_destinacao': 'Destinação (código)',
@@ -58,3 +60,4 @@ Widget propertyTile(MapEntry<String, dynamic> entry) {
   return ListTile(dense: true,
     title: Text(propertyLabels[entry.key] ?? entry.key), subtitle: Text(value));
 }
+

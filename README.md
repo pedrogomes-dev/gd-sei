@@ -57,6 +57,11 @@ git clone https://github.com/pedrogomes-dev/gd-sei.git
 cd gd-sei
 ```
 
+## Interface
+
+Cabeçalho com identificação da sessão, menu Validação/Catálogo, tabelas de revisão e catálogo somente leitura por versão autorizada. Consulte `docs/interface.md` para comportamento e roteiro de homologação. Esta etapa não requer migração SQL.
+
 ## Validação
 
 Veja `database/003_validacao.sql`. Compilação Dart/Flutter e execução SQL precisam ser feitas em ambiente com SDKs e SQL Server. Nenhuma dessas execuções foi realizada no ambiente de criação.
+

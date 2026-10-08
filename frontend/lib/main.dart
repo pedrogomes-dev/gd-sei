@@ -4,6 +4,7 @@ import 'screens/login_screen.dart';
 import 'screens/tipos_screen.dart';
 import 'screens/tipo_screen.dart';
 import 'screens/resumo_screen.dart';
+import 'screens/catalogo_screen.dart';
 
 void main() => runApp(const SeiApp());
 
@@ -13,13 +14,19 @@ class SeiApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Validação SEI',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true),
+    theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true,
+      scaffoldBackgroundColor:const Color(0xfff5f7fa),
+      inputDecorationTheme:const InputDecorationTheme(border:OutlineInputBorder(),filled:true,fillColor:Colors.white,
+        contentPadding:EdgeInsets.symmetric(horizontal:16,vertical:16)),
+      dividerColor:const Color(0xffe2e8f0)),
     initialRoute: '/login',
     onGenerateRoute: (settings) {
       final name = settings.name ?? '/login';
       Widget screen;
       if(name=='/login' || name=='/verificar-token') { screen=const LoginScreen(); }
       else if(name=='/tipos' || name=='/inicio') { screen=const TiposScreen(); }
+      else if(name=='/resumos') { screen=const TiposScreen(summaries:true); }
+      else if(name=='/catalogo/assuntos' || name=='/catalogo/tipos') { screen=CatalogoScreen(kind:name.split('/').last); }
       else if(RegExp(r'^/tipos/\d+$').hasMatch(name)) { screen=TipoScreen(id:name.split('/').last); }
       else if(Uri.parse(name).path=='/resumo' &&
           RegExp(r'^\d+$').hasMatch(Uri.parse(name).queryParameters['consulta']??'') &&
@@ -33,3 +40,4 @@ class SeiApp extends StatelessWidget {
     },
   );
 }
+

@@ -40,8 +40,19 @@ class Router {
       await auth.logout(request); json(request,{'ok':true}); return;
     }
     final userId=await auth.authorize(request);
+    if(request.method=='GET' && path=='/api/auth/me') {
+      json(request,await auth.profile(userId)); return;
+    }
     if(request.method=='GET' && path=='/api/tipos') {
       json(request,await consultas.list(userId)); return;
+    }
+    final catalog=RegExp(r'^/api/catalogo/(assuntos|tipos)$').firstMatch(path);
+    if(request.method=='GET' && catalog!=null) {
+      final assignment=int.tryParse(request.uri.queryParameters['atribuicao']??'');
+      final text=(request.uri.queryParameters['q']??'').trim();
+      final offset=int.tryParse(request.uri.queryParameters['offset']??'0');
+      if(assignment==null || assignment<1 || assignment>2147483647 || text.length>250 || offset==null || offset<0 || offset>1000000)throw ApiError(400,'Pesquisa inválida');
+      json(request,await manifestacoes.catalog(userId,assignment,catalog.group(1)!,text,offset));return;
     }
     final match=RegExp(r'^/api/tipos/(\d+)(/visualizar|/manifestacao|/assuntos)?$').firstMatch(path);
     if(match!=null) {
@@ -78,3 +89,4 @@ class Router {
     throw ApiError(404,'Rota não disponível');
   }
 }
+
