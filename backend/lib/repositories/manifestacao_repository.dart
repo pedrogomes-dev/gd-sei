@@ -37,7 +37,7 @@ class ManifestacaoRepository {
     return {'itens':rows.take(50).toList(),'mais':rows.length>50,'offset':offset};
   }
 
-  Future<Map<String,dynamic>> catalog(String kind,String text,int offset,int? requestedVersion) async {
+  Future<Map<String,dynamic>> catalog(String kind,String text,int offset,int? requestedVersion,String state) async {
     final versions=await db.query('SELECT MAX(versao) AS versao FROM dbo.versao_base');
     if(versions.first['versao']==null)throw ApiError(404,'Nenhuma base publicada.');
     final version=requestedVersion??number(versions.first['versao']);
@@ -51,10 +51,12 @@ class ManifestacaoRepository {
     final exactId=parsed!=null && parsed>=-2147483648 && parsed<=2147483647?parsed:null;
     final conditions=fields.map((f)=>"$f LIKE ? ESCAPE '~'").join(' OR ');
     // Table/column names come exclusively from the fixed whitelist above.
-    final rows=await db.query('SELECT * FROM dbo.$table WHERE versao=? AND ($conditions'
-      '${exactId==null?'':' OR $key=?'}) ORDER BY $key OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY',
-      params:[version,for(final _ in fields)'%$escaped%',if(exactId!=null)exactId,offset],operation:'consultar_catalogo');
-    return {'itens':rows.take(50).toList(),'mais':rows.length>50,'versao':version};
+    final where='versao=? AND ($conditions${exactId==null?'':' OR $key=?'})${state=='TODOS'?'':' AND sin_ativo=?'}';
+    final params=<Object>[version,for(final _ in fields)'%$escaped%',if(exactId!=null)exactId,if(state!='TODOS')state];
+    final count=await db.query('SELECT COUNT_BIG(*) AS total FROM dbo.$table WHERE $where',params:params,operation:'contar_catalogo');
+    final rows=await db.query('SELECT * FROM dbo.$table WHERE $where ORDER BY $key OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY',
+      params:[...params,offset],operation:'consultar_catalogo');
+    return {'itens':rows.take(50).toList(),'mais':rows.length>50,'versao':version,'total':number(count.first['total'])};
   }
 
   ApiError business(DatabaseFailure error) {
