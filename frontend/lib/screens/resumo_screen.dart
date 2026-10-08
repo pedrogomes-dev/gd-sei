@@ -33,11 +33,34 @@ class _ResumoScreenState extends State<ResumoScreen> {
     await Navigator.pushNamed(context,'/tipos/$id');
     if(mounted)reload();
   }
-  void subjectInfo(Map<String,dynamic> subject)=>showDialog<void>(context:context,builder:(context)=>AlertDialog(
-    title:Text('Informações do Assunto ${subject['id_assunto']}'),
-    content:SizedBox(width:600,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,
-      children:subject.entries.where((e)=>propertyLabels.containsKey(e.key)).map(propertyTile).toList()))),
-    actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Fechar'))]));
+  Future<Map<String,dynamic>> loadSubject(Map<String,dynamic> row) async {
+    final detail=await ApiService().tipo(row['id_atribuicao'].toString());
+    final candidates=[...(detail['assuntos'] as List<dynamic>),...(detail['decisoes'] as List<dynamic>)];
+    for(final subject in candidates) {
+      if(subject['id_assunto'].toString()==row['id_assunto'].toString())return Map<String,dynamic>.from(subject as Map);
+    }
+    throw Exception('Assunto não encontrado na versão da consulta.');
+  }
+  void subjectInfo(Map<String,dynamic> subject) {
+    var detail=loadSubject(subject);
+    showDialog<void>(context:context,builder:(context)=>StatefulBuilder(builder:(context,setDialogState)=>AlertDialog(
+      title:Text('Informações do Assunto ${subject['id_assunto']}'),
+      content:SizedBox(width:600,child:FutureBuilder<Map<String,dynamic>>(future:detail,builder:(context,snapshot){
+        if(snapshot.connectionState!=ConnectionState.done)return const SizedBox(height:120,child:Center(child:CircularProgressIndicator()));
+        if(snapshot.hasError)return Column(mainAxisSize:MainAxisSize.min,children:[Text(snapshot.error.toString()),
+          TextButton(onPressed:()=>setDialogState((){detail=loadSubject(subject);}),child:const Text('Tentar novamente'))]);
+        final value=snapshot.data!;
+        return SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+          for(final key in ['id_assunto','codigo_estruturado','descricao'])propertyTile(MapEntry(key,value[key])),
+          const Divider(),
+          const ListTile(title:Text('Prazos de guarda',style:TextStyle(fontWeight:FontWeight.w600))),
+          ListTile(leading:const Icon(Icons.schedule_outlined),title:const Text('Prazo corrente'),subtitle:Text(value['prazo_corrente']?.toString()??'Não informado')),
+          ListTile(leading:const Icon(Icons.schedule_outlined),title:const Text('Prazo intermediário'),subtitle:Text(value['prazo_intermediario']?.toString()??'Não informado')),
+          destinationTile(value['sta_destinacao']),const Divider(),
+          for(final entry in value.entries.where((e)=>propertyLabels.containsKey(e.key)&&!['id_assunto','codigo_estruturado','descricao','prazo_corrente','prazo_intermediario','sta_destinacao'].contains(e.key)))propertyTile(entry),
+        ]));
+      })),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Fechar'))])));
+  }
   String date(dynamic raw) {
     final text=raw.toString();
     final parsed=DateTime.tryParse(text.endsWith('Z')?text:'${text}Z');
@@ -72,20 +95,24 @@ class _ResumoScreenState extends State<ResumoScreen> {
               Text(t['pendentes'].toString()=='0'?'Revisão completa':'${t['pendentes']} vínculos pendentes',style:const TextStyle(color:Colors.blueGrey))]),
             const SizedBox(height:20),
             if(links.isEmpty)const Text('Nenhuma decisão de vínculo salva.')
-            else SubjectTableViewport(child:DataTable(
-              headingRowColor:const WidgetStatePropertyAll(Color(0xfff5f7fa)),dataRowMinHeight:72,dataRowMaxHeight:120,columnSpacing:24,
-              columns:const [DataColumn(label:Text('Assunto')),DataColumn(label:Text('Decisão')),DataColumn(label:Text('Justificativa')),DataColumn(label:Text('Informações'))],
-              rows:links.map((d)=>DataRow(cells:[
-                DataCell(SizedBox(width:390,child:Column(mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.start,children:[
-                  Text('ID ${d['id_assunto']} · ${d['codigo_estruturado']}',style:const TextStyle(fontSize:12,color:Colors.blueGrey)),
-                  const SizedBox(height:4),Text(d['descricao'].toString(),maxLines:3,overflow:TextOverflow.ellipsis)]))),
-                DataCell(StatusTag(d['acao'].toString())),
-                DataCell(SizedBox(width:260,child:Text((d['justificativa']??'').toString().isEmpty?'—':d['justificativa'].toString(),maxLines:4,overflow:TextOverflow.ellipsis)),
-                  onTap:()=>showDialog<void>(context:context,builder:(context)=>AlertDialog(title:const Text('Justificativa'),
-                    content:SingleChildScrollView(child:Text((d['justificativa']??'').toString().isEmpty?'Nenhuma justificativa informada.':d['justificativa'].toString())),
-                    actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Fechar'))]))),
-                DataCell(IconButton(tooltip:'Informações do Assunto',icon:const Icon(Icons.info_outline),onPressed:()=>subjectInfo(Map<String,dynamic>.from(d as Map)))),
-              ])).toList())),
+            else SubjectTableViewport(child:Table(
+              columnWidths:const {0:FixedColumnWidth(52),1:FlexColumnWidth(3),2:FixedColumnWidth(140),3:FlexColumnWidth(2)},
+              defaultVerticalAlignment:TableCellVerticalAlignment.middle,
+              border:const TableBorder(horizontalInside:BorderSide(color:Color(0xffe2e8f0))),
+              children:[
+                const TableRow(decoration:BoxDecoration(color:Color(0xfff5f7fa)),children:[
+                  SizedBox.shrink(),Padding(padding:EdgeInsets.all(16),child:Text('Assunto')),
+                  Padding(padding:EdgeInsets.all(16),child:Text('Decisão')),
+                  Padding(padding:EdgeInsets.all(16),child:Text('Justificativa'))]),
+                ...links.map((d)=>TableRow(children:[
+                  IconButton(tooltip:'Informações do Assunto',icon:const Icon(Icons.info_outline),onPressed:()=>subjectInfo(Map<String,dynamic>.from(d as Map))),
+                  Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                    Text('ID ${d['id_assunto']} · ${d['codigo_estruturado']}',style:const TextStyle(fontSize:12,color:Colors.blueGrey)),
+                    const SizedBox(height:6),Text(d['descricao'].toString())])),
+                  Padding(padding:const EdgeInsets.symmetric(horizontal:8,vertical:16),child:Align(alignment:Alignment.centerLeft,child:StatusTag(d['acao'].toString()))),
+                  Padding(padding:const EdgeInsets.all(16),child:Text((d['justificativa']??'').toString().isEmpty?'—':d['justificativa'].toString())),
+                ])),
+              ])),
             if((t['observacao']??'').toString().isNotEmpty)...[
               const SizedBox(height:20),const Divider(),const SizedBox(height:12),
               const Text('Observação sobre o Tipo',style:TextStyle(fontWeight:FontWeight.w600)),const SizedBox(height:8),Text(t['observacao'].toString())],
@@ -112,9 +139,13 @@ class _SubjectTableViewportState extends State<SubjectTableViewport> {
   final vertical=ScrollController();
   final horizontal=ScrollController();
   @override void dispose(){vertical.dispose();horizontal.dispose();super.dispose();}
-  @override Widget build(BuildContext context)=>SizedBox(height:360,
-    child:Scrollbar(controller:vertical,thumbVisibility:true,notificationPredicate:(n)=>n.metrics.axis==Axis.vertical,
+  @override Widget build(BuildContext context)=>LayoutBuilder(builder:(context,constraints){
+    final width=constraints.maxWidth<640?640.0:constraints.maxWidth;
+    final height=(MediaQuery.sizeOf(context).height*.4).clamp(180.0,440.0).toDouble();
+    return SizedBox(height:height,child:Scrollbar(controller:vertical,thumbVisibility:true,notificationPredicate:(n)=>n.metrics.axis==Axis.vertical,
       child:SingleChildScrollView(controller:vertical,primary:false,
-        child:Scrollbar(controller:horizontal,thumbVisibility:true,notificationPredicate:(n)=>n.metrics.axis==Axis.horizontal,
-          child:SingleChildScrollView(controller:horizontal,primary:false,scrollDirection:Axis.horizontal,child:widget.child)))));
+        child:Scrollbar(controller:horizontal,thumbVisibility:constraints.maxWidth<640,notificationPredicate:(n)=>n.metrics.axis==Axis.horizontal,
+          child:SingleChildScrollView(controller:horizontal,primary:false,scrollDirection:Axis.horizontal,
+            child:SizedBox(width:width,child:widget.child))))));
+  });
 }

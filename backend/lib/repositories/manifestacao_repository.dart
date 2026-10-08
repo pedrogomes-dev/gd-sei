@@ -13,7 +13,7 @@ class ManifestacaoRepository {
   Future<Map<String,dynamic>> detail(int user,int id) async {
     final data=await consultas.detail(user,id);
     final manifest=await db.query('SELECT observacao,revisao FROM dbo.manifestacao_tipo WHERE id_atribuicao=?',params:[id]);
-    final decisions=await db.query('SELECT m.id_assunto,m.acao,m.justificativa,s.codigo_estruturado,s.descricao '
+    final decisions=await db.query('SELECT s.*,m.acao,m.justificativa '
       'FROM dbo.manifestacao_vinculo m JOIN dbo.assunto s ON s.versao=m.versao AND s.id_assunto=m.id_assunto '
       'WHERE m.id_atribuicao=? ORDER BY s.codigo_estruturado',params:[id]);
     return {...data,'manifestacao':manifest.isEmpty?{'observacao':'','revisao':0}:manifest.first,'decisoes':decisions};
