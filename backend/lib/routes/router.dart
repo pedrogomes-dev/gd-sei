@@ -5,14 +5,14 @@ import '../models/api_error.dart';
 import '../repositories/consulta_repository.dart';
 import '../services/auth_service.dart';
 import '../repositories/manifestacao_repository.dart';
-import '../repositories/admin_repository.dart';
+import '../controllers/administracao_controller.dart';
 
 class Router {
   final AuthService auth;
   final ConsultaRepository consultas;
   final ManifestacaoRepository manifestacoes;
-  final AdminRepository admin;
-  Router(this.auth,this.consultas,this.manifestacoes,this.admin);
+  final AdministracaoController administracao;
+  Router(this.auth,this.consultas,this.manifestacoes,this.administracao);
   Future<Map<String,dynamic>> body(HttpRequest request) async {
     var length=0;
     final bytes=<int>[];
@@ -45,40 +45,9 @@ class Router {
     if(request.method=='GET' && path=='/api/auth/me') {
       json(request,await auth.profile(userId)); return;
     }
-    if(path.startsWith('/api/admin/')) {
-      await admin.authorize(userId);
-      if(request.method=='GET' && path=='/api/admin/orgaos') {
-        json(request,await admin.organs(userId)); return;
-      }
-      if(path=='/api/admin/usuarios' && request.method=='POST') {
-        json(request,await admin.save(userId,0,await body(request))); return;
-      }
-      final offset=int.tryParse(request.uri.queryParameters['offset']??'0');
-      if(offset==null || offset<0 || offset>1000000)throw ApiError(400,'Página inválida.');
-      if(path=='/api/admin/usuarios' && request.method=='GET') {
-        final text=(request.uri.queryParameters['q']??'').trim();
-        final state=request.uri.queryParameters['estado']??'TODOS';
-        final rawOrgan=request.uri.queryParameters['orgao'];
-        final organ=rawOrgan==null?null:int.tryParse(rawOrgan);
-        if(text.length>250 || !['TODOS','S','N'].contains(state) ||
-          (rawOrgan!=null && (organ==null || organ < -2147483648 || organ>2147483647)))throw ApiError(400,'Filtro inválido.');
-        json(request,await admin.list(userId,text,state,organ,offset)); return;
-      }
-      final target=RegExp(r'^/api/admin/usuarios/(\d+)(/historico)?$').firstMatch(path);
-      if(target!=null) {
-        final id=int.tryParse(target.group(1)!);
-        if(id==null || id<1 || id>2147483647)throw ApiError(400,'Usuário inválido.');
-        if(request.method=='GET' && target.group(2)=='/historico') {
-          json(request,await admin.history(userId,id,offset)); return;
-        }
-        if(request.method=='GET' && target.group(2)==null) {
-          json(request,await admin.detail(userId,id)); return;
-        }
-        if(request.method=='POST' && target.group(2)==null) {
-          json(request,await admin.save(userId,id,await body(request))); return;
-        }
-      }
-      throw ApiError(404,'Rota administrativa não disponível.');
+    if (path.startsWith('/api/admin/')) {
+      await rotasAdministracao(request, userId);
+      return;
     }
     if(request.method=='GET' && path=='/api/tipos') {
       json(request,await consultas.list(userId)); return;
@@ -128,6 +97,90 @@ class Router {
     }
     throw ApiError(404,'Rota não disponível');
   }
-}
+  Future<void> rotasAdministracao(HttpRequest request, int idAdministrador) async {
+    await administracao.verificarAdministrador(idAdministrador);
 
+    final caminho = request.uri.path;
+    final metodo = request.method;
+    final filtros = request.uri.queryParameters;
+
+    if (metodo == 'GET' && caminho == '/api/admin/orgaos') {
+      final orgaos = await administracao.listarOrgaos(idAdministrador);
+      json(request, orgaos);
+      return;
+    }
+
+    if (metodo == 'POST' && caminho == '/api/admin/usuarios') {
+      final dados = await body(request);
+      final usuario = await administracao.salvarUsuario(idAdministrador, 0, dados);
+      json(request, usuario);
+      return;
+    }
+
+    final inicio = int.tryParse(filtros['offset'] ?? '0');
+    if (inicio == null || inicio < 0 || inicio > 1000000) {
+      throw ApiError(400, 'Página inválida.');
+    }
+
+    if (metodo == 'GET' && caminho == '/api/admin/usuarios') {
+      final pesquisa = (filtros['q'] ?? '').trim();
+      if (pesquisa.length > 250) {
+        throw ApiError(400, 'Pesquisa deve ter até 250 caracteres.');
+      }
+
+      final situacao = filtros['estado'] ?? 'TODOS';
+      if (!['TODOS', 'S', 'N'].contains(situacao)) {
+        throw ApiError(400, 'Situação de acesso inválida.');
+      }
+
+      int? idOrgao;
+      if (filtros.containsKey('orgao')) {
+        idOrgao = int.tryParse(filtros['orgao']!);
+        if (idOrgao == null || idOrgao < -2147483648 || idOrgao > 2147483647) {
+          throw ApiError(400, 'Órgão inválido.');
+        }
+      }
+
+      final usuarios = await administracao.listarUsuarios(
+        idAdministrador, pesquisa, situacao, idOrgao, inicio,
+      );
+      json(request, usuarios);
+      return;
+    }
+
+    final rotaUsuario = RegExp(r'^/api/admin/usuarios/(\d+)(/historico)?$');
+    final resultado = rotaUsuario.firstMatch(caminho);
+    if (resultado == null) {
+      throw ApiError(404, 'Rota administrativa não disponível.');
+    }
+
+    final idUsuario = int.tryParse(resultado.group(1)!);
+    if (idUsuario == null || idUsuario < 1 || idUsuario > 2147483647) {
+      throw ApiError(400, 'Usuário inválido.');
+    }
+
+    final historico = resultado.group(2) == '/historico';
+    if (metodo == 'GET' && historico) {
+      final eventos = await administracao.consultarHistorico(idAdministrador, idUsuario, inicio);
+      json(request, eventos);
+      return;
+    }
+
+    if (metodo == 'GET' && !historico) {
+      final usuario = await administracao.buscarUsuario(idAdministrador, idUsuario);
+      json(request, usuario);
+      return;
+    }
+
+    if (metodo == 'POST' && !historico) {
+      final dados = await body(request);
+      final usuario = await administracao.salvarUsuario(idAdministrador, idUsuario, dados);
+      json(request, usuario);
+      return;
+    }
+
+    throw ApiError(404, 'Rota administrativa não disponível.');
+  }
+
+}
 

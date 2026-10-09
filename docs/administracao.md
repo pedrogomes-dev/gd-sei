@@ -1,5 +1,11 @@
 # Administração de usuários
 
+## Organização do código
+
+A administração segue `Router → AdministracaoController → DatabaseRepository` (conexão existente). O controller valida os campos em blocos separados e executa consultas SQL multilinha. Não há repository ou service intermediário para essa funcionalidade. `Validacoes.emailValido` concentra a regex de formato básico de e-mail; backend e frontend possuem o mesmo helper simples, sem acrescentar pacote compartilhado.
+
+As telas coordenam carregamento e navegação. Formulário, filtros, tabela e cartão de histórico ficam em `frontend/lib/widgets/admin`. Mantidos StatefulWidget/setState e componentes Flutter padrão. A refatoração não altera a instalação SQL: quem já executou 007 não deve executá-lo novamente. Não é uma verificação de existência ou entrega do e-mail; isso será tratado na autenticação.
+
 Primeira etapa: cadastro/edição de nome e e-mail, múltiplos órgãos, acesso ativo/inativo, perfil administrador e histórico administrativo. Não exclui usuários ou manifestações. Não cria órgãos nem modifica sua distribuição de processos. Administrador continua precisando de vínculo com órgão para avaliar.
 
 ## Instalação
@@ -35,3 +41,4 @@ O ambiente de edição não tem Dart/Flutter nem SQL Server: análise, compilaç
 No navegador: conferir lista, filtros combinados, total/paginação, nome longo e rolagem; criar/editar usuário, vincular/desvincular órgãos e verificar histórico; abrir a edição em duas abas e confirmar conflito na segunda. Conferir HTTP 403 nas rotas administrativas com usuário não administrador. Enquanto o login é fixo, essa última verificação pode ser feita retirando temporariamente o perfil do usuário de teste em base de homologação e restaurando-o por script do operador. Conferir também sessão inválida após alteração de permissão e após desativar/reativar, inclusive em outra aba. Preenchimento perdido por conflito deve ser reaplicado após recarregar.
 
 Autenticação por e-mail, tokens de uso único, sessões persistentes, trilha de autenticação e indicadores de quantidade/último acesso pertencem à segunda etapa. Novos usuários cadastrados ainda não podem entrar pelo bypass fixo. Esta etapa não apresenta contadores de acesso incompletos como se fossem definitivos.
+

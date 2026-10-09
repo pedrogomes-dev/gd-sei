@@ -14,14 +14,55 @@ class ApiService {
     return decoded;
   }
   Future<Map<String,dynamic>> profile() async => await request('/api/auth/me') as Map<String,dynamic>;
-  Future<List<dynamic>> adminOrgans() async => await request('/api/admin/orgaos') as List<dynamic>;
-  Future<Map<String,dynamic>> adminUsers(String text,String state,int? organ,int offset) async =>
-    await request('/api/admin/usuarios?q=${Uri.encodeQueryComponent(text)}&estado=$state&offset=$offset${organ==null?'':'&orgao=$organ'}') as Map<String,dynamic>;
-  Future<Map<String,dynamic>> adminUser(int id) async => await request('/api/admin/usuarios/$id') as Map<String,dynamic>;
-  Future<Map<String,dynamic>> saveUser(int? id,Map<String,dynamic> data) async =>
-    await request('/api/admin/usuarios${id==null?'':'/$id'}',data:data) as Map<String,dynamic>;
-  Future<Map<String,dynamic>> adminHistory(int id,int offset) async =>
-    await request('/api/admin/usuarios/$id/historico?offset=$offset') as Map<String,dynamic>;
+  Future<List<dynamic>> listarOrgaos() async {
+    return await request('/api/admin/orgaos') as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> listarUsuarios(
+    String pesquisa,
+    String situacao,
+    int? idOrgao,
+    int inicio,
+  ) async {
+    final filtros = {
+      'q': pesquisa,
+      'estado': situacao,
+      'offset': inicio.toString(),
+    };
+    if (idOrgao != null) {
+      filtros['orgao'] = idOrgao.toString();
+    }
+
+    final endereco = Uri(
+      path: '/api/admin/usuarios',
+      queryParameters: filtros,
+    );
+    return await request(endereco.toString()) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> buscarUsuario(int idUsuario) async {
+    return await request('/api/admin/usuarios/$idUsuario') as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> salvarUsuario(
+    int? idUsuario,
+    Map<String, dynamic> dados,
+  ) async {
+    var endereco = '/api/admin/usuarios';
+    if (idUsuario != null) {
+      endereco += '/$idUsuario';
+    }
+    return await request(endereco, data: dados) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> consultarHistoricoUsuario(
+    int idUsuario,
+    int inicio,
+  ) async {
+    final endereco = '/api/admin/usuarios/$idUsuario/historico?offset=$inicio';
+    return await request(endereco) as Map<String, dynamic>;
+  }
+
   Future<String> health() async => (await request('/api/health'))['status'] as String;
   Future<void> login(String email,String token) async { await request('/api/auth/dev',data:{'email':email,'token':token}); }
   Future<void> logout() async { await request('/api/auth/logout',data:{}); }
@@ -40,5 +81,6 @@ class ApiService {
     await request('/api/consultas/$consulta/orgaos/$orgao/finalizar',data:{'revisao':revision});
   }
 }
+
 
 
