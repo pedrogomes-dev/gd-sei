@@ -6,6 +6,11 @@ class Validacoes {
 
   static final _formatoEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
   static final _caracteresEmail = RegExp(r'^[\x21-\x7E]+$');
+  static final _formatoCodigoAcesso = RegExp(r'^[1-9][0-9]{5}$');
+
+  static bool codigoAcessoValido(String codigo) {
+    return _formatoCodigoAcesso.hasMatch(codigo);
+  }
 
   static bool emailValido(String email) {
     final valor = email.trim();
@@ -17,4 +22,5 @@ class Validacoes {
     return _formatoEmail.hasMatch(valor);
   }
 }
+
 

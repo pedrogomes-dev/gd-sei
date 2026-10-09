@@ -8,3 +8,6 @@ dependencies:
   dart_odbc:
     path: vendor/dart_odbc
   dotenv: ^4.2.0
+  crypto: ^3.0.7
+  mailer: ^7.2.0
+
