@@ -50,8 +50,6 @@ class _AppShellState extends State<AppShell> {
   }
   Widget menu()=>SizedBox(width:230,child:ColoredBox(color:Colors.white,child:ListView(
     padding:const EdgeInsets.symmetric(horizontal:16,vertical:24),children:[
-      item('Início',Icons.home_outlined,'inicio','/inicio'),
-      const SizedBox(height:24),
       const Padding(padding:EdgeInsets.all(12),child:Text('VALIDAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
       item('Tipos de Processo atribuídos',Icons.fact_check_outlined,'tipos','/tipos'),
       item('Resumo e submissão',Icons.assignment_outlined,'resumos','/resumos'),
@@ -72,6 +70,43 @@ class _AppShellState extends State<AppShell> {
       selected:widget.section==section,selectedTileColor:const Color(0xffeaf2fc),
       leading:Icon(icon,size:20),title:Text(label,style:const TextStyle(fontSize:14)),
       onTap:()=>go(path)));
+  Widget linkNavegacao(String texto, String rota) {
+    return TextButton(
+      onPressed: () => go(rota),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 40),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        alignment: Alignment.centerLeft,
+      ),
+      child: Text(texto),
+    );
+  }
+
+  Widget caminhoNavegacao() {
+    const separador = Icon(Icons.chevron_right, size: 16, color: Colors.blueGrey);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        linkNavegacao('Início', '/inicio'),
+        if (widget.section != 'inicio') ...[
+          separador,
+          linkNavegacao(nomeSecao(), rotaSecao()),
+        ],
+        for (final texto in widget.trail) ...[
+          separador,
+          if (texto == 'Tipos de Processo atribuídos')
+            linkNavegacao(texto, '/tipos')
+          else if (texto == 'Resumo e submissão')
+            linkNavegacao(texto, '/resumos')
+          else
+            Text(texto, style: const TextStyle(fontSize: 13, color: Colors.blueGrey)),
+        ],
+      ],
+    );
+  }
   @override Widget build(BuildContext context)=>LayoutBuilder(builder:(context,size){
     final wide=size.maxWidth>=1000;
     return Scaffold(
@@ -110,10 +145,7 @@ class _AppShellState extends State<AppShell> {
         if(wide)...[menu(),const VerticalDivider(width:1,color:Color(0xffe2e8f0))],
         Expanded(child:Column(children:[
           Padding(padding:EdgeInsets.fromLTRB(wide?32:20,24,wide?32:20,20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-            Wrap(crossAxisAlignment:WrapCrossAlignment.center,children:[
-              TextButton(onPressed:()=>go(rotaSecao()),child:Text(nomeSecao())),
-              for(final label in widget.trail)...[const Icon(Icons.chevron_right,size:16,color:Colors.blueGrey),if(label=='Tipos de Processo atribuídos'||label=='Resumo e submissão')TextButton(onPressed:()=>go(label=='Tipos de Processo atribuídos'?'/tipos':'/resumos'),child:Text(label))else Text(label,style:const TextStyle(fontSize:13,color:Colors.blueGrey))],
-            ]),const SizedBox(height:8),
+            caminhoNavegacao(),const SizedBox(height:8),
             Row(children:[Expanded(child:Text(widget.title,style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w600))),...widget.actions]),
           ])),
           Expanded(child:widget.child),
@@ -132,6 +164,7 @@ class SectionCard extends StatelessWidget {
     margin:const EdgeInsets.only(bottom:24),padding:const EdgeInsets.all(24),
     decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(12),border:Border.all(color:const Color(0xffe2e8f0))),child:child);
 }
+
 
 
 

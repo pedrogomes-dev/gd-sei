@@ -17,7 +17,7 @@ Os indicadores se sobrepõem: uma atribuição submetida também pode ser analis
 
 Cada cartão informa também quantos órgãos possuem ao menos uma atribuição naquela condição, por exemplo “235 (10 órgãos) Pendentes de análise”. Ao clicar, a tabela lista esses órgãos e limpa a busca por sigla. Um órgão pode aparecer em mais de um indicador se suas atribuições estiverem em condições diferentes. “Analisados” inclui órgãos com alguma análise concluída; “Submetidos” inclui somente órgãos que finalizaram a rodada.
 
-Início fica acima dos grupos do menu. O logo também abre a Home. O rótulo “Rodada de avaliação” fica acima do seletor para permanecer visível.
+Início é o primeiro item do caminho de navegação de todas as telas internas, por exemplo “Início > Validação > Tipos de Processo atribuídos”. Na Home, aparece somente “Início”. O menu lateral começa pelo grupo Validação, sem um atalho separado para a Home. O logo também abre a Home. Os links do caminho têm espaçamento horizontal interno zero, alinhando seu primeiro texto com o título. O rótulo “Rodada de avaliação” fica acima do seletor para permanecer visível.
 
 ## Órgãos
 
@@ -41,4 +41,5 @@ Antes de integrar, executar no ambiente com Dart/Flutter e SQL Server:
 6. Testar busca, filtros, rodada sem órgãos, órgão sem atribuições, atualização após submissão e redimensionamento em telas largas e estreitas.
 
 Neste trabalho, as consultas de leitura foram verificadas com dados controlados em SQLite, usando a mesma lógica SQL portável. Isso valida contagens e escopo dos SELECTs; não substitui a execução no SQL Server nem a compilação Dart/Flutter.
+
 
