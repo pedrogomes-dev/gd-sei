@@ -4,15 +4,17 @@ import '../controllers/health_controller.dart';
 import '../models/api_error.dart';
 import '../repositories/consulta_repository.dart';
 import '../services/auth_service.dart';
-import '../repositories/manifestacao_repository.dart';
+import '../controllers/manifestacao_controller.dart';
+import '../controllers/catalogo_controller.dart';
 import '../controllers/administracao_controller.dart';
 
 class Router {
   final AuthService auth;
   final ConsultaRepository consultas;
-  final ManifestacaoRepository manifestacoes;
+  final ManifestacaoController manifestacoes;
+  final CatalogoController catalogo;
   final AdministracaoController administracao;
-  Router(this.auth,this.consultas,this.manifestacoes,this.administracao);
+  Router(this.auth,this.consultas,this.manifestacoes,this.catalogo,this.administracao);
   Future<Map<String,dynamic>> body(HttpRequest request) async {
     var length=0;
     final bytes=<int>[];
@@ -33,70 +35,161 @@ class Router {
     request.response.write(jsonEncode(value));
   }
   Future<void> route(HttpRequest request) async {
-    final path=request.uri.path;
-    if(request.method=='GET' && path=='/api/health') { await healthController(request); return; }
-    if(request.method=='POST' && path=='/api/auth/dev') {
-      await auth.login(request,await body(request)); json(request,{'ok':true}); return;
-    }
-    if(request.method=='POST' && path=='/api/auth/logout') {
-      await auth.logout(request); json(request,{'ok':true}); return;
-    }
-    final userId=await auth.authorize(request);
-    if(request.method=='GET' && path=='/api/auth/me') {
-      json(request,await auth.profile(userId)); return;
-    }
-    if (path.startsWith('/api/admin/')) {
-      await rotasAdministracao(request, userId);
+    final caminho = request.uri.path;
+    final metodo = request.method;
+
+    if (metodo == 'GET' && caminho == '/api/health') {
+      await healthController(request);
       return;
     }
-    if(request.method=='GET' && path=='/api/tipos') {
-      json(request,await consultas.list(userId)); return;
+    if (metodo == 'POST' && caminho == '/api/auth/dev') {
+      await auth.login(request, await body(request));
+      json(request, {'ok': true});
+      return;
     }
-    final catalog=RegExp(r'^/api/catalogo/(assuntos|tipos)$').firstMatch(path);
-    if(request.method=='GET' && catalog!=null) {
-      final state=request.uri.queryParameters['estado']??'TODOS';
-      if(!['TODOS','S','N'].contains(state))throw ApiError(400,'Estado inválido.');
-      final rawVersion=request.uri.queryParameters['versao'];
-      final version=rawVersion==null?null:int.tryParse(rawVersion);
-      final text=(request.uri.queryParameters['q']??'').trim();
-      final offset=int.tryParse(request.uri.queryParameters['offset']??'0');
-      if((rawVersion!=null&&(version==null||version<0||version>2147483647)) || text.length>250 || offset==null || offset<0 || offset>1000000)throw ApiError(400,'Pesquisa inválida');
-      json(request,await manifestacoes.catalog(catalog.group(1)!,text,offset,version,state));return;
+    if (metodo == 'POST' && caminho == '/api/auth/logout') {
+      await auth.logout(request);
+      json(request, {'ok': true});
+      return;
     }
-    final match=RegExp(r'^/api/tipos/(\d+)(/visualizar|/manifestacao|/assuntos)?$').firstMatch(path);
-    if(match!=null) {
-      final id=int.tryParse(match.group(1)!);
-      if(id==null || id<1 || id>2147483647) throw ApiError(400,'Identificador inválido');
-      if(request.method=='GET' && match.group(2)==null) {
-        json(request,await manifestacoes.detail(userId,id)); return;
-      }
-      if(request.method=='POST' && match.group(2)=='/manifestacao') {
-        json(request,await manifestacoes.save(userId,id,await body(request))); return;
-      }
-      if(request.method=='GET' && match.group(2)=='/assuntos') {
-        final text=(request.uri.queryParameters['q']??'').trim();
-        final offset=int.tryParse(request.uri.queryParameters['offset']??'0');
-        if(text.length>250 || offset==null || offset<0 || offset>1000000)throw ApiError(400,'Pesquisa inválida');
-        json(request,await manifestacoes.search(userId,id,text,offset)); return;
-      }
-      if(request.method=='POST' && match.group(2)=='/visualizar') {
-        await consultas.detail(userId,id);
-        await consultas.viewed(userId,id); json(request,{'ok':true}); return;
-      }
+
+    final idUsuario = await auth.authorize(request);
+    if (metodo == 'GET' && caminho == '/api/auth/me') {
+      json(request, await auth.profile(idUsuario));
+      return;
     }
-    final group=RegExp(r'^/api/consultas/(\d+)/orgaos/(\d+)/(resumo|finalizar)$').firstMatch(path);
-    if(group!=null) {
-      final consulta=int.tryParse(group.group(1)!);final orgao=int.tryParse(group.group(2)!);
-      if(consulta==null||orgao==null||consulta<1||orgao<1||consulta>2147483647||orgao>2147483647)throw ApiError(400,'Identificador inválido');
-      if(request.method=='GET' && group.group(3)=='resumo') {
-        json(request,await manifestacoes.summary(userId,consulta,orgao));return;
-      }
-      if(request.method=='POST' && group.group(3)=='finalizar') {
-        await manifestacoes.finish(userId,consulta,orgao,await body(request));json(request,{'status':'FINALIZADA'});return;
-      }
+    if (caminho.startsWith('/api/admin/')) {
+      await rotasAdministracao(request, idUsuario);
+      return;
     }
-    throw ApiError(404,'Rota não disponível');
+    if (metodo == 'GET' && caminho == '/api/tipos') {
+      json(request, await consultas.list(idUsuario));
+      return;
+    }
+
+    final rotaCatalogo = RegExp(r'^/api/catalogo/(assuntos|tipos)$').firstMatch(caminho);
+    if (metodo == 'GET' && rotaCatalogo != null) {
+      await consultarCatalogo(request, rotaCatalogo.group(1)!);
+      return;
+    }
+
+    final rotaTipo = RegExp(r'^/api/tipos/(\d+)(/visualizar|/manifestacao|/assuntos)?$').firstMatch(caminho);
+    if (rotaTipo != null) {
+      await rotasTipoProcesso(request, idUsuario, rotaTipo);
+      return;
+    }
+
+    final rotaConsulta = RegExp(r'^/api/consultas/(\d+)/orgaos/(\d+)/(resumo|finalizar)$').firstMatch(caminho);
+    if (rotaConsulta != null) {
+      await rotasConsulta(request, idUsuario, rotaConsulta);
+      return;
+    }
+
+    throw ApiError(404, 'Rota não disponível');
   }
+
+  int lerIdentificador(String valor) {
+    final id = int.tryParse(valor);
+    if (id == null || id < 1 || id > 2147483647) {
+      throw ApiError(400, 'Identificador inválido');
+    }
+    return id;
+  }
+
+  int lerInicioPagina(HttpRequest request) {
+    final inicio = int.tryParse(request.uri.queryParameters['offset'] ?? '0');
+    if (inicio == null || inicio < 0 || inicio > 1000000) {
+      throw ApiError(400, 'Página inválida');
+    }
+    return inicio;
+  }
+
+  String lerPesquisa(HttpRequest request) {
+    final pesquisa = (request.uri.queryParameters['q'] ?? '').trim();
+    if (pesquisa.length > 250) {
+      throw ApiError(400, 'Pesquisa deve ter até 250 caracteres');
+    }
+    return pesquisa;
+  }
+
+  Future<void> consultarCatalogo(HttpRequest request, String categoria) async {
+    final filtros = request.uri.queryParameters;
+    final situacao = filtros['estado'] ?? 'TODOS';
+    if (!['TODOS', 'S', 'N'].contains(situacao)) {
+      throw ApiError(400, 'Estado inválido.');
+    }
+
+    int? versao;
+    if (filtros.containsKey('versao')) {
+      versao = int.tryParse(filtros['versao']!);
+      if (versao == null || versao < 0 || versao > 2147483647) {
+        throw ApiError(400, 'Versão inválida.');
+      }
+    }
+
+    final pesquisa = lerPesquisa(request);
+    final inicio = lerInicioPagina(request);
+    final resultado = await catalogo.consultar(categoria, pesquisa, inicio, versao, situacao);
+    json(request, resultado);
+  }
+
+  Future<void> rotasTipoProcesso(
+    HttpRequest request,
+    int idUsuario,
+    RegExpMatch rota,
+  ) async {
+    final idAtribuicao = lerIdentificador(rota.group(1)!);
+    final operacao = rota.group(2);
+    final metodo = request.method;
+
+    if (metodo == 'GET' && operacao == null) {
+      json(request, await manifestacoes.consultar(idUsuario, idAtribuicao));
+      return;
+    }
+    if (metodo == 'POST' && operacao == '/manifestacao') {
+      final dados = await body(request);
+      json(request, await manifestacoes.salvar(idUsuario, idAtribuicao, dados));
+      return;
+    }
+    if (metodo == 'GET' && operacao == '/assuntos') {
+      final pesquisa = lerPesquisa(request);
+      final inicio = lerInicioPagina(request);
+      final resultado = await manifestacoes.pesquisarAssuntos(idUsuario, idAtribuicao, pesquisa, inicio);
+      json(request, resultado);
+      return;
+    }
+    if (metodo == 'POST' && operacao == '/visualizar') {
+      await consultas.detail(idUsuario, idAtribuicao);
+      await consultas.viewed(idUsuario, idAtribuicao);
+      json(request, {'ok': true});
+      return;
+    }
+    throw ApiError(404, 'Rota não disponível');
+  }
+
+  Future<void> rotasConsulta(
+    HttpRequest request,
+    int idUsuario,
+    RegExpMatch rota,
+  ) async {
+    final idConsulta = lerIdentificador(rota.group(1)!);
+    final idOrgao = lerIdentificador(rota.group(2)!);
+    final operacao = rota.group(3);
+
+    if (request.method == 'GET' && operacao == 'resumo') {
+      final resumo = await manifestacoes.consultarResumo(idUsuario, idConsulta, idOrgao);
+      json(request, resumo);
+      return;
+    }
+    if (request.method == 'POST' && operacao == 'finalizar') {
+      final dados = await body(request);
+      await manifestacoes.finalizar(idUsuario, idConsulta, idOrgao, dados);
+      json(request, {'status': 'FINALIZADA'});
+      return;
+    }
+    throw ApiError(404, 'Rota não disponível');
+  }
+
   Future<void> rotasAdministracao(HttpRequest request, int idAdministrador) async {
     await administracao.verificarAdministrador(idAdministrador);
 
@@ -183,4 +276,5 @@ class Router {
   }
 
 }
+
 
