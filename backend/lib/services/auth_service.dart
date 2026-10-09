@@ -7,7 +7,7 @@ import '../repositories/database_repository.dart';
 
 class AuthService {
   final DatabaseRepository db;
-  final Map<String, ({int userId, DateTime expires})> _sessions = {};
+  final Map<String, ({int userId, int version, DateTime expires})> _sessions = {};
   final bool enabled;
   final bool secureCookie;
   AuthService(this.db) : enabled = loadSettings()['DEV_AUTH_ENABLED'] == 'true',
@@ -25,7 +25,7 @@ class AuthService {
     if (body['email'] != 'pg@setic.ro.gov.br' || body['token'] != '123456') {
       throw ApiError(401, 'E-mail ou token inválido');
     }
-    final rows = await db.query('SELECT id_usuario FROM dbo.usuario WHERE email=? AND sin_ativo=?',
+    final rows = await db.query('SELECT id_usuario,versao_sessao FROM dbo.usuario WHERE email_normalizado=? AND sin_ativo=?',
       params: ['pg@setic.ro.gov.br', 'S'],operation:'login_buscar_usuario');
     if (rows.isEmpty) throw ApiError(403, 'Usuário não cadastrado ou inativo');
     final userId = int.parse(rows.first['id_usuario'].toString());
@@ -34,7 +34,7 @@ class AuthService {
     _sessions.removeWhere((_, s) => !s.expires.isAfter(DateTime.now().toUtc()));
     await db.query('INSERT dbo.auditoria(id_usuario,evento) VALUES(?,?)', params: [userId,'LOGIN_DEV'],operation:'login_gravar_auditoria');
     for (final c in request.cookies.where((c) => c.name == 'sei_session')) { _sessions.remove(c.value); }
-    _sessions[token] = (userId: userId, expires: DateTime.now().toUtc().add(const Duration(hours: 8)));
+    _sessions[token] = (userId: userId, version: int.parse(rows.first['versao_sessao'].toString()), expires: DateTime.now().toUtc().add(const Duration(hours: 8)));
     request.response.cookies.add(cookie(token));
   }
 
@@ -47,14 +47,18 @@ class AuthService {
       _sessions.remove(key);
       throw ApiError(401, 'Sessão expirada');
     }
-    final user = await db.query('SELECT id_usuario FROM dbo.usuario WHERE id_usuario=? AND sin_ativo=?',
+    final user = await db.query('SELECT id_usuario,versao_sessao FROM dbo.usuario WHERE id_usuario=? AND sin_ativo=?',
       params:[session.userId,'S']);
-    if (user.isEmpty) throw ApiError(401, 'Usuário inativo');
+    if (user.isEmpty || int.parse(user.first['versao_sessao'].toString())!=session.version) {
+      _sessions.remove(key);
+      request.response.cookies.add(cookie('',expired:true));
+      throw ApiError(401, 'Acesso desativado ou permissões alteradas. Faça login novamente.');
+    }
     return session.userId;
   }
 
   Future<Map<String, dynamic>> profile(int userId) async {
-    final users = await db.query('SELECT id_usuario,email FROM dbo.usuario WHERE id_usuario=? AND sin_ativo=?', params:[userId,'S']);
+    final users = await db.query('SELECT id_usuario,nome,email,sin_admin FROM dbo.usuario WHERE id_usuario=? AND sin_ativo=?', params:[userId,'S']);
     if (users.isEmpty) throw ApiError(401, 'Usuário inativo');
     final organs = await db.query('SELECT o.id_orgao,o.sigla FROM dbo.orgao o JOIN dbo.usuario_orgao u ON u.id_orgao=o.id_orgao WHERE u.id_usuario=? ORDER BY o.sigla', params:[userId]);
     return {...users.first, 'orgaos': organs};
@@ -67,4 +71,5 @@ class AuthService {
     await db.query('INSERT dbo.auditoria(id_usuario,evento) VALUES(?,?)',params:[userId,'LOGOUT'],operation:'logout_gravar_auditoria');
   }
 }
+
 

@@ -5,6 +5,8 @@ import 'screens/tipos_screen.dart';
 import 'screens/tipo_screen.dart';
 import 'screens/resumo_screen.dart';
 import 'screens/catalogo_screen.dart';
+import 'screens/admin_users_screen.dart';
+import 'screens/admin_history_screen.dart';
 
 void main() => runApp(const SeiApp());
 
@@ -26,6 +28,8 @@ class SeiApp extends StatelessWidget {
       if(name=='/login' || name=='/verificar-token') { screen=const LoginScreen(); }
       else if(name=='/tipos' || name=='/inicio') { screen=const TiposScreen(); }
       else if(name=='/resumos') { screen=const TiposScreen(summaries:true); }
+      else if(name=='/admin/usuarios') { screen=const AdminUsersScreen(); }
+      else if(RegExp(r'^/admin/usuarios/\d+/historico$').hasMatch(name)) { screen=AdminHistoryScreen(id:int.parse(name.split('/')[3])); }
       else if(name=='/catalogo/assuntos' || name=='/catalogo/tipos') { screen=CatalogoScreen(kind:name.split('/').last); }
       else if(RegExp(r'^/tipos/\d+$').hasMatch(name)) { screen=TipoScreen(id:name.split('/').last); }
       else if(Uri.parse(name).path=='/resumo' &&
@@ -40,4 +44,5 @@ class SeiApp extends StatelessWidget {
     },
   );
 }
+
 
