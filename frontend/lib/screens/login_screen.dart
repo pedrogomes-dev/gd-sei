@@ -15,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState((){busy=true;error=null;});
     try {
       await ApiService().login(email.text.trim(),token.text.trim());
-      if(mounted) Navigator.pushReplacementNamed(context,'/tipos');
+      if(mounted) Navigator.pushReplacementNamed(context,'/inicio');
     } catch(e){if(mounted)setState((){error=e.toString();});}
     finally{if(mounted)setState((){busy=false;});}
   }
@@ -33,4 +33,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ElevatedButton(onPressed:busy?null:login,child:Text(busy?'Entrando…':'Entrar')),
       ])))))));
 }
+
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/initial_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/inicio_screen.dart';
 import 'screens/tipos_screen.dart';
 import 'screens/tipo_screen.dart';
 import 'screens/resumo_screen.dart';
@@ -26,7 +27,8 @@ class SeiApp extends StatelessWidget {
       final name = settings.name ?? '/login';
       Widget screen;
       if(name=='/login' || name=='/verificar-token') { screen=const LoginScreen(); }
-      else if(name=='/tipos' || name=='/inicio') { screen=const TiposScreen(); }
+      else if(name=='/inicio') { screen=const InicioScreen(); }
+      else if(name=='/tipos') { screen=const TiposScreen(); }
       else if(name=='/resumos') { screen=const TiposScreen(summaries:true); }
       else if(name=='/admin/usuarios') { screen=const AdminUsersScreen(); }
       else if(RegExp(r'^/admin/usuarios/\d+/historico$').hasMatch(name)) { screen=AdminHistoryScreen(id:int.parse(name.split('/')[3])); }
@@ -44,5 +46,6 @@ class SeiApp extends StatelessWidget {
     },
   );
 }
+
 
 
