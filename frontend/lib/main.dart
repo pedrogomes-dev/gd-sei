@@ -42,10 +42,11 @@ class SeiApp extends StatelessWidget {
       }
       else { screen=InitialScreen(route:name); }
       return MaterialPageRoute<void>(settings: settings,
-        builder: (_) => screen);
+        builder: (_) => SelectionArea(child: screen));
     },
   );
 }
+
 
 
 

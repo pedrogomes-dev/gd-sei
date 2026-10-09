@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/display_fields.dart';
+import '../widgets/propriedades_assunto.dart';
 
 class CatalogoScreen extends StatefulWidget {
   final String kind;
@@ -30,10 +31,28 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
     }catch(e){if(mounted&&request==generation)setState((){error=e.toString();});}
     finally{if(mounted&&request==generation)setState((){busy=false;});}
   }
-  void properties(Map<String,dynamic> row)=>showDialog<void>(context:context,builder:(context)=>AlertDialog(
-    title:Text(subjects?'Propriedades do Assunto':'Propriedades do Tipo de Processo'),
-    content:SizedBox(width:600,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:row.entries.where((e)=>!['versao','sin_ultima'].contains(e.key)).map(propertyTile).toList()))),
-    actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Fechar'))]));
+  void properties(Map<String, dynamic> row) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => SelectionArea(
+        child: AlertDialog(
+          title: Text(subjects ? 'Propriedades do Assunto' : 'Propriedades do Tipo de Processo'),
+          content: SizedBox(
+            width: subjects ? 760 : 600,
+            child: SingleChildScrollView(
+              child: subjects
+                  ? PropriedadesAssunto(assunto: row)
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: row.entries.where((campo) => !['versao', 'sin_ultima'].contains(campo.key)).map(propertyTile).toList(),
+                    ),
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar'))],
+        ),
+      ),
+    );
+  }
   Widget resultTable() {
     Widget cell(Widget child)=>Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:16),child:child);
     final descriptionColumn=subjects?3:2;
@@ -94,3 +113,4 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         ])),
       ]));
 }
+

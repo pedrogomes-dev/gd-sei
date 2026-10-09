@@ -37,16 +37,18 @@ class _ResumoScreenState extends State<ResumoScreen> {
   Future<bool> confirmarFinalizacao() async {
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Finalizar manifestação do órgão?'),
-        content: const Text(
-          'A submissão abrangerá todos os Tipos de Processo desta consulta. '
-          'Após finalizar, não será possível alterar ou reabrir.',
+      builder: (context) => SelectionArea(
+        child: AlertDialog(
+          title: const Text('Finalizar manifestação do órgão?'),
+          content: const Text(
+            'A submissão abrangerá todos os Tipos de Processo desta consulta. '
+            'Após finalizar, não será possível alterar ou reabrir.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Finalizar')),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Finalizar')),
-        ],
       ),
     );
     return confirmado == true;
@@ -231,4 +233,5 @@ class _ResumoScreenState extends State<ResumoScreen> {
     );
   }
 }
+
 

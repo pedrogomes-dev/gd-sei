@@ -104,19 +104,21 @@ class _TipoScreenState extends State<TipoScreen> {
 
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Descartar alterações não salvas?'),
-        content: const Text('O preenchimento desde o último salvamento será perdido.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Continuar editando'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Descartar'),
-          ),
-        ],
+      builder: (context) => SelectionArea(
+        child: AlertDialog(
+          title: const Text('Descartar alterações não salvas?'),
+          content: const Text('O preenchimento desde o último salvamento será perdido.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Continuar editando'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Descartar'),
+            ),
+          ],
+        ),
       ),
     );
     return confirmado == true;
@@ -474,3 +476,4 @@ class _TipoScreenState extends State<TipoScreen> {
     );
   }
 }
+
