@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 class IndicadorCard extends StatelessWidget {
   final String titulo;
   final int quantidade;
+  final int quantidadeOrgaos;
+  final VoidCallback aoSelecionar;
   final IconData icone;
   final Color cor;
 
@@ -10,29 +12,42 @@ class IndicadorCard extends StatelessWidget {
     super.key,
     required this.titulo,
     required this.quantidade,
+    required this.quantidadeOrgaos,
+    required this.aoSelecionar,
     required this.icone,
     required this.cor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    final orgaos = quantidadeOrgaos == 1 ? 'órgão' : 'órgãos';
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xffe2e8f0)),
+        side: const BorderSide(color: Color(0xffe2e8f0)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icone, color: cor),
-          const SizedBox(height: 12),
-          Text('$quantidade', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 4),
-          Text(titulo),
-        ],
+      child: InkWell(
+        onTap: aoSelecionar,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icone, color: cor),
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text('$quantidade', style: Theme.of(context).textTheme.headlineMedium),
+                Text('($quantidadeOrgaos $orgaos)'),
+              ]),
+              const SizedBox(height: 4),
+              Text(titulo),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
+

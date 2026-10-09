@@ -68,6 +68,9 @@ class _InicioScreenState extends State<InicioScreen> {
     final texto = pesquisa.text.trim().toLowerCase();
     return (dados!['orgaos'] as List).where((orgao) {
       if (!orgao['sigla'].toString().toLowerCase().contains(texto)) return false;
+      if (filtro == 'Pendentes de análise') return orgao['pendentes'] > 0;
+      if (filtro == 'Analisados') return orgao['analisados'] > 0;
+      if (filtro == 'Visualizados') return orgao['visualizados'] > 0;
       if (filtro == 'Submetidos') return orgao['status'] == 'FINALIZADA';
       if (filtro == 'Pendentes de submissão') {
         return orgao['atribuidos'] > 0 && orgao['status'] != 'FINALIZADA';
@@ -77,25 +80,29 @@ class _InicioScreenState extends State<InicioScreen> {
   }
 
   Widget seletorRodada() {
-    return SizedBox(
-      width: 520,
-      child: DropdownButtonFormField<int>(
-        value: idConsulta,
-        isExpanded: true,
-        decoration: const InputDecoration(labelText: 'Rodada de avaliação'),
-        items: rodadas.map((rodada) {
-          final nome = rodada['nome'];
-          final versao = rodada['versao'];
-          return DropdownMenuItem<int>(
-            value: int.parse(rodada['id_consulta'].toString()),
-            child: Text('$nome · Base versão $versao', overflow: TextOverflow.ellipsis),
-          );
-        }).toList(),
-        onChanged: carregando ? null : (valor) {
-          setState(() => idConsulta = valor);
-          carregar();
-        },
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Rodada de avaliação', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<int>(
+          value: idConsulta,
+          isExpanded: true,
+          decoration: const InputDecoration(),
+          items: rodadas.map((rodada) {
+            final nome = rodada['nome'];
+            final versao = rodada['versao'];
+            return DropdownMenuItem<int>(
+              value: int.parse(rodada['id_consulta'].toString()),
+              child: Text('$nome · Base versão $versao', overflow: TextOverflow.ellipsis),
+            );
+          }).toList(),
+          onChanged: carregando ? null : (valor) {
+            setState(() => idConsulta = valor);
+            carregar();
+          },
+        ),
+      ],
     );
   }
 
@@ -105,11 +112,46 @@ class _InicioScreenState extends State<InicioScreen> {
       final colunas = tamanho.maxWidth >= 900 ? 4 : tamanho.maxWidth >= 500 ? 2 : 1;
       final largura = (tamanho.maxWidth - (colunas - 1) * 16) / colunas;
       return Wrap(spacing: 16, runSpacing: 16, children: [
-        SizedBox(width: largura, child: IndicadorCard(titulo: 'Pendentes de análise', quantidade: totais['pendentes'], icone: Icons.pending_actions, cor: Colors.orange.shade800)),
-        SizedBox(width: largura, child: IndicadorCard(titulo: 'Analisados', quantidade: totais['analisados'], icone: Icons.fact_check_outlined, cor: Colors.blue)),
-        SizedBox(width: largura, child: IndicadorCard(titulo: 'Visualizados', quantidade: totais['visualizados'], icone: Icons.visibility_outlined, cor: Colors.blueGrey)),
-        SizedBox(width: largura, child: IndicadorCard(titulo: 'Submetidos', quantidade: totais['submetidos'], icone: Icons.check_circle_outline, cor: Colors.green)),
+        SizedBox(width: largura, child: IndicadorCard(
+          titulo: 'Pendentes de análise',
+          quantidade: totais['pendentes'],
+          quantidadeOrgaos: totais['orgaos_pendentes_analise'],
+          icone: Icons.pending_actions,
+          cor: Colors.orange.shade800,
+          aoSelecionar: () => selecionarFiltro('Pendentes de análise'),
+        )),
+        SizedBox(width: largura, child: IndicadorCard(
+          titulo: 'Analisados',
+          quantidade: totais['analisados'],
+          quantidadeOrgaos: totais['orgaos_com_analises'],
+          icone: Icons.fact_check_outlined,
+          cor: Colors.blue,
+          aoSelecionar: () => selecionarFiltro('Analisados'),
+        )),
+        SizedBox(width: largura, child: IndicadorCard(
+          titulo: 'Visualizados',
+          quantidade: totais['visualizados'],
+          quantidadeOrgaos: totais['orgaos_com_visualizacoes'],
+          icone: Icons.visibility_outlined,
+          cor: Colors.blueGrey,
+          aoSelecionar: () => selecionarFiltro('Visualizados'),
+        )),
+        SizedBox(width: largura, child: IndicadorCard(
+          titulo: 'Submetidos',
+          quantidade: totais['submetidos'],
+          quantidadeOrgaos: totais['orgaos_submetidos'],
+          icone: Icons.check_circle_outline,
+          cor: Colors.green,
+          aoSelecionar: () => selecionarFiltro('Submetidos'),
+        )),
       ]);
+    });
+  }
+
+  void selecionarFiltro(String opcao) {
+    setState(() {
+      pesquisa.clear();
+      filtro = opcao;
     });
   }
 
@@ -131,7 +173,7 @@ class _InicioScreenState extends State<InicioScreen> {
       )),
       const SizedBox(height: 16),
       Wrap(spacing: 8, runSpacing: 8, children: [
-        for (final opcao in ['Todos', 'Pendentes de submissão', 'Submetidos'])
+        for (final opcao in ['Todos', 'Pendentes de análise', 'Analisados', 'Visualizados', 'Pendentes de submissão', 'Submetidos'])
           ChoiceChip(label: Text(opcao), selected: filtro == opcao, onSelected: (_) => setState(() => filtro = opcao)),
       ]),
       const SizedBox(height: 16),
@@ -176,3 +218,4 @@ class _InicioScreenState extends State<InicioScreen> {
     );
   }
 }
+

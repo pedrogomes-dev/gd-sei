@@ -50,8 +50,9 @@ class _AppShellState extends State<AppShell> {
   }
   Widget menu()=>SizedBox(width:230,child:ColoredBox(color:Colors.white,child:ListView(
     padding:const EdgeInsets.symmetric(horizontal:16,vertical:24),children:[
-      const Padding(padding:EdgeInsets.all(12),child:Text('VALIDAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
       item('Início',Icons.home_outlined,'inicio','/inicio'),
+      const SizedBox(height:24),
+      const Padding(padding:EdgeInsets.all(12),child:Text('VALIDAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
       item('Tipos de Processo atribuídos',Icons.fact_check_outlined,'tipos','/tipos'),
       item('Resumo e submissão',Icons.assignment_outlined,'resumos','/resumos'),
       const SizedBox(height:24),
@@ -74,10 +75,14 @@ class _AppShellState extends State<AppShell> {
   @override Widget build(BuildContext context)=>LayoutBuilder(builder:(context,size){
     final wide=size.maxWidth>=1000;
     return Scaffold(
-      appBar:AppBar(title: Image.asset(
-    'assets/images/logo.png',
-    height: 36,
-    fit: BoxFit.contain,
+      appBar:AppBar(title: TextButton(
+    onPressed: () => go('/inicio'),
+    child: Image.asset(
+      'assets/images/logo.png',
+      height: 36,
+      fit: BoxFit.contain,
+      semanticLabel: 'Abrir Início',
+    ),
   ),
   automaticallyImplyLeading: !wide,
   backgroundColor: Colors.white,
@@ -127,5 +132,6 @@ class SectionCard extends StatelessWidget {
     margin:const EdgeInsets.only(bottom:24),padding:const EdgeInsets.all(24),
     decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(12),border:Border.all(color:const Color(0xffe2e8f0))),child:child);
 }
+
 
 
