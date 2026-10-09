@@ -104,13 +104,16 @@ class _InformacoesAssuntoDialogState extends State<InformacoesAssuntoDialog> {
   @override
   Widget build(BuildContext context) {
     final idAssunto = widget.assunto['id_assunto'];
-    return AlertDialog(
-      title: Text('Informações do Assunto $idAssunto'),
-      content: SizedBox(width: 600, child: conteudo()),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
-      ],
+    return SelectionArea(
+      child: AlertDialog(
+        title: Text('Informações do Assunto $idAssunto'),
+        content: SizedBox(width: 600, child: conteudo()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+        ],
+      ),
     );
   }
 }
+
 
