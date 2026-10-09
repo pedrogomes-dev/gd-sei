@@ -40,3 +40,12 @@ As decisões usam etiquetas com texto e ícone: manter azul, remover vermelho e 
 A pesquisa de Assuntos também compara o ID exato quando o texto é um inteiro válido, além da busca textual nos campos existentes. Os resultados continuam restritos a Assuntos ativos da versão da consulta, excluindo vínculos já existentes no Tipo. O ID aparece nos vínculos, resultados e resumo. As propriedades recebem rótulos legíveis; códigos do SEI não recebem significados presumidos.
 
 Para atualizar, execute `git pull` e reinicie backend e frontend. Esta alteração não requer novo script SQL. O acesso temporário permanece habilitado conforme a configuração de desenvolvimento. Verifique localmente com `dart analyze` no backend e `flutter analyze` no frontend; valide a busca por ID e os filtros no navegador.
+
+## Organização após refatoração
+
+O Router encaminha a revisão, busca, salvamento, resumo e finalização para `ManifestacaoController`. O controller usa consultas SQL multilinha e valida revisão, observação e cada vínculo em blocos separados. O antigo `ManifestacaoRepository` foi removido. O catálogo fica em `CatalogoController`, preservando a versão, pesquisa, filtros e total existentes. A conexão e a autorização das atribuições continuam nas classes existentes; não há service intermediário para manifestações.
+
+As telas `TipoScreen` e `ResumoScreen` coordenam o estado e as operações. Widgets em `frontend/lib/widgets/manifestacao` cuidam dos vínculos, justificativas, busca, informações do Assunto e resumo de cada Tipo. Os controllers de texto permanecem na tela de revisão, para conservar o preenchimento ao navegar. Mantidos o aviso de descarte, rascunho compartilhado, etiquetas, cores e bloqueio após finalização.
+
+Esta refatoração não modifica as procedures ou tabelas SQL e não exige reaplicar 005/007. As mesmas rotas e campos JSON são usados; métodos internos da API receberam nomes mais claros. Homologar análise/compilação, busca por ID e texto com paginação, manter/remover/incluir com justificativa, salvamento e recarga, aviso de descarte, resumo/contadores, informações de guarda/destinação, submissão e edição concorrente. Reutilizar `database/tests/manifestacoes.sql` apenas em homologação.
+

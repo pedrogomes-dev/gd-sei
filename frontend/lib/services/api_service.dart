@@ -69,18 +69,39 @@ class ApiService {
   Future<List<dynamic>> tipos() async => await request('/api/tipos') as List<dynamic>;
   Future<Map<String,dynamic>> tipo(String id) async => await request('/api/tipos/$id') as Map<String,dynamic>;
   Future<void> visualizar(String id) async { await request('/api/tipos/$id/visualizar',data:{}); }
-  Future<Map<String,dynamic>> save(String id,Map<String,dynamic> data) async =>
-    await request('/api/tipos/$id/manifestacao',data:data) as Map<String,dynamic>;
-  Future<Map<String,dynamic>> search(String id,String text,int offset) async =>
-    await request('/api/tipos/$id/assuntos?q=${Uri.encodeQueryComponent(text)}&offset=$offset') as Map<String,dynamic>;
-  Future<Map<String,dynamic>> summary(String consulta,String orgao) async =>
-    await request('/api/consultas/$consulta/orgaos/$orgao/resumo') as Map<String,dynamic>;
+  Future<Map<String, dynamic>> salvarManifestacao(
+    String idAtribuicao,
+    Map<String, dynamic> dados,
+  ) async {
+    final endereco = '/api/tipos/$idAtribuicao/manifestacao';
+    return await request(endereco, data: dados) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> pesquisarAssuntos(
+    String idAtribuicao,
+    String pesquisa,
+    int inicio,
+  ) async {
+    final endereco = Uri(
+      path: '/api/tipos/$idAtribuicao/assuntos',
+      queryParameters: {'q': pesquisa, 'offset': inicio.toString()},
+    );
+    return await request(endereco.toString()) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> consultarResumo(String idConsulta, String idOrgao) async {
+    final endereco = '/api/consultas/$idConsulta/orgaos/$idOrgao/resumo';
+    return await request(endereco) as Map<String, dynamic>;
+  }
+
   Future<Map<String,dynamic>> catalog(String kind,String text,int offset,{int? version,String state='TODOS'}) async =>
     await request('/api/catalogo/$kind?estado=$state&q=${Uri.encodeQueryComponent(text)}&offset=$offset${version==null?'':'&versao=$version'}') as Map<String,dynamic>;
-  Future<void> finish(String consulta,String orgao,int revision) async {
-    await request('/api/consultas/$consulta/orgaos/$orgao/finalizar',data:{'revisao':revision});
+  Future<void> finalizarManifestacao(String idConsulta, String idOrgao, int revisao) async {
+    final endereco = '/api/consultas/$idConsulta/orgaos/$idOrgao/finalizar';
+    await request(endereco, data: {'revisao': revisao});
   }
 }
+
 
 
 
