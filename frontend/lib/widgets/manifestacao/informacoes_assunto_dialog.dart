@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
-import '../display_fields.dart';
+import '../propriedades_assunto.dart';
 
 class InformacoesAssuntoDialog extends StatefulWidget {
   final Map<String, dynamic> assunto;
@@ -44,39 +44,6 @@ class _InformacoesAssuntoDialogState extends State<InformacoesAssuntoDialog> {
     throw Exception('Assunto não encontrado na versão da consulta.');
   }
 
-  Widget prazo(String titulo, dynamic valor) {
-    return ListTile(
-      leading: const Icon(Icons.schedule_outlined),
-      title: Text(titulo),
-      subtitle: Text(valor?.toString() ?? 'Não informado'),
-    );
-  }
-
-  Widget propriedades(Map<String, dynamic> assunto) {
-    const camposPrincipais = ['id_assunto', 'codigo_estruturado', 'descricao'];
-    const camposGuarda = ['prazo_corrente', 'prazo_intermediario', 'sta_destinacao'];
-
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final campo in camposPrincipais) propertyTile(MapEntry(campo, assunto[campo])),
-          const Divider(),
-          const ListTile(title: Text('Prazos de guarda', style: TextStyle(fontWeight: FontWeight.w600))),
-          prazo('Prazo corrente', assunto['prazo_corrente']),
-          prazo('Prazo intermediário', assunto['prazo_intermediario']),
-          destinationTile(assunto['sta_destinacao']),
-          const Divider(),
-          for (final campo in assunto.entries)
-            if (propertyLabels.containsKey(campo.key) &&
-                !camposPrincipais.contains(campo.key) &&
-                !camposGuarda.contains(campo.key))
-              propertyTile(campo),
-        ],
-      ),
-    );
-  }
-
   Widget conteudo() {
     return FutureBuilder<Map<String, dynamic>>(
       future: carregamento,
@@ -96,21 +63,24 @@ class _InformacoesAssuntoDialogState extends State<InformacoesAssuntoDialog> {
             ],
           );
         }
-        return propriedades(resultado.data!);
+        return SingleChildScrollView(child: PropriedadesAssunto(assunto: resultado.data!));
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final idAssunto = widget.assunto['id_assunto'];
-    return AlertDialog(
-      title: Text('Informações do Assunto $idAssunto'),
-      content: SizedBox(width: 600, child: conteudo()),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
-      ],
+    return SelectionArea(
+      child: AlertDialog(
+        title: const Text('Propriedades do Assunto'),
+        content: SizedBox(width: 760, child: conteudo()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+        ],
+      ),
     );
   }
 }
+
+
 

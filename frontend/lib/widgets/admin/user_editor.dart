@@ -220,43 +220,46 @@ class _UserEditorState extends State<UserEditor> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !salvando,
-      child: AlertDialog(
-        title: Text(widget.usuario == null ? 'Cadastrar usuário' : 'Editar usuário'),
-        content: SizedBox(
-          width: 640,
-          child: SingleChildScrollView(
-            child: IgnorePointer(
-              ignoring: salvando,
-              child: Form(
-                key: formulario,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    camposCadastro(),
-                    const SizedBox(height: 12),
-                    permissoes(),
-                    const SizedBox(height: 16),
-                    vinculosOrgaos(),
-                    const SizedBox(height: 16),
-                    avisos(),
-                  ],
+      child: SelectionArea(
+        child: AlertDialog(
+          title: Text(widget.usuario == null ? 'Cadastrar usuário' : 'Editar usuário'),
+          content: SizedBox(
+            width: 640,
+            child: SingleChildScrollView(
+              child: IgnorePointer(
+                ignoring: salvando,
+                child: Form(
+                  key: formulario,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      camposCadastro(),
+                      const SizedBox(height: 12),
+                      permissoes(),
+                      const SizedBox(height: 16),
+                      vinculosOrgaos(),
+                      const SizedBox(height: 16),
+                      avisos(),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: salvando ? null : () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: salvando ? null : salvar,
+              child: const Text('Salvar'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: salvando ? null : () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: salvando ? null : salvar,
-            child: const Text('Salvar'),
-          ),
-        ],
       ),
     );
   }
 }
+
