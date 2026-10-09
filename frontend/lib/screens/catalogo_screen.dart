@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/display_fields.dart';
 import '../widgets/propriedades_assunto.dart';
+import '../widgets/propriedades_processo.dart';
 
 class CatalogoScreen extends StatefulWidget {
   final String kind;
@@ -38,14 +39,11 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         child: AlertDialog(
           title: Text(subjects ? 'Propriedades do Assunto' : 'Propriedades do Tipo de Processo'),
           content: SizedBox(
-            width: subjects ? 760 : 600,
+            width: 760,
             child: SingleChildScrollView(
               child: subjects
                   ? PropriedadesAssunto(assunto: row)
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: row.entries.where((campo) => !['versao', 'sin_ultima'].contains(campo.key)).map(propertyTile).toList(),
-                    ),
+                  : PropriedadesProcesso(processo: row),
             ),
           ),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar'))],
@@ -113,4 +111,5 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         ])),
       ]));
 }
+
 
