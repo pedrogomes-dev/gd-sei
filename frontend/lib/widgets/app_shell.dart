@@ -54,9 +54,18 @@ class _AppShellState extends State<AppShell> {
   @override Widget build(BuildContext context)=>LayoutBuilder(builder:(context,size){
     final wide=size.maxWidth>=1000;
     return Scaffold(
-      appBar:AppBar(title:const Text('GD-SEI',style:TextStyle(fontWeight:FontWeight.w700)),
-        automaticallyImplyLeading:!wide,backgroundColor:Colors.white,surfaceTintColor:Colors.transparent,
-        shape:const Border(bottom:BorderSide(color:Color(0xffe2e8f0))),
+      appBar:AppBar(title: Image.asset(
+    'assets/images/logo.png',
+    height: 36,
+    fit: BoxFit.contain,
+  ),
+  automaticallyImplyLeading: !wide,
+  backgroundColor: Colors.white,
+  surfaceTintColor: Colors.transparent,
+  shape: const Border(
+    bottom: BorderSide(color: Color(0xffe2e8f0)),
+  ),
+
         actions:[FutureBuilder<Map<String,dynamic>>(future:profile,builder:(context,snapshot){
           final user=snapshot.data;
           return PopupMenuButton<String>(onSelected:(value){if(value=='sair')logout();},
