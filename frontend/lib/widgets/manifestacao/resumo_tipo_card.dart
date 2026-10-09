@@ -10,6 +10,7 @@ class ResumoTipoCard extends StatelessWidget {
   final List<dynamic> decisoes;
   final bool finalizada;
   final bool finalizando;
+  final bool podeRevisar;
   final VoidCallback abrirTipo;
 
   const ResumoTipoCard({
@@ -18,6 +19,7 @@ class ResumoTipoCard extends StatelessWidget {
     required this.decisoes,
     required this.finalizada,
     required this.finalizando,
+    this.podeRevisar = true,
     required this.abrirTipo,
   });
 
@@ -130,8 +132,8 @@ class ResumoTipoCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(observacao),
           ],
-          const SizedBox(height: 16),
-          Align(
+          if (podeRevisar) const SizedBox(height: 16),
+          if (podeRevisar) Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: finalizando ? null : abrirTipo,
@@ -144,3 +146,4 @@ class ResumoTipoCard extends StatelessWidget {
     );
   }
 }
+

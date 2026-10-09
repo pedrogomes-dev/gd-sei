@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../controllers/manifestacao_controller.dart';
 import '../controllers/catalogo_controller.dart';
 import '../controllers/administracao_controller.dart';
+import '../controllers/inicio_controller.dart';
 
 class Router {
   final AuthService auth;
@@ -14,7 +15,8 @@ class Router {
   final ManifestacaoController manifestacoes;
   final CatalogoController catalogo;
   final AdministracaoController administracao;
-  Router(this.auth,this.consultas,this.manifestacoes,this.catalogo,this.administracao);
+  final InicioController inicio;
+  Router(this.auth,this.consultas,this.manifestacoes,this.catalogo,this.administracao,this.inicio);
   Future<Map<String,dynamic>> body(HttpRequest request) async {
     var length=0;
     final bytes=<int>[];
@@ -56,6 +58,15 @@ class Router {
     final idUsuario = await auth.authorize(request);
     if (metodo == 'GET' && caminho == '/api/auth/me') {
       json(request, await auth.profile(idUsuario));
+      return;
+    }
+    if (metodo == 'GET' && caminho == '/api/inicio/rodadas') {
+      json(request, await inicio.listarRodadas(idUsuario));
+      return;
+    }
+    if (metodo == 'GET' && caminho == '/api/inicio') {
+      final idConsulta = lerIdentificador(request.uri.queryParameters['consulta'] ?? '');
+      json(request, await inicio.consultar(idUsuario, idConsulta));
       return;
     }
     if (caminho.startsWith('/api/admin/')) {
@@ -276,5 +287,6 @@ class Router {
   }
 
 }
+
 
 

@@ -29,9 +29,29 @@ class _AppShellState extends State<AppShell> {
     // Pushing preserves the detail screen's PopScope and unsaved edits.
     Navigator.pushNamed(context,path);
   }
+  String rotaSecao() {
+    switch (widget.section) {
+      case 'inicio': return '/inicio';
+      case 'admin-usuarios': return '/admin/usuarios';
+      case 'assuntos': return '/catalogo/assuntos';
+      case 'catalogo-tipos': return '/catalogo/tipos';
+      default: return '/tipos';
+    }
+  }
+
+  String nomeSecao() {
+    switch (widget.section) {
+      case 'inicio': return 'Início';
+      case 'admin-usuarios': return 'Administração';
+      case 'assuntos':
+      case 'catalogo-tipos': return 'Catálogo';
+      default: return 'Validação';
+    }
+  }
   Widget menu()=>SizedBox(width:230,child:ColoredBox(color:Colors.white,child:ListView(
     padding:const EdgeInsets.symmetric(horizontal:16,vertical:24),children:[
       const Padding(padding:EdgeInsets.all(12),child:Text('VALIDAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
+      item('Início',Icons.home_outlined,'inicio','/inicio'),
       item('Tipos de Processo atribuídos',Icons.fact_check_outlined,'tipos','/tipos'),
       item('Resumo e submissão',Icons.assignment_outlined,'resumos','/resumos'),
       const SizedBox(height:24),
@@ -77,7 +97,7 @@ class _AppShellState extends State<AppShell> {
         Expanded(child:Column(children:[
           Padding(padding:EdgeInsets.fromLTRB(wide?32:20,24,wide?32:20,20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Wrap(crossAxisAlignment:WrapCrossAlignment.center,children:[
-              TextButton(onPressed:()=>go(widget.section=='admin-usuarios'?'/admin/usuarios':widget.section=='assuntos'||widget.section=='catalogo-tipos'?'/catalogo/assuntos':'/tipos'),child:Text(widget.section=='admin-usuarios'?'Administração':widget.section=='assuntos'||widget.section=='catalogo-tipos'?'Catálogo':'Validação')),
+              TextButton(onPressed:()=>go(rotaSecao()),child:Text(nomeSecao())),
               for(final label in widget.trail)...[const Icon(Icons.chevron_right,size:16,color:Colors.blueGrey),if(label=='Tipos de Processo atribuídos'||label=='Resumo e submissão')TextButton(onPressed:()=>go(label=='Tipos de Processo atribuídos'?'/tipos':'/resumos'),child:Text(label))else Text(label,style:const TextStyle(fontSize:13,color:Colors.blueGrey))],
             ]),const SizedBox(height:8),
             Row(children:[Expanded(child:Text(widget.title,style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w600))),...widget.actions]),
@@ -98,4 +118,5 @@ class SectionCard extends StatelessWidget {
     margin:const EdgeInsets.only(bottom:24),padding:const EdgeInsets.all(24),
     decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(12),border:Border.all(color:const Color(0xffe2e8f0))),child:child);
 }
+
 
