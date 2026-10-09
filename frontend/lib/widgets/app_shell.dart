@@ -48,7 +48,7 @@ class _AppShellState extends State<AppShell> {
       default: return 'Validação';
     }
   }
-  Widget menu()=>SizedBox(width:230,child:ColoredBox(color:Colors.white,child:ListView(
+  Widget menu()=>SizedBox(width:230,child:Material(color:Colors.white,child:ListView(
     padding:const EdgeInsets.symmetric(horizontal:16,vertical:24),children:[
       const Padding(padding:EdgeInsets.all(12),child:Text('VALIDAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
       item('Tipos de Processo atribuídos',Icons.fact_check_outlined,'tipos','/tipos'),
