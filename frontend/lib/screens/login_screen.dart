@@ -160,7 +160,21 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Validação SEI')),
+      appBar: AppBar(title: TextButton(
+    onPressed: () => {},
+    child: Image.asset(
+      'assets/images/logo.png',
+      height: 36,
+      fit: BoxFit.contain,
+      semanticLabel: 'Abrir Início',
+    ),
+  ),
+  //automaticallyImplyLeading: !wide,
+  backgroundColor: Colors.white,
+  surfaceTintColor: Colors.transparent,
+  shape: const Border(
+    bottom: BorderSide(color: Color(0xffe2e8f0)),
+  ),),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
