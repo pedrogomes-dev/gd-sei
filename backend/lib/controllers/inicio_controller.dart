@@ -86,6 +86,9 @@ class InicioController {
       'submetidos': 0,
       'orgaos_submetidos': 0,
       'orgaos_pendentes': 0,
+      'orgaos_pendentes_analise': 0,
+      'orgaos_com_analises': 0,
+      'orgaos_com_visualizacoes': 0,
     };
 
     for (final registro in registros) {
@@ -113,6 +116,16 @@ class InicioController {
       totais['visualizados'] = totais['visualizados']! + visualizados;
       totais['pendentes'] = totais['pendentes']! + pendentes;
 
+      if (pendentes > 0) {
+        totais['orgaos_pendentes_analise'] = totais['orgaos_pendentes_analise']! + 1;
+      }
+      if (analisados > 0) {
+        totais['orgaos_com_analises'] = totais['orgaos_com_analises']! + 1;
+      }
+      if (visualizados > 0) {
+        totais['orgaos_com_visualizacoes'] = totais['orgaos_com_visualizacoes']! + 1;
+      }
+
       if (atribuidos > 0) {
         if (orgao['status'] == 'FINALIZADA') {
           totais['submetidos'] = totais['submetidos']! + atribuidos;
@@ -127,3 +140,4 @@ class InicioController {
     return {'rodada': rodada, 'totais': totais, 'orgaos': orgaos};
   }
 }
+

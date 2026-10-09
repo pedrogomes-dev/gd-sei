@@ -15,6 +15,10 @@ As contagens representam atribuições de Tipos de Processo a órgãos, dentro d
 
 Os indicadores se sobrepõem: uma atribuição submetida também pode ser analisada e visualizada. Não devem ser somados. Revisar o mesmo Tipo de Processo não multiplica sua contagem.
 
+Cada cartão informa também quantos órgãos possuem ao menos uma atribuição naquela condição, por exemplo “235 (10 órgãos) Pendentes de análise”. Ao clicar, a tabela lista esses órgãos e limpa a busca por sigla. Um órgão pode aparecer em mais de um indicador se suas atribuições estiverem em condições diferentes. “Analisados” inclui órgãos com alguma análise concluída; “Submetidos” inclui somente órgãos que finalizaram a rodada.
+
+Início fica acima dos grupos do menu. O logo também abre a Home. O rótulo “Rodada de avaliação” fica acima do seletor para permanecer visível.
+
 ## Órgãos
 
 A tabela apresenta sigla, atribuições, pendências, análises concluídas, percentual de análise, situação e data da submissão em horário local. A busca por sigla e os filtros de submissão atualizam a quantidade de órgãos encontrados. Os indicadores continuam representando a rodada inteira dentro do acesso do usuário.
@@ -37,3 +41,4 @@ Antes de integrar, executar no ambiente com Dart/Flutter e SQL Server:
 6. Testar busca, filtros, rodada sem órgãos, órgão sem atribuições, atualização após submissão e redimensionamento em telas largas e estreitas.
 
 Neste trabalho, as consultas de leitura foram verificadas com dados controlados em SQLite, usando a mesma lógica SQL portável. Isso valida contagens e escopo dos SELECTs; não substitui a execução no SQL Server nem a compilação Dart/Flutter.
+
