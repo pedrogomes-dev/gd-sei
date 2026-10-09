@@ -10,13 +10,14 @@ import '../lib/models/api_error.dart';
 import '../lib/models/database_failure.dart';
 import '../lib/config/settings.dart';
 import '../lib/repositories/manifestacao_repository.dart';
-import '../lib/repositories/admin_repository.dart';
+import '../lib/controllers/administracao_controller.dart';
 
 Future<void> main() async {
   final config = Environment.fromEnvironment();
   final db = DatabaseRepository(DatabaseConfig.fromEnvironment());
   final consultas = ConsultaRepository(db);
-  final router = Router(AuthService(db), consultas, ManifestacaoRepository(db, consultas), AdminRepository(db));
+  final administracao = AdministracaoController(db);
+  final router = Router(AuthService(db), consultas, ManifestacaoRepository(db, consultas), administracao);
   final server = await HttpServer.bind(config.host, config.port);
   stdout.writeln('API iniciada em ${config.host}:${config.port}');
   await for (final request in server) {
@@ -67,4 +68,5 @@ Future<void> handle(HttpRequest request, Environment config, Router router) asyn
     await request.response.close();
   }
 }
+
 
