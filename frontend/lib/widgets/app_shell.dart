@@ -38,6 +38,12 @@ class _AppShellState extends State<AppShell> {
       const Padding(padding:EdgeInsets.all(12),child:Text('CATÁLOGO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
       item('Assuntos',Icons.topic_outlined,'assuntos','/catalogo/assuntos'),
       item('Tipos de Processo',Icons.folder_outlined,'catalogo-tipos','/catalogo/tipos'),
+      FutureBuilder<Map<String,dynamic>>(future:profile,builder:(context,snapshot)=>
+        snapshot.data?['sin_admin']=='S'?Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          const SizedBox(height:24),
+          const Padding(padding:EdgeInsets.all(12),child:Text('ADMINISTRAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
+          item('Usuários',Icons.manage_accounts_outlined,'admin-usuarios','/admin/usuarios'),
+        ]):const SizedBox.shrink()),
     ])));
   Widget item(String label,IconData icon,String section,String path)=>Padding(
     padding:const EdgeInsets.only(bottom:6),child:ListTile(
@@ -60,7 +66,7 @@ class _AppShellState extends State<AppShell> {
             child:Padding(padding:const EdgeInsets.symmetric(horizontal:24),child:Row(children:[
               const Icon(Icons.account_circle_outlined),const SizedBox(width:10),
               if(size.maxWidth>=650)Column(mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Text(user?['email']?.toString()??(snapshot.hasError?'Identificação indisponível':'Carregando usuário…'),style:const TextStyle(fontSize:14)),
+                Text(user?['nome']?.toString()??user?['email']?.toString()??(snapshot.hasError?'Identificação indisponível':'Carregando usuário…'),style:const TextStyle(fontSize:14)),
                 if(user!=null)Text((user['orgaos'] as List).map((o)=>o['sigla']).join(' · '),style:const TextStyle(fontSize:12,color:Colors.blueGrey)),
               ]),const SizedBox(width:8),const Icon(Icons.expand_more,size:18),
             ])));
@@ -71,7 +77,7 @@ class _AppShellState extends State<AppShell> {
         Expanded(child:Column(children:[
           Padding(padding:EdgeInsets.fromLTRB(wide?32:20,24,wide?32:20,20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Wrap(crossAxisAlignment:WrapCrossAlignment.center,children:[
-              TextButton(onPressed:()=>go(widget.section=='assuntos'||widget.section=='catalogo-tipos'?'/catalogo/assuntos':'/tipos'),child:Text(widget.section=='assuntos'||widget.section=='catalogo-tipos'?'Catálogo':'Validação')),
+              TextButton(onPressed:()=>go(widget.section=='admin-usuarios'?'/admin/usuarios':widget.section=='assuntos'||widget.section=='catalogo-tipos'?'/catalogo/assuntos':'/tipos'),child:Text(widget.section=='admin-usuarios'?'Administração':widget.section=='assuntos'||widget.section=='catalogo-tipos'?'Catálogo':'Validação')),
               for(final label in widget.trail)...[const Icon(Icons.chevron_right,size:16,color:Colors.blueGrey),if(label=='Tipos de Processo atribuídos'||label=='Resumo e submissão')TextButton(onPressed:()=>go(label=='Tipos de Processo atribuídos'?'/tipos':'/resumos'),child:Text(label))else Text(label,style:const TextStyle(fontSize:13,color:Colors.blueGrey))],
             ]),const SizedBox(height:8),
             Row(children:[Expanded(child:Text(widget.title,style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w600))),...widget.actions]),
@@ -92,3 +98,4 @@ class SectionCard extends StatelessWidget {
     margin:const EdgeInsets.only(bottom:24),padding:const EdgeInsets.all(24),
     decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(12),border:Border.all(color:const Color(0xffe2e8f0))),child:child);
 }
+

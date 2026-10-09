@@ -61,7 +61,12 @@ cd gd-sei
 
 Cabeçalho com identificação da sessão, menu Validação/Catálogo, tabelas de revisão e catálogo somente leitura por versão autorizada. Consulte `docs/interface.md` para comportamento e roteiro de homologação. Esta etapa não requer migração SQL.
 
+## Administração
+
+Cadastro de nome/e-mail, vínculos com órgãos, acesso ativo/inativo, perfil administrador e histórico antes/depois: executar uma vez `database/007_administracao.sql` após 005 e seguir `docs/administracao.md`. O usuário de teste existente é promovido a administrador inicial. Atualizar e reiniciar backend/frontend juntos após a migração. Autenticação por e-mail e indicadores de acesso permanecem na etapa seguinte.
+
 ## Validação
 
 Veja `database/003_validacao.sql`. Compilação Dart/Flutter e execução SQL precisam ser feitas em ambiente com SDKs e SQL Server. Nenhuma dessas execuções foi realizada no ambiente de criação.
+
 

@@ -14,6 +14,14 @@ class ApiService {
     return decoded;
   }
   Future<Map<String,dynamic>> profile() async => await request('/api/auth/me') as Map<String,dynamic>;
+  Future<List<dynamic>> adminOrgans() async => await request('/api/admin/orgaos') as List<dynamic>;
+  Future<Map<String,dynamic>> adminUsers(String text,String state,int? organ,int offset) async =>
+    await request('/api/admin/usuarios?q=${Uri.encodeQueryComponent(text)}&estado=$state&offset=$offset${organ==null?'':'&orgao=$organ'}') as Map<String,dynamic>;
+  Future<Map<String,dynamic>> adminUser(int id) async => await request('/api/admin/usuarios/$id') as Map<String,dynamic>;
+  Future<Map<String,dynamic>> saveUser(int? id,Map<String,dynamic> data) async =>
+    await request('/api/admin/usuarios${id==null?'':'/$id'}',data:data) as Map<String,dynamic>;
+  Future<Map<String,dynamic>> adminHistory(int id,int offset) async =>
+    await request('/api/admin/usuarios/$id/historico?offset=$offset') as Map<String,dynamic>;
   Future<String> health() async => (await request('/api/health'))['status'] as String;
   Future<void> login(String email,String token) async { await request('/api/auth/dev',data:{'email':email,'token':token}); }
   Future<void> logout() async { await request('/api/auth/logout',data:{}); }
@@ -32,4 +40,5 @@ class ApiService {
     await request('/api/consultas/$consulta/orgaos/$orgao/finalizar',data:{'revisao':revision});
   }
 }
+
 
