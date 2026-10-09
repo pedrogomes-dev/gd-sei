@@ -14,6 +14,14 @@ class ApiService {
     return decoded;
   }
   Future<Map<String,dynamic>> profile() async => await request('/api/auth/me') as Map<String,dynamic>;
+  Future<List<dynamic>> listarRodadas() async {
+    return await request('/api/inicio/rodadas') as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> consultarInicio(int idConsulta) async {
+    return await request('/api/inicio?consulta=$idConsulta') as Map<String, dynamic>;
+  }
+
   Future<List<dynamic>> listarOrgaos() async {
     return await request('/api/admin/orgaos') as List<dynamic>;
   }
@@ -101,6 +109,7 @@ class ApiService {
     await request(endereco, data: {'revisao': revisao});
   }
 }
+
 
 
 

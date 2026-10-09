@@ -12,6 +12,7 @@ import '../lib/config/settings.dart';
 import '../lib/controllers/manifestacao_controller.dart';
 import '../lib/controllers/catalogo_controller.dart';
 import '../lib/controllers/administracao_controller.dart';
+import '../lib/controllers/inicio_controller.dart';
 
 Future<void> main() async {
   final config = Environment.fromEnvironment();
@@ -26,6 +27,7 @@ Future<void> main() async {
     manifestacoes,
     catalogo,
     administracao,
+    InicioController(db),
   );
   final server = await HttpServer.bind(config.host, config.port);
   stdout.writeln('API iniciada em ${config.host}:${config.port}');
@@ -77,6 +79,7 @@ Future<void> handle(HttpRequest request, Environment config, Router router) asyn
     await request.response.close();
   }
 }
+
 
 
 

@@ -200,10 +200,11 @@ class _ResumoScreenState extends State<ResumoScreen> {
             decisoes: decisoesDoTipo(decisoes, tipo),
             finalizada: finalizada,
             finalizando: finalizando,
+            podeRevisar: dados['pode_revisar'] == true,
             abrirTipo: () => abrirTipo(tipo['id_atribuicao'].toString()),
           ),
         if (erro != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: Text(erro!)),
-        if (!finalizada) submissao(dados),
+        if (!finalizada && dados['pode_revisar'] == true) submissao(dados),
       ],
     );
   }
@@ -230,3 +231,4 @@ class _ResumoScreenState extends State<ResumoScreen> {
     );
   }
 }
+

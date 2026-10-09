@@ -22,6 +22,12 @@ class _InformacoesAssuntoDialogState extends State<InformacoesAssuntoDialog> {
   }
 
   Future<Map<String, dynamic>> carregarAssunto() async {
+    // O resumo já recebe as propriedades da versão autorizada pelo backend.
+    if (widget.assunto.containsKey('prazo_corrente') &&
+        widget.assunto.containsKey('prazo_intermediario') &&
+        widget.assunto.containsKey('sta_destinacao')) {
+      return widget.assunto;
+    }
     final idAtribuicao = widget.assunto['id_atribuicao'].toString();
     final idAssunto = widget.assunto['id_assunto'].toString();
     final detalhes = await ApiService().tipo(idAtribuicao);
@@ -107,3 +113,4 @@ class _InformacoesAssuntoDialogState extends State<InformacoesAssuntoDialog> {
     );
   }
 }
+

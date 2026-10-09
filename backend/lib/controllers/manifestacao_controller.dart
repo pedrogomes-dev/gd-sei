@@ -194,13 +194,23 @@ class ManifestacaoController {
     int idOrgao,
   ) async {
     const sqlCabecalho = '''
-      SELECT grupo.*, consulta.nome AS consulta, orgao.sigla
+      SELECT grupo.*, consulta.nome AS consulta, orgao.sigla,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM dbo.usuario_orgao vinculo
+          WHERE vinculo.id_usuario = usuario.id_usuario AND vinculo.id_orgao = grupo.id_orgao
+        ) THEN 'S' ELSE 'N' END AS pode_revisar
       FROM dbo.consulta_orgao grupo
       JOIN dbo.consulta consulta ON consulta.id_consulta = grupo.id_consulta
       JOIN dbo.orgao orgao ON orgao.id_orgao = grupo.id_orgao
-      JOIN dbo.usuario_orgao usuario
-        ON usuario.id_orgao = grupo.id_orgao AND usuario.id_usuario = ?
+      JOIN dbo.usuario usuario ON usuario.id_usuario = ? AND usuario.sin_ativo = 'S'
       WHERE grupo.id_consulta = ? AND grupo.id_orgao = ?
+        AND (
+          usuario.sin_admin = 'S'
+          OR EXISTS (
+            SELECT 1 FROM dbo.usuario_orgao vinculo
+            WHERE vinculo.id_usuario = usuario.id_usuario AND vinculo.id_orgao = grupo.id_orgao
+          )
+        )
     ''';
     final grupos = await banco.query(sqlCabecalho, params: [idUsuario, idConsulta, idOrgao]);
     if (grupos.isEmpty) {
@@ -254,7 +264,8 @@ class ManifestacaoController {
       'consulta_orgao': cabecalho,
       'tipos': tiposProcesso,
       'decisoes': decisoes,
-      'pode_finalizar': podeFinalizar(cabecalho, tiposProcesso),
+      'pode_revisar': cabecalho['pode_revisar'] == 'S',
+      'pode_finalizar': cabecalho['pode_revisar'] == 'S' && podeFinalizar(cabecalho, tiposProcesso),
     };
   }
 
@@ -313,3 +324,4 @@ class ManifestacaoController {
     return ApiError(status, mensagem);
   }
 }
+
