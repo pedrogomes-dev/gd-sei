@@ -49,6 +49,20 @@ class Router {
       json(request, {'ok': true});
       return;
     }
+    if (metodo == 'GET' && caminho == '/api/auth/config') {
+      json(request, {'acesso_temporario': auth.enabled});
+      return;
+    }
+    if (metodo == 'POST' && caminho == '/api/auth/codigo') {
+      await auth.solicitarCodigo(request, await body(request));
+      json(request, {'mensagem': 'Se o e-mail estiver cadastrado e ativo, você receberá um código de acesso.'});
+      return;
+    }
+    if (metodo == 'POST' && caminho == '/api/auth/entrar') {
+      await auth.entrarEmail(request, await body(request));
+      json(request, {'ok': true});
+      return;
+    }
     if (metodo == 'POST' && caminho == '/api/auth/logout') {
       await auth.logout(request);
       json(request, {'ok': true});
@@ -287,6 +301,7 @@ class Router {
   }
 
 }
+
 
 
 

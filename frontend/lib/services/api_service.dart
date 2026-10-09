@@ -4,11 +4,11 @@ import 'package:http/browser_client.dart';
 class ApiService {
   static const baseUrl=String.fromEnvironment('API_BASE_URL',defaultValue:'http://localhost:8080');
   static final BrowserClient _client=BrowserClient()..withCredentials=true;
-  Future<dynamic> request(String path,{Map<String,dynamic>? data}) async {
+  Future<dynamic> request(String path,{Map<String,dynamic>? data, Duration timeout = const Duration(seconds: 20)}) async {
     final uri=Uri.parse('$baseUrl$path');
     final response=await (data==null ? _client.get(uri) :
       _client.post(uri,headers:{'Content-Type':'application/json'},body:jsonEncode(data)))
-      .timeout(const Duration(seconds:20));
+      .timeout(timeout);
     final decoded=jsonDecode(response.body);
     if(response.statusCode!=200) throw Exception(decoded is Map ? decoded['error'] : 'Falha na API');
     return decoded;
@@ -73,6 +73,17 @@ class ApiService {
 
   Future<String> health() async => (await request('/api/health'))['status'] as String;
   Future<void> login(String email,String token) async { await request('/api/auth/dev',data:{'email':email,'token':token}); }
+  Future<Map<String, dynamic>> configurarAcesso() async {
+    return await request('/api/auth/config') as Map<String, dynamic>;
+  }
+
+  Future<void> solicitarCodigo(String email) async {
+    await request('/api/auth/codigo', data: {'email': email}, timeout: const Duration(seconds: 40));
+  }
+
+  Future<void> entrarEmail(String email, String codigo) async {
+    await request('/api/auth/entrar', data: {'email': email, 'codigo': codigo});
+  }
   Future<void> logout() async { await request('/api/auth/logout',data:{}); }
   Future<List<dynamic>> tipos() async => await request('/api/tipos') as List<dynamic>;
   Future<Map<String,dynamic>> tipo(String id) async => await request('/api/tipos/$id') as Map<String,dynamic>;
@@ -109,6 +120,7 @@ class ApiService {
     await request(endereco, data: {'revisao': revisao});
   }
 }
+
 
 
 
