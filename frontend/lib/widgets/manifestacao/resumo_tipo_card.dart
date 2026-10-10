@@ -71,7 +71,7 @@ class ResumoTipoCard extends StatelessWidget {
   }
 
   Widget tabela(BuildContext context) {
-    if (decisoes.isEmpty) return const Text('Nenhuma decisão de vínculo salva.');
+    if (decisoes.isEmpty) return const SizedBox.shrink();
 
     return TabelaAssuntosScroll(
       tabela: Table(
@@ -99,6 +99,21 @@ class ResumoTipoCard extends StatelessWidget {
     );
   }
 
+  Widget botaoResumo(String titulo, IconData icone, Color cor) {
+    return OutlinedButton.icon(
+      onPressed: podeRevisar && !finalizando ? abrirTipo : null,
+      icon: Icon(icone, size: 18),
+      label: Text(titulo),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: cor,
+        backgroundColor: cor.withValues(alpha: 0.06),
+        side: BorderSide(color: cor.withValues(alpha: 0.35)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pendentes = tipo['pendentes'].toString();
@@ -112,23 +127,48 @@ class ResumoTipoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
+          LayoutBuilder(builder: (context, tamanho) {
+            final titulo = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
               Text(
                 tipo['visualizado'] == 'S' ? 'Visualização registrada' : 'Visualização pendente',
                 style: const TextStyle(color: Colors.blueGrey),
               ),
-              Text(revisao, style: const TextStyle(color: Colors.blueGrey)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          if (tipo['decisao_tipo'] != null)
-            Text(descontinuar ? 'Sugestão de descontinuação' : 'Manter Tipo de Processo',
-                style: TextStyle(fontWeight: FontWeight.w600, color: descontinuar ? Colors.red.shade800 : Colors.blue.shade800)),
+            ]);
+            final botoes = Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                if (tipo['decisao_tipo'] != null)
+                  botaoResumo(
+                    descontinuar ? 'Sugestão de descontinuação' : 'Manter Tipo de Processo',
+                    descontinuar ? Icons.block : Icons.check_circle_outline,
+                    descontinuar ? Colors.red.shade800 : Colors.blue.shade800,
+                  ),
+                botaoResumo(
+                  revisao,
+                  descontinuar ? Icons.info_outline : pendentes == '0' && tipo['decisao_tipo'] != null
+                      ? Icons.task_alt : Icons.pending_actions,
+                  descontinuar ? Colors.blueGrey.shade700 : pendentes == '0' && tipo['decisao_tipo'] != null
+                      ? Colors.green.shade800 : const Color(0xff9a4300),
+                ),
+              ],
+            );
+            if (tamanho.maxWidth < 1000) {
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                titulo,
+                const SizedBox(height: 16),
+                Align(alignment: Alignment.centerRight, child: botoes),
+              ]);
+            }
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: titulo),
+              const SizedBox(width: 24),
+              Flexible(child: Align(alignment: Alignment.topRight, child: botoes)),
+            ]);
+          }),
           if (descontinuar) ...[
             const SizedBox(height: 12),
             Text(tipo['justificativa_tipo']?.toString() ?? ''),
