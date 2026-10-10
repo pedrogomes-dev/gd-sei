@@ -16,6 +16,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
   @override void initState(){super.initState();search();}
   String searched='',state='TODOS';
   int total=0;
+  Map<String, int> quantidades = {};
   int offset=0,generation=0;
   bool busy=false,more=false;
   List<dynamic> items=[];
@@ -28,7 +29,16 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
     setState((){busy=true;error=null;});
     try {
       final result=await ApiService().catalog(widget.kind,text,page,version:next||previous?version:null,state:state);
-      if(mounted&&request==generation)setState((){items=result['itens'] as List<dynamic>;total=int.parse(result['total'].toString());more=result['mais']==true;offset=page;searched=text;version=int.parse(result['versao'].toString());});
+      if (mounted && request == generation) setState(() {
+        items = result['itens'] as List<dynamic>;
+        quantidades = Map<String, dynamic>.from(result['quantidades'] as Map? ?? {})
+            .map((key, value) => MapEntry(key, int.parse(value.toString())));
+        total = int.parse(result['total'].toString());
+        more = result['mais'] == true;
+        offset = page;
+        searched = text;
+        version = int.parse(result['versao'].toString());
+      });
     }catch(e){if(mounted&&request==generation)setState((){error=e.toString();});}
     finally{if(mounted&&request==generation)setState((){busy=false;});}
   }
@@ -37,7 +47,10 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       context: context,
       builder: (context) => SelectionArea(
         child: AlertDialog(
-          title: Text(subjects ? 'Propriedades do Assunto' : 'Propriedades do Tipo de Processo'),
+          title: Row(children: [
+            Expanded(child: Text(subjects ? 'Propriedades do Assunto' : 'Propriedades do Tipo de Processo')),
+            IconButton(tooltip: 'Fechar', icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+          ]),
           content: SizedBox(
             width: 760,
             child: SingleChildScrollView(
@@ -46,19 +59,17 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                   : PropriedadesProcesso(processo: row),
             ),
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar'))],
         ),
       ),
     );
   }
   Widget resultTable() {
     Widget cell(Widget child)=>Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:16),child:child);
-    final descriptionColumn=subjects?3:2;
+    final descriptionColumn=subjects?2:1;
     return Table(
       columnWidths:{
         0:const FixedColumnWidth(48),
-        1:const FixedColumnWidth(120),
-        if(subjects)2:const FixedColumnWidth(100),
+        if(subjects)1:const FixedColumnWidth(100),
         descriptionColumn:const FlexColumnWidth(),
         descriptionColumn+1:const FixedColumnWidth(120),
       },
@@ -66,12 +77,11 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       border:const TableBorder(horizontalInside:BorderSide(color:Color(0xffe2e8f0))),
       children:[
         TableRow(decoration:const BoxDecoration(color:Color(0xfff5f7fa)),children:[
-          const SizedBox.shrink(),cell(const Text('ID')),if(subjects)cell(const Text('Código')),
+          const SizedBox.shrink(),if(subjects)cell(const Text('Código')),
           cell(const Text('Descrição')),cell(const Text('Estado')),
         ]),
         ...items.map((row)=>TableRow(children:[
           IconButton(tooltip:'Propriedades',icon:const Icon(Icons.info_outline),onPressed:()=>properties(Map<String,dynamic>.from(row as Map))),
-          cell(Text(row[subjects?'id_assunto':'id_tipo_procedimento'].toString())),
           if(subjects)cell(Text((row['codigo_estruturado']??'—').toString())),
           cell(Text((row[subjects?'descricao':'nome']??'—').toString())),
           cell(Align(alignment:Alignment.centerLeft,child:row['sin_ativo']=='S'?const StatusTag('ATIVO'):row['sin_ativo']=='N'?const StatusTag('INATIVO'):const StatusTag('PENDENTE',label:'Não informado'))),
@@ -85,6 +95,8 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
 
   Widget cardEstado(String opcao, String titulo, IconData icone, Color cor) {
     final selecionado = state == opcao;
+    final chave = opcao == 'S' ? 'ativos' : opcao == 'N' ? 'inativos' : 'todos';
+    final quantidade = quantidades[chave]?.toString() ?? '—';
     return Semantics(
       button: true,
       selected: selecionado,
@@ -103,6 +115,8 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
               Icon(icone, color: cor),
               const SizedBox(width: 12),
               Expanded(child: Text(titulo, style: TextStyle(color: cor, fontWeight: FontWeight.w600))),
+              Text(quantidade, style: TextStyle(color: cor, fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
               if (selecionado) Icon(Icons.check_circle, color: cor, size: 18),
             ]),
           ),
@@ -181,5 +195,6 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         ])),
       ]));
 }
+
 
 

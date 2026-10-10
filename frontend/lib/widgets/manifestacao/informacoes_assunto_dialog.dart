@@ -72,15 +72,16 @@ class _InformacoesAssuntoDialogState extends State<InformacoesAssuntoDialog> {
   Widget build(BuildContext context) {
     return SelectionArea(
       child: AlertDialog(
-        title: const Text('Propriedades do Assunto'),
+        title: Row(children: [
+          const Expanded(child: Text('Propriedades do Assunto')),
+          IconButton(tooltip: 'Fechar', icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+        ]),
         content: SizedBox(width: 760, child: conteudo()),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
-        ],
       ),
     );
   }
 }
+
 
 
 

@@ -58,6 +58,15 @@ class CatalogoController {
 
     final pesquisaSql = condicoes.join(' OR ');
     var filtro = 'registro.versao = ? AND ($pesquisaSql)';
+    // Totais da busca e versão, antes do filtro de estado e da paginação.
+    final totais = await banco.query('''
+      SELECT COUNT_BIG(*) AS todos,
+        COUNT_BIG(CASE WHEN registro.sin_ativo = 'S' THEN 1 END) AS ativos,
+        COUNT_BIG(CASE WHEN registro.sin_ativo = 'N' THEN 1 END) AS inativos
+      FROM dbo.$tabela registro
+      WHERE $filtro
+    ''', params: [...parametros], operation: 'contar_estados_catalogo');
+
     if (situacao != 'TODOS') {
       filtro += ' AND registro.sin_ativo = ?';
       parametros.add(situacao);
@@ -103,7 +112,9 @@ class CatalogoController {
       'itens': registros.take(50).toList(),
       'mais': registros.length > 50,
       'versao': versao,
+      'quantidades': totais.first,
       'total': int.parse(quantidade.first['total'].toString()),
     };
   }
 }
+

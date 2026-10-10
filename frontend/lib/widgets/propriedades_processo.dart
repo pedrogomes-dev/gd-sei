@@ -32,10 +32,7 @@ class PropriedadesProcesso extends StatelessWidget {
 
     final partes = <String>[nome];
     final base = processo['hipotese_legal_base']?.toString().trim() ?? '';
-    final descricao = processo['hipotese_legal_descricao']?.toString().trim() ?? '';
     if (base.isNotEmpty) partes.add(base);
-    if (descricao.isNotEmpty) partes.add(descricao);
-    if (processo['hipotese_legal_ativa'] == 'N') partes.add('Hipótese inativa');
     return partes.join('\n');
   }
 
@@ -106,3 +103,4 @@ class PropriedadesProcesso extends StatelessWidget {
     );
   }
 }
+
