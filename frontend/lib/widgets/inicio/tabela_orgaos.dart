@@ -37,8 +37,8 @@ class _TabelaOrgaosState extends State<TabelaOrgaos> {
   }
 
   Widget situacao(dynamic orgao) {
-    var texto = 'Validando';
-    var icone = Icons.edit_outlined;
+    var texto = 'Pendente';
+    var icone = Icons.schedule;
     var cor = const Color(0xff9a4300);
     if (orgao['atribuidos'] == 0) {
       texto = 'Sem atribuições';
@@ -75,7 +75,7 @@ class _TabelaOrgaosState extends State<TabelaOrgaos> {
 
   Widget progresso(dynamic orgao) {
     final atribuidos = orgao['atribuidos'] as int;
-    final analisados = orgao['analisados'] as int;
+    final analisados = orgao['revisados'] as int;
     if (atribuidos == 0) return const Text('—');
     final fracao = analisados / atribuidos;
     final percentual = (fracao * 100).round();
@@ -91,7 +91,7 @@ class _TabelaOrgaosState extends State<TabelaOrgaos> {
       celula(nomeOrgao(orgao)),
       celula(Text(orgao['atribuidos'].toString())),
       celula(Text(orgao['pendentes'].toString())),
-      celula(Text(orgao['analisados'].toString())),
+      celula(Text(orgao['revisados'].toString())),
       celula(progresso(orgao)),
       celula(situacao(orgao)),
     ]);
@@ -131,7 +131,7 @@ class _TabelaOrgaosState extends State<TabelaOrgaos> {
                 TableRow(
                   decoration: const BoxDecoration(color: Color(0xfff5f7fa)),
                   children: [
-                    for (final titulo in ['Órgão', 'Atribuídos', 'Aguardando', 'Analisados', 'Progresso', 'Submissão'])
+                    for (final titulo in ['Órgão', 'Atribuídos', 'Aguardando', 'Revisados', 'Progresso', 'Submissão'])
                       celula(Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600))),
                   ],
                 ),
