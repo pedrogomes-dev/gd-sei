@@ -4,21 +4,39 @@ import '../models/api_error.dart';
 class ConsultaRepository {
   final DatabaseRepository db;
   ConsultaRepository(this.db);
-  Future<List<Map<String, dynamic>>> list(int userId) => db.query(
-    "SELECT a.id_atribuicao,a.id_consulta,a.id_orgao,a.id_tipo_procedimento,a.versao,"
-    "t.nome,o.sigla,c.nome AS consulta,co.status,"
-    "CASE WHEN v.id_atribuicao IS NULL THEN 'N' ELSE 'S' END AS visualizado, "
-    '(SELECT COUNT(*) FROM dbo.rel_tipo_procedimento_assunto r WHERE r.versao=a.versao '
-    'AND r.id_tipo_procedimento=a.id_tipo_procedimento AND NOT EXISTS(SELECT 1 FROM dbo.manifestacao_vinculo mv '
-    "WHERE mv.id_atribuicao=a.id_atribuicao AND mv.id_assunto=r.id_assunto_proxy AND mv.acao IN('MANTER','REMOVER'))) AS pendentes "
-    'FROM dbo.consulta_orgao_tipo a '
-    'JOIN dbo.usuario_orgao u ON u.id_orgao=a.id_orgao AND u.id_usuario=? '
-    'JOIN dbo.orgao o ON o.id_orgao=a.id_orgao '
-    'JOIN dbo.consulta c ON c.id_consulta=a.id_consulta '
-    'JOIN dbo.consulta_orgao co ON co.id_consulta=a.id_consulta AND co.id_orgao=a.id_orgao '
-    'JOIN dbo.tipo_procedimento t ON t.versao=a.versao AND t.id_tipo_procedimento=a.id_tipo_procedimento '
-    'LEFT JOIN dbo.visualizacao_tipo v ON v.id_atribuicao=a.id_atribuicao '
-    'ORDER BY c.nome,o.sigla,t.nome', params:[userId]);
+  Future<List<Map<String, dynamic>>> list(int userId) {
+    const sql = '''
+      SELECT atribuicao.id_atribuicao, atribuicao.id_consulta, atribuicao.id_orgao,
+        atribuicao.id_tipo_procedimento, atribuicao.versao, tipo.nome, orgao.sigla,
+        consulta.nome AS consulta, grupo.status, manifestacao.decisao_tipo,
+        CASE WHEN visualizacao.id_atribuicao IS NULL THEN 'N' ELSE 'S' END AS visualizado,
+        CASE
+          WHEN manifestacao.decisao_tipo = 'DESCONTINUAR' THEN 0
+          ELSE (
+            SELECT COUNT(*)
+            FROM dbo.rel_tipo_procedimento_assunto vinculo
+            WHERE vinculo.versao = atribuicao.versao
+              AND vinculo.id_tipo_procedimento = atribuicao.id_tipo_procedimento
+              AND NOT EXISTS (
+                SELECT 1 FROM dbo.manifestacao_vinculo decisao
+                WHERE decisao.id_atribuicao = atribuicao.id_atribuicao
+                  AND decisao.id_assunto = vinculo.id_assunto_proxy
+                  AND decisao.acao IN ('MANTER','REMOVER')
+              )
+          ) + CASE WHEN manifestacao.decisao_tipo IS NULL THEN 1 ELSE 0 END
+        END AS pendentes
+      FROM dbo.consulta_orgao_tipo atribuicao
+      JOIN dbo.usuario_orgao usuario ON usuario.id_orgao = atribuicao.id_orgao AND usuario.id_usuario = ?
+      JOIN dbo.orgao orgao ON orgao.id_orgao = atribuicao.id_orgao
+      JOIN dbo.consulta consulta ON consulta.id_consulta = atribuicao.id_consulta
+      JOIN dbo.consulta_orgao grupo ON grupo.id_consulta = atribuicao.id_consulta AND grupo.id_orgao = atribuicao.id_orgao
+      JOIN dbo.tipo_procedimento tipo ON tipo.versao = atribuicao.versao AND tipo.id_tipo_procedimento = atribuicao.id_tipo_procedimento
+      LEFT JOIN dbo.visualizacao_tipo visualizacao ON visualizacao.id_atribuicao = atribuicao.id_atribuicao
+      LEFT JOIN dbo.manifestacao_tipo manifestacao ON manifestacao.id_atribuicao = atribuicao.id_atribuicao
+      ORDER BY consulta.nome, orgao.sigla, tipo.nome
+    ''';
+    return db.query(sql, params: [userId]);
+  }
 
   Future<Map<String,dynamic>> detail(int userId, int id) async {
     const sqlTipo = '''

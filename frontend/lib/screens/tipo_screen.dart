@@ -21,6 +21,8 @@ class _TipoScreenState extends State<TipoScreen> {
   final api = ApiService();
   final observacao = TextEditingController();
   final pesquisa = TextEditingController();
+  final justificativaTipo = TextEditingController();
+  String? decisaoTipo;
   final justificativas = <int, TextEditingController>{};
   final decisoes = <int, String>{};
   final inclusoes = <int, Map<String, dynamic>>{};
@@ -59,6 +61,7 @@ class _TipoScreenState extends State<TipoScreen> {
   void dispose() {
     observacao.dispose();
     pesquisa.dispose();
+    justificativaTipo.dispose();
     limparJustificativas();
     super.dispose();
   }
@@ -75,6 +78,8 @@ class _TipoScreenState extends State<TipoScreen> {
     visualizado = resultado['tipo']['visualizado'] == 'S';
     final manifestacao = resultado['manifestacao'] as Map<String, dynamic>;
     revisao = int.parse(manifestacao['revisao'].toString());
+    decisaoTipo = manifestacao['decisao_tipo']?.toString();
+    justificativaTipo.text = manifestacao['justificativa_tipo']?.toString() ?? '';
     observacao.text = manifestacao['observacao']?.toString() ?? '';
 
     for (final assunto in resultado['assuntos'] as List) {
@@ -147,7 +152,15 @@ class _TipoScreenState extends State<TipoScreen> {
   }
 
   Future<void> salvar() async {
-    final vinculos = montarVinculos();
+    if (decisaoTipo == null) {
+      setState(() => erro = 'Escolha manter ou sugerir descontinuação do Tipo de Processo.');
+      return;
+    }
+    if (decisaoTipo == 'DESCONTINUAR' && justificativaTipo.text.trim().isEmpty) {
+      setState(() => erro = 'Justifique a sugestão de descontinuação.');
+      return;
+    }
+    final vinculos = decisaoTipo == 'MANTER' ? montarVinculos() : <Map<String, dynamic>>[];
     for (final vinculo in vinculos) {
       if (vinculo['acao'] != 'MANTER' && vinculo['justificativa'] == '') {
         setState(() => erro = 'Preencha a justificativa de todas as remoções e inclusões.');
@@ -163,6 +176,8 @@ class _TipoScreenState extends State<TipoScreen> {
       final resultado = await api.salvarManifestacao(widget.id, {
         'revisao': revisao,
         'observacao': observacao.text,
+        'decisao_tipo': decisaoTipo,
+        'justificativa_tipo': justificativaTipo.text,
         'vinculos': vinculos,
       });
       if (!mounted) return;
@@ -284,6 +299,8 @@ class _TipoScreenState extends State<TipoScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          decisaoProcesso(),
+          const SizedBox(height: 16),
           OutlinedButton.icon(
             icon: const Icon(Icons.visibility_outlined),
             onPressed: salvando || visualizado || finalizada ? null : confirmarVisualizacao,
@@ -292,6 +309,88 @@ class _TipoScreenState extends State<TipoScreen> {
         ],
       ),
     );
+  }
+
+  void escolherDecisaoTipo(String? decisao) {
+    setState(() {
+      decisaoTipo = decisao;
+      alterado = true;
+      erro = null;
+    });
+  }
+
+  Widget decisaoProcesso() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Este Tipo de Processo deve ser mantido?', style: TextStyle(fontWeight: FontWeight.w600)),
+      const SizedBox(height: 12),
+      Wrap(spacing: 12, runSpacing: 8, children: [
+        ChoiceChip(
+          label: const Text('Manter'),
+          avatar: const Icon(Icons.check_circle_outline, color: Colors.blue),
+          selected: decisaoTipo == 'MANTER',
+          onSelected: finalizada || salvando ? null : (selecionado) => escolherDecisaoTipo(selecionado ? 'MANTER' : null),
+        ),
+        ChoiceChip(
+          label: const Text('Sugerir descontinuação'),
+          avatar: const Icon(Icons.block, color: Colors.red),
+          selected: decisaoTipo == 'DESCONTINUAR',
+          onSelected: finalizada || salvando ? null : (selecionado) => escolherDecisaoTipo(selecionado ? 'DESCONTINUAR' : null),
+        ),
+      ]),
+      if (decisaoTipo == 'DESCONTINUAR') ...[
+        const SizedBox(height: 16),
+        const Text('Proposta para avaliação da SETIC. Os vínculos com Assuntos não serão considerados nesta submissão.'),
+        const SizedBox(height: 12),
+        TextField(
+          controller: justificativaTipo,
+          readOnly: finalizada,
+          enabled: !salvando,
+          maxLength: 2000,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Justificativa da descontinuação'),
+          onChanged: (_) => marcarAlteracao(),
+        ),
+      ],
+    ]);
+  }
+
+  Widget indicadorVinculos(String titulo, int quantidade, IconData icone, Color cor) {
+    return Card(child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icone, size: 20, color: cor),
+          const SizedBox(width: 8),
+          Expanded(child: Text(titulo)),
+        ]),
+        const SizedBox(height: 12),
+        Text('$quantidade', style: Theme.of(context).textTheme.headlineSmall),
+      ]),
+    ));
+  }
+
+  Widget resumoVinculos(List<dynamic> assuntos) {
+    var mantidos = 0;
+    var removidos = 0;
+    for (final assunto in assuntos) {
+      final acao = decisoes[int.parse(assunto['id_assunto'].toString())];
+      if (acao == 'MANTER') mantidos++;
+      if (acao == 'REMOVER') removidos++;
+    }
+    final concluidos = mantidos + removidos;
+    return LayoutBuilder(builder: (context, tamanho) {
+      final colunas = tamanho.maxWidth >= 800 ? 4 : tamanho.maxWidth >= 450 ? 2 : 1;
+      final largura = (tamanho.maxWidth - (colunas - 1) * 12) / colunas;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Wrap(spacing: 12, runSpacing: 12, children: [
+          SizedBox(width: largura, child: indicadorVinculos('Mantidos', mantidos, Icons.check_circle_outline, Colors.blue)),
+          SizedBox(width: largura, child: indicadorVinculos('Removidos', removidos, Icons.remove_circle_outline, Colors.red)),
+          SizedBox(width: largura, child: indicadorVinculos('Pendentes', assuntos.length - concluidos, Icons.pending_outlined, Colors.orange)),
+          SizedBox(width: largura, child: indicadorVinculos('Concluídos', concluidos, Icons.task_alt, Colors.green)),
+        ]),
+      );
+    });
   }
 
   Widget assuntosVinculados(List<dynamic> assuntos) {
@@ -433,8 +532,14 @@ class _TipoScreenState extends State<TipoScreen> {
           padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
           children: [
             cabecalho(tipo),
-            assuntosVinculados(assuntos),
-            inclusoesPropostas(),
+            if (decisaoTipo == 'MANTER') ...[
+              resumoVinculos(assuntos),
+              assuntosVinculados(assuntos),
+              inclusoesPropostas(),
+            ] else
+              SectionCard(child: Text(decisaoTipo == 'DESCONTINUAR'
+                  ? 'Avaliação dos Assuntos dispensada pela sugestão de descontinuação.'
+                  : 'Escolha manter o Tipo de Processo para liberar a avaliação dos Assuntos.')),
             observacaoGeral(),
           ],
         );
@@ -475,4 +580,3 @@ class _TipoScreenState extends State<TipoScreen> {
     );
   }
 }
-
