@@ -129,6 +129,7 @@ class _InicioScreenState extends State<InicioScreen> {
         
           SizedBox(width: largura, child: IndicadorCard(
             titulo: 'Aguardando',
+            selecionado: filtro == 'Aguardando',
             quantidade: totais['pendentes'],
             quantidadeOrgaos: totais['orgaos_pendentes_analise'],
             icone: Icons.pending_actions,
@@ -137,6 +138,7 @@ class _InicioScreenState extends State<InicioScreen> {
           )),
           SizedBox(width: largura, child: IndicadorCard(
             titulo: 'Visualizados',
+            selecionado: filtro == 'Visualizados',
             quantidade: totais['visualizados'],
             quantidadeOrgaos: totais['orgaos_com_visualizacoes'],
             icone: Icons.visibility_outlined,
@@ -145,6 +147,7 @@ class _InicioScreenState extends State<InicioScreen> {
           )),
           SizedBox(width: largura, child: IndicadorCard(
             titulo: 'Analisados',
+            selecionado: filtro == 'Analisados',
             quantidade: totais['analisados'],
             quantidadeOrgaos: totais['orgaos_com_analises'],
             icone: Icons.fact_check_outlined,
@@ -153,6 +156,7 @@ class _InicioScreenState extends State<InicioScreen> {
           )),
           SizedBox(width: largura, child: IndicadorCard(
             titulo: 'Validando',
+            selecionado: filtro == 'Validando',
             quantidade: totais['validando'],
             quantidadeOrgaos: totais['orgaos_validando'],
             icone: Icons.edit_outlined,
@@ -161,6 +165,7 @@ class _InicioScreenState extends State<InicioScreen> {
           )),
           SizedBox(width: largura, child: IndicadorCard(
             titulo: 'Submetidos',
+            selecionado: filtro == 'Submetidos',
             quantidade: totais['submetidos'],
             quantidadeOrgaos: totais['orgaos_submetidos'],
             icone: Icons.check_circle_outline,
@@ -174,31 +179,8 @@ class _InicioScreenState extends State<InicioScreen> {
 
   void selecionarFiltro(String opcao) {
     setState(() {
-      pesquisa.clear();
-      filtro = opcao;
+      filtro = filtro == opcao ? 'Todos' : opcao;
     });
-  }
-
-  Color corFiltro(String opcao) {
-    switch (opcao) {
-      case 'Aguardando': return Colors.red.shade800;
-      case 'Visualizados': return Colors.grey.shade800;
-      case 'Analisados': return Colors.blue.shade800;
-      case 'Validando': return const Color(0xff9a4300);
-      case 'Submetidos': return Colors.green.shade800;
-      default: return Colors.grey.shade800;
-    }
-  }
-
-  IconData iconeFiltro(String opcao) {
-    switch (opcao) {
-      case 'Aguardando': return Icons.pending_actions;
-      case 'Visualizados': return Icons.visibility_outlined;
-      case 'Analisados': return Icons.fact_check_outlined;
-      case 'Validando': return Icons.edit_outlined;
-      case 'Submetidos': return Icons.check_circle_outline;
-      default: return Icons.filter_list;
-    }
   }
 
   Widget acompanhamento() {
@@ -236,18 +218,6 @@ class _InicioScreenState extends State<InicioScreen> {
         ]);
       }),
       const SizedBox(height: 24),
-      Wrap(spacing: 8, runSpacing: 8, children: [
-        for (final opcao in ['Todos', 'Aguardando', 'Visualizados', 'Analisados', 'Validando', 'Submetidos'])
-          ChoiceChip(
-            label: Text(opcao, style: TextStyle(color: corFiltro(opcao))),
-            avatar: Icon(iconeFiltro(opcao), size: 18, color: corFiltro(opcao)),
-            selected: filtro == opcao,
-            backgroundColor: Colors.white,
-            selectedColor: const Color(0xffeaf2fc),
-            onSelected: (_) => setState(() => filtro = opcao),
-          ),
-      ]),
-      const SizedBox(height: 16),
       Text('$quantidade órgãos encontrados'),
       const SizedBox(height: 16),
       TabelaOrgaos(orgaos: orgaos, abrirResumo: abrirResumo),
