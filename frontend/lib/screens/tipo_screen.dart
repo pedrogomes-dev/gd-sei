@@ -411,7 +411,7 @@ class _TipoScreenState extends State<TipoScreen> {
       final colunas = tamanho.maxWidth >= 800 ? 4 : tamanho.maxWidth >= 450 ? 2 : 1;
       final largura = (tamanho.maxWidth - (colunas - 1) * 12) / colunas;
       return Padding(
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(bottom: 12),
         child: Wrap(spacing: 12, runSpacing: 12, children: [
           SizedBox(width: largura, child: indicadorVinculos('Mantidos', mantidos, Icons.check_circle_outline, Colors.blue)),
           SizedBox(width: largura, child: indicadorVinculos('Removidos', removidos, Icons.remove_circle_outline, Colors.red)),
@@ -427,8 +427,13 @@ class _TipoScreenState extends State<TipoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Assuntos atualmente vinculados', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 18)),
-          const SizedBox(height: 20),
+
+          Text('Assuntos atualmente vinculados', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20)),
+          const SizedBox(height: 12),
+          resumoVinculos(assuntos),
+
+          Text('Lista de Assuntos', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+          const SizedBox(height: 12),
           if (assuntos.isEmpty) const Text('Nenhum vínculo existente.'),
           for (final registro in assuntos)
             AssuntoVinculadoCard(
@@ -585,7 +590,7 @@ class _TipoScreenState extends State<TipoScreen> {
           children: [
             cabecalho(tipo),
             if (decisaoTipo == 'MANTER') ...[
-              resumoVinculos(assuntos),
+              
               assuntosVinculados(assuntos),
               inclusoesPropostas(),
             ] else

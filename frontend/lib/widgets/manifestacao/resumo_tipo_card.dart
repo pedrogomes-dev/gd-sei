@@ -147,7 +147,7 @@ class ResumoTipoCard extends StatelessWidget {
           if (podeRevisar) const SizedBox(height: 16),
           if (podeRevisar) Align(
             alignment: Alignment.centerRight,
-            child: TextButton.icon(
+            child: FilledButton.icon(
               onPressed: finalizando ? null : abrirTipo,
               icon: const Icon(Icons.open_in_new, size: 18),
               label: Text(finalizada ? 'Consultar Tipo de Processo' : 'Revisar Tipo de Processo'),
