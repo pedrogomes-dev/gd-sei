@@ -2,7 +2,9 @@
 
 ## Pendência das propriedades dos Tipos de Processo
 
-O responsável fará uma carga com os nomes correspondentes aos códigos de nível de acesso, hipótese legal e grau de sigilo. Após essa carga, integrar as referências para exibir os nomes nas propriedades. Até lá, manter os códigos/IDs recebidos da base, sem deduzir rótulos. A organização visual desses campos é independente da carga.
+Hipótese legal integrada pela tabela `dbo.hipotese_legal`, carregada pelo responsável: catálogo e avaliação exibem nome, base legal, descrição e indicação de inatividade. Referências ausentes preservam o ID. Nível de acesso: 1 = Restrito; 2 = Sigiloso, conforme confirmação do responsável. Outros códigos permanecem explícitos. Grau de sigilo continua pendente de referência.
+
+A tabela de hipótese legal é uma referência atual, sem versão própria; sua atualização altera os rótulos exibidos também em rodadas anteriores, preservando o ID registrado no Tipo de Processo.
 
 Administração implementada: cadastro/edição de usuários, órgãos vinculados, acesso/perfil e trilha administrativa; instalação e homologação em `docs/administracao.md`. A autenticação ainda usa o acesso temporário. Indicadores e trilha de autenticação pertencem à próxima etapa.
 

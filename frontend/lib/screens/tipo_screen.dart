@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/display_fields.dart';
+import '../widgets/propriedades_processo.dart';
 import '../widgets/manifestacao/assunto_vinculado_card.dart';
 import '../widgets/manifestacao/busca_assuntos.dart';
 import '../widgets/manifestacao/justificativa_field.dart';
@@ -253,11 +254,6 @@ class _TipoScreenState extends State<TipoScreen> {
   }
 
   Widget cabecalho(Map<String, dynamic> tipo) {
-    const ocultos = [
-      'id_atribuicao', 'id_consulta', 'id_orgao', 'status',
-      'visualizado', 'versao', 'sin_ultima',
-    ];
-
     return SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,8 +276,10 @@ class _TipoScreenState extends State<TipoScreen> {
           ExpansionTile(
             title: const Text('Propriedades do Tipo de Processo'),
             children: [
-              for (final campo in tipo.entries)
-                if (!ocultos.contains(campo.key)) propertyTile(campo),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: PropriedadesProcesso(processo: tipo),
+              ),
             ],
           ),
           const SizedBox(height: 16),

@@ -8,11 +8,31 @@ class PropriedadesProcesso extends StatelessWidget {
   String valor(String nome) {
     final texto = processo[nome]?.toString().trim() ?? '';
     if (texto.isEmpty) return 'Não informado';
+    if (nome == 'id_hipotese_legal_sugestao') return hipoteseLegal();
+    if (nome == 'sta_nivel_acesso_sugestao') {
+      if (texto == '1') return 'Restrito';
+      if (texto == '2') return 'Sigiloso';
+      return 'Código $texto';
+    }
     if (nome.startsWith('sin_')) {
       if (texto == 'S') return 'Sim';
       if (texto == 'N') return 'Não';
     }
     return texto;
+  }
+
+  String hipoteseLegal() {
+    final nome = processo['hipotese_legal_nome']?.toString().trim() ?? '';
+    final id = processo['id_hipotese_legal_sugestao'];
+    if (nome.isEmpty) return 'ID $id — referência não cadastrada';
+
+    final partes = <String>[nome];
+    final base = processo['hipotese_legal_base']?.toString().trim() ?? '';
+    final descricao = processo['hipotese_legal_descricao']?.toString().trim() ?? '';
+    if (base.isNotEmpty) partes.add(base);
+    if (descricao.isNotEmpty) partes.add(descricao);
+    if (processo['hipotese_legal_ativa'] == 'N') partes.add('Hipótese inativa');
+    return partes.join('\n');
   }
 
   Widget campo(String titulo, String nome, IconData icone) {
@@ -72,8 +92,8 @@ class PropriedadesProcesso extends StatelessWidget {
         ]),
         const SizedBox(height: 16),
         linha([
-          campo('Hipótese legal sugerida (ID)', 'id_hipotese_legal_sugestao', Icons.gavel_outlined),
-          campo('Nível de acesso sugerido (código)', 'sta_nivel_acesso_sugestao', Icons.visibility_outlined),
+          campo('Hipótese legal sugerida', 'id_hipotese_legal_sugestao', Icons.gavel_outlined),
+          campo('Nível de acesso sugerido', 'sta_nivel_acesso_sugestao', Icons.visibility_outlined),
           campo('Grau de sigilo sugerido (código)', 'sta_grau_sigilo_sugestao', Icons.lock_outline),
         ]),
       ],
