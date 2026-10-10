@@ -84,6 +84,8 @@ class InicioController {
       'analisados': 0,
       'visualizados': 0,
       'submetidos': 0,
+      'validando': 0,
+      'orgaos_validando': 0,
       'orgaos_submetidos': 0,
       'orgaos_pendentes': 0,
       'orgaos_pendentes_analise': 0,
@@ -97,11 +99,15 @@ class InicioController {
       final atribuidos = int.parse(orgao['atribuidos'].toString());
       final analisados = int.parse(orgao['analisados'].toString());
       final visualizados = int.parse(orgao['visualizados'].toString());
-      final pendentes = atribuidos - analisados;
+      final estados = classificarEstados(atribuidos, visualizados, analisados, orgao['status'] == 'FINALIZADA');
+      final pendentes = estados['pendentes']!;
 
       orgao['atribuidos'] = atribuidos;
-      orgao['analisados'] = analisados;
-      orgao['visualizados'] = visualizados;
+      orgao['revisados'] = analisados;
+      orgao['analisados'] = estados['analisados'];
+      orgao['visualizados'] = estados['visualizados'];
+      orgao['validando'] = estados['validando'];
+      orgao['submetidos'] = estados['submetidos'];
       orgao['pendentes'] = pendentes;
 
       final data = orgao['data_finalizacao'];
@@ -112,19 +118,22 @@ class InicioController {
       }
 
       totais['atribuidos'] = totais['atribuidos']! + atribuidos;
-      totais['analisados'] = totais['analisados']! + analisados;
-      totais['visualizados'] = totais['visualizados']! + visualizados;
+      totais['analisados'] = totais['analisados']! + estados['analisados']!;
+      totais['visualizados'] = totais['visualizados']! + estados['visualizados']!;
       totais['pendentes'] = totais['pendentes']! + pendentes;
 
       if (pendentes > 0) {
         totais['orgaos_pendentes_analise'] = totais['orgaos_pendentes_analise']! + 1;
       }
-      if (analisados > 0) {
+      if (estados['analisados']! > 0) {
         totais['orgaos_com_analises'] = totais['orgaos_com_analises']! + 1;
       }
-      if (visualizados > 0) {
+      if (estados['visualizados']! > 0) {
         totais['orgaos_com_visualizacoes'] = totais['orgaos_com_visualizacoes']! + 1;
       }
+
+      totais['validando'] = totais['validando']! + estados['validando']!;
+      if (estados['validando']! > 0) totais['orgaos_validando'] = totais['orgaos_validando']! + 1;
 
       if (atribuidos > 0) {
         if (orgao['status'] == 'FINALIZADA') {
@@ -139,5 +148,31 @@ class InicioController {
 
     return {'rodada': rodada, 'totais': totais, 'orgaos': orgaos};
   }
+
+  static Map<String, int> classificarEstados(
+    int atribuidos,
+    int visualizados,
+    int analisados,
+    bool submetido,
+  ) {
+    final estados = {
+      'pendentes': 0,
+      'visualizados': 0,
+      'analisados': 0,
+      'validando': 0,
+      'submetidos': 0,
+    };
+    if (submetido) {
+      estados['submetidos'] = atribuidos;
+    } else if (atribuidos > 0 && analisados == atribuidos) {
+      estados['validando'] = atribuidos;
+    } else {
+      estados['pendentes'] = atribuidos - visualizados;
+      estados['visualizados'] = visualizados - analisados;
+      estados['analisados'] = analisados;
+    }
+    return estados;
+  }
+
 }
 

@@ -71,9 +71,9 @@ class _InicioScreenState extends State<InicioScreen> {
       if (filtro == 'Aguardando') return orgao['pendentes'] > 0;
       if (filtro == 'Analisados') return orgao['analisados'] > 0;
       if (filtro == 'Visualizados') return orgao['visualizados'] > 0;
-      if (filtro == 'Submetidos') return orgao['status'] == 'FINALIZADA';
+      if (filtro == 'Submetidos') return orgao['submetidos'] > 0;
       if (filtro == 'Validando') {
-        return orgao['atribuidos'] > 0 && orgao['status'] != 'FINALIZADA';
+        return orgao['validando'] > 0;
       }
       return true;
     }).toList();
@@ -109,7 +109,7 @@ class _InicioScreenState extends State<InicioScreen> {
   Widget indicadores() {
     final totais = dados!['totais'] as Map;
     return LayoutBuilder(builder: (context, tamanho) {
-      final colunas = tamanho.maxWidth >= 900 ? 4 : tamanho.maxWidth >= 500 ? 2 : 1;
+      final colunas = tamanho.maxWidth >= 1100 ? 5 : tamanho.maxWidth >= 500 ? 2 : 1;
       final largura = (tamanho.maxWidth - (colunas - 1) * 16) / colunas;
       return Wrap(spacing: 16, runSpacing: 16, children: [
         SizedBox(width: largura, child: IndicadorCard(
@@ -135,6 +135,14 @@ class _InicioScreenState extends State<InicioScreen> {
           icone: Icons.fact_check_outlined,
           cor: Colors.blue.shade800,
           aoSelecionar: () => selecionarFiltro('Analisados'),
+        )),
+        SizedBox(width: largura, child: IndicadorCard(
+          titulo: 'Validando',
+          quantidade: totais['validando'],
+          quantidadeOrgaos: totais['orgaos_validando'],
+          icone: Icons.edit_outlined,
+          cor: const Color(0xff9a4300),
+          aoSelecionar: () => selecionarFiltro('Validando'),
         )),
         SizedBox(width: largura, child: IndicadorCard(
           titulo: 'Submetidos',
@@ -190,7 +198,7 @@ class _InicioScreenState extends State<InicioScreen> {
           children: [
             Text('Acompanhamento dos órgãos', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            Text('$submetidos órgãos submetidos · $pendentes em validação'),
+            Text('$submetidos órgãos submetidos · $pendentes com submissão pendente'),
           ],
         );
         final busca = TextField(
