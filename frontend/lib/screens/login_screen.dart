@@ -119,6 +119,13 @@ class _LoginScreenState extends State<LoginScreen> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Image.asset(
+          'assets/images/logo.png',
+          height: 72,
+          fit: BoxFit.contain,
+          semanticLabel: 'Gestão Documental SEI',
+        ),
+        const SizedBox(height: 24),
         const Text('Acesso por e-mail', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
         const SizedBox(height: 16),
         TextField(
@@ -160,21 +167,15 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: TextButton(
-    onPressed: () => {},
-    child: Image.asset(
-      'assets/images/logo.png',
-      height: 36,
-      fit: BoxFit.contain,
-      semanticLabel: 'Abrir Início',
-    ),
-  ),
-  //automaticallyImplyLeading: !wide,
-  backgroundColor: Colors.white,
-  surfaceTintColor: Colors.transparent,
-  shape: const Border(
-    bottom: BorderSide(color: Color(0xffe2e8f0)),
-  ),),
+      appBar: AppBar(
+        title: const Text('Gestão Documental SEI'),
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: const Border(
+          bottom: BorderSide(color: Color(0xffe2e8f0)),
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
