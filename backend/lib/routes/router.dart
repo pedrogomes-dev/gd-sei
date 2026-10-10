@@ -113,9 +113,9 @@ class Router {
     throw ApiError(404, 'Rota não disponível');
   }
 
-  int lerIdentificador(String valor) {
+  int lerIdentificador(String valor, {bool permitirZero = false}) {
     final id = int.tryParse(valor);
-    if (id == null || id < 1 || id > 2147483647) {
+    if (id == null || id < (permitirZero ? 0 : 1) || id > 2147483647) {
       throw ApiError(400, 'Identificador inválido');
     }
     return id;
@@ -198,7 +198,8 @@ class Router {
     RegExpMatch rota,
   ) async {
     final idConsulta = lerIdentificador(rota.group(1)!);
-    final idOrgao = lerIdentificador(rota.group(2)!);
+    // IDs de órgão são preservados do SEI, incluindo o órgão 0.
+    final idOrgao = lerIdentificador(rota.group(2)!, permitirZero: true);
     final operacao = rota.group(3);
 
     if (request.method == 'GET' && operacao == 'resumo') {
@@ -301,6 +302,7 @@ class Router {
   }
 
 }
+
 
 
 
