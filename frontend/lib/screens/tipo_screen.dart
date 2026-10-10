@@ -196,21 +196,6 @@ class _TipoScreenState extends State<TipoScreen> {
     }
   }
 
-  Future<void> confirmarVisualizacao() async {
-    setState(() {
-      salvando = true;
-      erro = null;
-    });
-    try {
-      await api.visualizar(widget.id);
-      if (mounted) setState(() => visualizado = true);
-    } catch (excecao) {
-      if (mounted) setState(() => erro = excecao.toString());
-    } finally {
-      if (mounted) setState(() => salvando = false);
-    }
-  }
-
   Future<void> pesquisarAssuntos(bool proximaPagina) async {
     final texto = proximaPagina ? pesquisaAplicada : pesquisa.text.trim();
     final pagina = proximaPagina ? inicio + 50 : 0;
@@ -273,21 +258,41 @@ class _TipoScreenState extends State<TipoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              StatusTag(tipo['status'].toString()),
-              StatusTag(
-                visualizado ? 'VISUALIZADO' : 'PENDENTE',
-                label: visualizado ? 'Visualizado' : 'Visualização pendente',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(finalizada ? 'Manifestação finalizada — somente leitura.' : 'Rascunho compartilhado pelo órgão.'),
+          LayoutBuilder(builder: (context, tamanho) {
+            final estado = Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    StatusTag(tipo['status'].toString()),
+                    StatusTag(
+                      visualizado ? 'VISUALIZADO' : 'PENDENTE',
+                      label: visualizado ? 'Visualizado' : 'Visualização pendente',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(finalizada ? 'Manifestação finalizada — somente leitura.' : 'Rascunho compartilhado pelo órgão.'),
+              ],
+            );
+            final titulo = Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.headlineSmall);
+            if (tamanho.maxWidth < 800) {
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                titulo,
+                const SizedBox(height: 16),
+                estado,
+              ]);
+            }
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: titulo),
+              const SizedBox(width: 24),
+              Flexible(child: estado),
+            ]);
+          }),
+          const SizedBox(height: 24),
           Column(
             
             children: [
@@ -300,23 +305,34 @@ class _TipoScreenState extends State<TipoScreen> {
           ),
           const SizedBox(height: 16),
           decisaoProcesso(),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.visibility_outlined),
-            onPressed: salvando || visualizado || finalizada ? null : confirmarVisualizacao,
-            label: Text(visualizado ? 'Visualização registrada' : 'Confirmar visualização'),
-          ),
+
         ],
       ),
     );
   }
 
-  void escolherDecisaoTipo(String? decisao) {
+  Future<void> escolherDecisaoTipo(String? decisao) async {
+    if (finalizada || salvando) return;
     setState(() {
-      decisaoTipo = decisao;
-      alterado = true;
+      salvando = true;
       erro = null;
     });
+    try {
+      if (decisao != null && !visualizado) {
+        await api.visualizar(widget.id);
+        if (!mounted) return;
+        setState(() => visualizado = true);
+      }
+      if (!mounted) return;
+      setState(() {
+        decisaoTipo = decisao;
+        alterado = true;
+      });
+    } catch (excecao) {
+      if (mounted) setState(() => erro = 'Não foi possível registrar a visualização: $excecao');
+    } finally {
+      if (mounted) setState(() => salvando = false);
+    }
   }
 
   Widget decisaoProcesso() {

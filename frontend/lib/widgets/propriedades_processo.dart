@@ -9,6 +9,9 @@ class PropriedadesProcesso extends StatelessWidget {
     final texto = processo[nome]?.toString().trim() ?? '';
     if (texto.isEmpty) return 'Não informado';
     if (nome == 'id_hipotese_legal_sugestao') return hipoteseLegal();
+    if ((nome == 'sta_nivel_acesso_sugestao' || nome == 'sta_grau_sigilo_sugestao') && texto == '0') {
+      return 'Não informado';
+    }
     if (nome == 'sta_nivel_acesso_sugestao') {
       if (texto == '1') return 'Restrito';
       if (texto == '2') return 'Sigiloso';
