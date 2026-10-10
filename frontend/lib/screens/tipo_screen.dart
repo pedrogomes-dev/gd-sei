@@ -254,60 +254,71 @@ class _TipoScreenState extends State<TipoScreen> {
   }
 
   Widget cabecalho(Map<String, dynamic> tipo) {
+    final titulo = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 8),
+        Text(
+          finalizada ? 'Manifestação finalizada — somente leitura.' : 'Rascunho compartilhado pelo órgão.',
+          style: const TextStyle(color: Colors.blueGrey),
+        ),
+      ],
+    );
+    final estado = Wrap(
+      alignment: WrapAlignment.end,
+      spacing: 12,
+      runSpacing: 8,
+      children: [
+        StatusTag(tipo['status'].toString()),
+        StatusTag(
+          visualizado ? 'VISUALIZADO' : 'PENDENTE',
+          label: visualizado ? 'Visualizado' : 'Pendente',
+        ),
+      ],
+    );
     return SectionCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [   
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           LayoutBuilder(builder: (context, tamanho) {
-            final estado = Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    StatusTag(tipo['status'].toString()),
-                    StatusTag(
-                      visualizado ? 'VISUALIZADO' : 'PENDENTE',
-                      label: visualizado ? 'Visualizado' : 'Pendente',
-                    ),
-                  ],
-                ),
-                
-              ],
-            );
-            final titulo = Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.headlineMedium);
             if (tamanho.maxWidth < 800) {
               return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 titulo,
-                //GPT, por algum motivo não está aparecendo o text abaixo.. gostaria dele abaixo do título.
-                Text(finalizada ? 'Manifestação finalizada — somente leitura.' : 'Rascunho compartilhado pelo órgão.'),
                 const SizedBox(height: 16),
-                estado,
+                Align(alignment: Alignment.centerRight, child: estado),
               ]);
             }
             return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: titulo),
               const SizedBox(width: 24),
-              Flexible(child: estado),
+              estado,
             ]);
           }),
           const SizedBox(height: 24),
-          Column(
-            
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: PropriedadesProcesso(processo: tipo),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+          PropriedadesProcesso(processo: tipo, exibirNome: false),
+          const SizedBox(height: 24),
           decisaoProcesso(),
-
         ],
       ),
+    );
+  }
+
+  Widget aviso(String mensagem) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xfffff8e1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xffffe082)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.warning_amber_rounded, color: Color(0xff795548), size: 22),
+        const SizedBox(width: 12),
+        Expanded(child: Text(mensagem, style: const TextStyle(
+          color: Color(0xff5d4037), fontWeight: FontWeight.w600,
+        ))),
+      ]),
     );
   }
 
@@ -508,7 +519,28 @@ class _TipoScreenState extends State<TipoScreen> {
             maxLines: 4,
             enabled: !finalizada && !salvando,
             onChanged: (_) => marcarAlteracao(),
-            decoration: const InputDecoration(labelText: 'Observação geral sobre o Tipo de Processo'),
+            decoration: InputDecoration(
+              hintText: 'Escreva sua observação...',
+              filled: true,
+              fillColor: const Color(0xfff8fafc),
+              contentPadding: const EdgeInsets.all(16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xffe2e8f0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xffe2e8f0)),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xffe2e8f0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xff90caf9), width: 1.5),
+              ),
+            ),
           ),
           if (erro != null) Text(erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ],
@@ -530,7 +562,9 @@ class _TipoScreenState extends State<TipoScreen> {
             label: Text(salvando ? 'Salvando…' : 'Salvar rascunho'),
           ),
         const SizedBox(width: 16),
-        Expanded(child: Text(mensagem, style: const TextStyle(color: Colors.blueGrey))),
+        Expanded(child: alterado && !finalizada
+            ? aviso(mensagem)
+            : Text(mensagem, style: const TextStyle(color: Colors.blueGrey))),
       ],
     );
   }
@@ -555,9 +589,12 @@ class _TipoScreenState extends State<TipoScreen> {
               assuntosVinculados(assuntos),
               inclusoesPropostas(),
             ] else
-              SectionCard(child: Text(decisaoTipo == 'DESCONTINUAR'
-                  ? 'Avaliação dos Assuntos dispensada pela sugestão de descontinuação.'
-                  : 'Escolha manter o Tipo de Processo para liberar a avaliação dos Assuntos.')),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: aviso(decisaoTipo == 'DESCONTINUAR'
+                    ? 'Avaliação dos Assuntos dispensada pela sugestão de descontinuação.'
+                    : 'Escolha manter o Tipo de Processo para liberar a avaliação dos Assuntos.'),
+              ),
             observacaoGeral(),
           ],
         );
