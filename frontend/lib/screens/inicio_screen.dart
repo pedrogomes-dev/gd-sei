@@ -83,7 +83,10 @@ class _InicioScreenState extends State<InicioScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Rodada de avaliação', style: TextStyle(fontWeight: FontWeight.w600)),
+        const Text('Rodada de Avaliação', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 22)),
+        const SizedBox(height: 8),
+        Text('Selecione uma rodada de Avaliação.', style: Theme.of(context).textTheme.titleSmall,),
+          
         const SizedBox(height: 8),
         DropdownButtonFormField<int>(
           value: idConsulta,
@@ -109,50 +112,63 @@ class _InicioScreenState extends State<InicioScreen> {
   Widget indicadores() {
     final totais = dados!['totais'] as Map;
     return LayoutBuilder(builder: (context, tamanho) {
+      
       final colunas = tamanho.maxWidth >= 1100 ? 5 : tamanho.maxWidth >= 500 ? 2 : 1;
       final largura = (tamanho.maxWidth - (colunas - 1) * 16) / colunas;
-      return Wrap(spacing: 16, runSpacing: 16, children: [
-        SizedBox(width: largura, child: IndicadorCard(
-          titulo: 'Aguardando',
-          quantidade: totais['pendentes'],
-          quantidadeOrgaos: totais['orgaos_pendentes_analise'],
-          icone: Icons.pending_actions,
-          cor: Colors.red.shade800,
-          aoSelecionar: () => selecionarFiltro('Aguardando'),
-        )),
-        SizedBox(width: largura, child: IndicadorCard(
-          titulo: 'Visualizados',
-          quantidade: totais['visualizados'],
-          quantidadeOrgaos: totais['orgaos_com_visualizacoes'],
-          icone: Icons.visibility_outlined,
-          cor: Colors.grey.shade800,
-          aoSelecionar: () => selecionarFiltro('Visualizados'),
-        )),
-        SizedBox(width: largura, child: IndicadorCard(
-          titulo: 'Analisados',
-          quantidade: totais['analisados'],
-          quantidadeOrgaos: totais['orgaos_com_analises'],
-          icone: Icons.fact_check_outlined,
-          cor: Colors.blue.shade800,
-          aoSelecionar: () => selecionarFiltro('Analisados'),
-        )),
-        SizedBox(width: largura, child: IndicadorCard(
-          titulo: 'Validando',
-          quantidade: totais['validando'],
-          quantidadeOrgaos: totais['orgaos_validando'],
-          icone: Icons.edit_outlined,
-          cor: const Color(0xff9a4300),
-          aoSelecionar: () => selecionarFiltro('Validando'),
-        )),
-        SizedBox(width: largura, child: IndicadorCard(
-          titulo: 'Submetidos',
-          quantidade: totais['submetidos'],
-          quantidadeOrgaos: totais['orgaos_submetidos'],
-          icone: Icons.check_circle_outline,
-          cor: Colors.green.shade800,
-          aoSelecionar: () => selecionarFiltro('Submetidos'),
-        )),
-      ]);
+      return 
+      Column(
+        children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('Indicadores da avaliação', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text('Selecione um Card para filtrar as etapas. Clique novamente para remover o filtro.', style: Theme.of(context).textTheme.titleSmall, textAlign: TextAlign.left,),
+            const SizedBox(height: 16),
+          ]),
+          
+          Wrap(spacing: 16, runSpacing: 16, children: [
+        
+          SizedBox(width: largura, child: IndicadorCard(
+            titulo: 'Aguardando',
+            quantidade: totais['pendentes'],
+            quantidadeOrgaos: totais['orgaos_pendentes_analise'],
+            icone: Icons.pending_actions,
+            cor: Colors.red.shade800,
+            aoSelecionar: () => selecionarFiltro('Aguardando'),
+          )),
+          SizedBox(width: largura, child: IndicadorCard(
+            titulo: 'Visualizados',
+            quantidade: totais['visualizados'],
+            quantidadeOrgaos: totais['orgaos_com_visualizacoes'],
+            icone: Icons.visibility_outlined,
+            cor: Colors.grey.shade800,
+            aoSelecionar: () => selecionarFiltro('Visualizados'),
+          )),
+          SizedBox(width: largura, child: IndicadorCard(
+            titulo: 'Analisados',
+            quantidade: totais['analisados'],
+            quantidadeOrgaos: totais['orgaos_com_analises'],
+            icone: Icons.fact_check_outlined,
+            cor: Colors.blue.shade800,
+            aoSelecionar: () => selecionarFiltro('Analisados'),
+          )),
+          SizedBox(width: largura, child: IndicadorCard(
+            titulo: 'Validando',
+            quantidade: totais['validando'],
+            quantidadeOrgaos: totais['orgaos_validando'],
+            icone: Icons.edit_outlined,
+            cor: const Color(0xff9a4300),
+            aoSelecionar: () => selecionarFiltro('Validando'),
+          )),
+          SizedBox(width: largura, child: IndicadorCard(
+            titulo: 'Submetidos',
+            quantidade: totais['submetidos'],
+            quantidadeOrgaos: totais['orgaos_submetidos'],
+            icone: Icons.check_circle_outline,
+            cor: Colors.green.shade800,
+            aoSelecionar: () => selecionarFiltro('Submetidos'),
+          )),
+        ]),
+      ]); 
     });
   }
 
