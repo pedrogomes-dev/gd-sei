@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../display_fields.dart';
 
-class UserTable extends StatelessWidget {
+class UserTable extends StatefulWidget {
   final List<dynamic> usuarios;
   final ValueChanged<int> editar;
   final ValueChanged<int> abrirHistorico;
@@ -13,6 +13,19 @@ class UserTable extends StatelessWidget {
     required this.editar,
     required this.abrirHistorico,
   });
+
+  @override
+  State<UserTable> createState() => _UserTableState();
+}
+
+class _UserTableState extends State<UserTable> {
+  final rolagem = ScrollController();
+
+  @override
+  void dispose() {
+    rolagem.dispose();
+    super.dispose();
+  }
 
   Widget celula(Widget conteudo) {
     return Padding(padding: const EdgeInsets.all(12), child: conteudo);
@@ -45,19 +58,19 @@ class UserTable extends StatelessWidget {
         celula(Text(usuario['nome']?.toString() ?? 'Nome não informado')),
         celula(Text(usuario['email'].toString())),
         celula(Text(nomesOrgaos(usuario['orgaos'] as List))),
-        celula(StatusTag(situacao)),
+        celula(Align(alignment: Alignment.centerLeft, child: StatusTag(situacao))),
         celula(Text(perfil)),
         celula(
           Row(
             children: [
               IconButton(
                 tooltip: 'Editar usuário',
-                onPressed: () => editar(idUsuario),
+                onPressed: () => widget.editar(idUsuario),
                 icon: const Icon(Icons.edit_outlined),
               ),
               IconButton(
                 tooltip: 'Histórico administrativo',
-                onPressed: () => abrirHistorico(idUsuario),
+                onPressed: () => widget.abrirHistorico(idUsuario),
                 icon: const Icon(Icons.history),
               ),
             ],
@@ -71,29 +84,39 @@ class UserTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, tamanho) {
-        final largura = tamanho.maxWidth < 1000 ? 1000.0 : tamanho.maxWidth;
+        final largura = tamanho.maxWidth < 820 ? 820.0 : tamanho.maxWidth;
 
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: largura,
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(2),
-                3: FixedColumnWidth(110),
-                4: FixedColumnWidth(130),
-                5: FixedColumnWidth(140),
-              },
-              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-              border: const TableBorder(
-                horizontalInside: BorderSide(color: Color(0xffe2e8f0)),
+        return Scrollbar(
+          controller: rolagem,
+          thumbVisibility: tamanho.maxWidth < largura,
+          trackVisibility: tamanho.maxWidth < largura,
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          notificationPredicate: (notificacao) => notificacao.metrics.axis == Axis.horizontal,
+          child: SingleChildScrollView(
+            controller: rolagem,
+            primary: false,
+            padding: const EdgeInsets.only(bottom: 16),
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: largura,
+              child: Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(2),
+                  2: FlexColumnWidth(2),
+                  3: FixedColumnWidth(104),
+                  4: FixedColumnWidth(120),
+                  5: FixedColumnWidth(120),
+                },
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                border: const TableBorder(
+                  horizontalInside: BorderSide(color: Color(0xffe2e8f0)),
+                ),
+                children: [
+                  cabecalho(),
+                  for (final usuario in widget.usuarios) linhaUsuario(usuario),
+                ],
               ),
-              children: [
-                cabecalho(),
-                for (final usuario in usuarios) linhaUsuario(usuario),
-              ],
             ),
           ),
         );
@@ -101,3 +124,4 @@ class UserTable extends StatelessWidget {
     );
   }
 }
+

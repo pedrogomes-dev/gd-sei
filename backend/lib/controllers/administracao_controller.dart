@@ -53,11 +53,6 @@ class AdministracaoController {
       WHERE (u.nome LIKE ? ESCAPE '~' OR u.email LIKE ? ESCAPE '~')
     ''';
 
-    if (situacao != 'TODOS') {
-      filtro += ' AND u.sin_ativo = ?';
-      parametros.add(situacao);
-    }
-
     if (idOrgao != null) {
       filtro += '''
         AND EXISTS (
@@ -68,6 +63,20 @@ class AdministracaoController {
         )
       ''';
       parametros.add(idOrgao);
+    }
+
+    // Contagens de toda a busca/órgão, sem o filtro de acesso ou paginação.
+    final totais = await banco.query('''
+      SELECT COUNT_BIG(*) AS todos,
+        COUNT_BIG(CASE WHEN u.sin_ativo = 'S' THEN 1 END) AS ativos,
+        COUNT_BIG(CASE WHEN u.sin_ativo = 'N' THEN 1 END) AS inativos
+      FROM dbo.usuario u
+      $filtro
+    ''', params: [...parametros]);
+
+    if (situacao != 'TODOS') {
+      filtro += ' AND u.sin_ativo = ?';
+      parametros.add(situacao);
     }
 
     final sqlQuantidade = '''
@@ -109,6 +118,7 @@ class AdministracaoController {
 
     return {
       'itens': pagina,
+      'quantidades': totais.first,
       'total': int.parse(quantidade.first['total'].toString()),
       'mais': usuarios.length > 50,
     };
@@ -299,3 +309,4 @@ class AdministracaoController {
     }
   }
 }
+
