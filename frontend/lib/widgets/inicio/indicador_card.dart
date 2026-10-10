@@ -35,14 +35,16 @@ class IndicadorCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icone, color: cor),
+              Row(children: [
+                Icon(icone, color: cor),
+                const SizedBox(width: 8),
+                Expanded(child: Text(titulo, style: TextStyle(color: cor, fontWeight: FontWeight.w600))),
+              ]),
               const SizedBox(height: 12),
               Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 Text('$quantidade', style: Theme.of(context).textTheme.headlineMedium),
                 Text('($quantidadeOrgaos $orgaos)'),
               ]),
-              const SizedBox(height: 4),
-              Text(titulo),
             ],
           ),
         ),
