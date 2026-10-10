@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class PropriedadesProcesso extends StatelessWidget {
   final Map<String, dynamic> processo;
+  final bool exibirNome;
 
-  const PropriedadesProcesso({super.key, required this.processo});
+  const PropriedadesProcesso({super.key, required this.processo, this.exibirNome = true});
 
   String valor(String nome) {
     final texto = processo[nome]?.toString().trim() ?? '';
@@ -83,8 +84,10 @@ class PropriedadesProcesso extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        campo('Nome', 'nome', Icons.folder_outlined),
-        const SizedBox(height: 16),
+        if (exibirNome) ...[
+          campo('Nome', 'nome', Icons.folder_outlined),
+          const SizedBox(height: 16),
+        ],
         campo('Descrição', 'descricao', Icons.subject),
         const SizedBox(height: 24),
         linha([
