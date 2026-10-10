@@ -158,9 +158,12 @@ class ResumoTipoCard extends StatelessWidget {
             );
             if (tamanho.maxWidth < 1000) {
               return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                titulo,
-                const SizedBox(height: 16),
-                Align(alignment: Alignment.centerRight, child: botoes),
+                Row(children: [
+                  titulo,
+                  const Spacer(),
+                  botoes,
+                ],)
+                
               ]);
             }
             return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

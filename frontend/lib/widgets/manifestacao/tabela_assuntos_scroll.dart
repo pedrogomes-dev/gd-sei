@@ -43,8 +43,8 @@ class _TabelaAssuntosScrollState extends State<TabelaAssuntosScroll> {
         final alturaJanela = MediaQuery.sizeOf(context).height;
         final altura = (alturaJanela * 0.4).clamp(180.0, 440.0).toDouble();
 
-        return SizedBox(
-          height: altura,
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: altura),
           child: Scrollbar(
             controller: rolagemVertical,
             thumbVisibility: true,
