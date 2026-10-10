@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../display_fields.dart';
+import '../propriedades_assunto.dart';
 import 'justificativa_field.dart';
 
 class AssuntoVinculadoCard extends StatelessWidget {
@@ -59,7 +60,6 @@ class AssuntoVinculadoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final idAssunto = assunto['id_assunto'];
     final codigo = assunto['codigo_estruturado'];
     final exibirJustificativa = acao == 'REMOVER' || (finalizada && justificativa.text.isNotEmpty);
 
@@ -73,13 +73,16 @@ class AssuntoVinculadoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-            Text('CÓDIGO $codigo  -  ', style: const TextStyle(fontSize: 17, color: Colors.blueGrey)),
-            Text(assunto['descricao'].toString(), style: Theme.of(context).textTheme.titleMedium),
-            ],
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(
+                text: 'CÓDIGO $codigo — ',
+                style: const TextStyle(color: Colors.blueGrey),
+              ),
+              TextSpan(text: assunto['descricao'].toString()),
+            ]),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          
           const SizedBox(height: 16),
           decisoes(),
           if (exibirJustificativa)
@@ -90,13 +93,8 @@ class AssuntoVinculadoCard extends StatelessWidget {
               title: const Text('Adicionar justificativa opcional', style: TextStyle(fontSize: 14)),
               children: [campoJustificativa()],
             ),
-          const SizedBox(height: 8),
-          Column(
-            children:[
-            //ATENÇÃO GPT, MODIFICAR AQUI, SEGUIR AQUELA IDEIA DOS CARDS
-              for (final campo in assunto.entries)
-                if (campo.key != 'versao' && campo.key != 'sin_ultima') propertyTile(campo),
-          ]),
+          const SizedBox(height: 24),
+          PropriedadesAssunto(assunto: assunto),
         ],
       ),
     );
