@@ -102,7 +102,10 @@ class ResumoTipoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pendentes = tipo['pendentes'].toString();
-    final revisao = pendentes == '0' ? 'Revisão completa' : '$pendentes vínculos pendentes';
+    final descontinuar = tipo['decisao_tipo'] == 'DESCONTINUAR';
+    final revisao = tipo['decisao_tipo'] == null ? 'Decisão sobre o Tipo pendente'
+        : descontinuar ? 'Avaliação dos vínculos dispensada'
+        : pendentes == '0' ? 'Revisão completa' : '$pendentes vínculos pendentes';
     final observacao = tipo['observacao']?.toString() ?? '';
 
     return SectionCard(
@@ -123,7 +126,16 @@ class ResumoTipoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          tabela(context),
+          if (tipo['decisao_tipo'] != null)
+            Text(descontinuar ? 'Sugestão de descontinuação' : 'Manter Tipo de Processo',
+                style: TextStyle(fontWeight: FontWeight.w600, color: descontinuar ? Colors.red.shade800 : Colors.blue.shade800)),
+          if (descontinuar) ...[
+            const SizedBox(height: 12),
+            Text(tipo['justificativa_tipo']?.toString() ?? ''),
+          ] else if (tipo['decisao_tipo'] == 'MANTER') ...[
+            const SizedBox(height: 12),
+            tabela(context),
+          ],
           if (observacao.isNotEmpty) ...[
             const SizedBox(height: 20),
             const Divider(),
@@ -146,4 +158,3 @@ class ResumoTipoCard extends StatelessWidget {
     );
   }
 }
-

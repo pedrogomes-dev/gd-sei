@@ -76,7 +76,7 @@ class _TiposScreenState extends State<TiposScreen> {
                 DataCell(SizedBox(width:340,child:Text(r['nome'].toString(),maxLines:3,overflow:TextOverflow.ellipsis))),
                 DataCell(Text(r['sigla'].toString())),
                 DataCell(r['status']=='FINALIZADA'?const StatusTag('FINALIZADA'):StatusTag(r['visualizado']=='S'&&pending(r)==0?'MANTER':'PENDENTE',
-                  label:r['visualizado']!='S'?'Não visualizado':pending(r)==0?'Revisão completa':'${pending(r)} vínculos pendentes')),
+                  label:r['visualizado']!='S'?'Não visualizado':r['decisao_tipo']==null?'Decisão sobre o Tipo pendente':r['decisao_tipo']=='DESCONTINUAR'?'Descontinuação proposta':pending(r)==0?'Revisão completa':'${pending(r)} vínculos pendentes')),
                 DataCell(TextButton(onPressed:()=>open('/tipos/${r['id_atribuicao']}'),child:const Text('Abrir'))),
               ])).toList())),
           ])),

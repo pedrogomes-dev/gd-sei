@@ -36,7 +36,9 @@ class InicioController {
       WITH atribuicoes AS (
         SELECT atribuicao.id_atribuicao, atribuicao.id_consulta, atribuicao.id_orgao,
           CASE WHEN visualizacao.id_atribuicao IS NULL THEN 0 ELSE 1 END AS visualizado,
-          CASE WHEN visualizacao.id_atribuicao IS NOT NULL AND NOT EXISTS (
+          CASE WHEN visualizacao.id_atribuicao IS NOT NULL AND (
+            manifestacao.decisao_tipo = 'DESCONTINUAR'
+            OR (manifestacao.decisao_tipo = 'MANTER' AND NOT EXISTS (
             SELECT 1
             FROM dbo.rel_tipo_procedimento_assunto vinculo
             WHERE vinculo.versao = atribuicao.versao
@@ -48,10 +50,12 @@ class InicioController {
                   AND decisao.id_assunto = vinculo.id_assunto_proxy
                   AND decisao.acao IN ('MANTER', 'REMOVER')
               )
-          ) THEN 1 ELSE 0 END AS analisado
+          ))) THEN 1 ELSE 0 END AS analisado
         FROM dbo.consulta_orgao_tipo atribuicao
         LEFT JOIN dbo.visualizacao_tipo visualizacao
           ON visualizacao.id_atribuicao = atribuicao.id_atribuicao
+        LEFT JOIN dbo.manifestacao_tipo manifestacao
+          ON manifestacao.id_atribuicao = atribuicao.id_atribuicao
         WHERE atribuicao.id_consulta = ?
       )
       SELECT grupo.id_orgao, orgao.sigla, grupo.status, grupo.data_finalizacao,
@@ -175,4 +179,3 @@ class InicioController {
   }
 
 }
-

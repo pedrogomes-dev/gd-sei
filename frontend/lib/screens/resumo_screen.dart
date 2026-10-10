@@ -161,7 +161,7 @@ class _ResumoScreenState extends State<ResumoScreen> {
           Text(
             podeFinalizar
                 ? 'Todos os Tipos de Processo estão revisados. Você pode finalizar a manifestação.'
-                : 'Visualize todos os Tipos de Processo e salve uma decisão para cada vínculo existente.',
+                : 'Visualize e decida todos os Tipos de Processo. Para os mantidos, decida os vínculos; para descontinuação, informe a justificativa.',
           ),
           const SizedBox(height: 20),
           Align(
@@ -233,5 +233,3 @@ class _ResumoScreenState extends State<ResumoScreen> {
     );
   }
 }
-
-

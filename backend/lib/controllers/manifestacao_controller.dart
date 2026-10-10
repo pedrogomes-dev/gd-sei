@@ -16,7 +16,7 @@ class ManifestacaoController {
     final dados = await consultas.detail(idUsuario, idAtribuicao);
 
     const sqlManifestacao = '''
-      SELECT observacao, revisao
+      SELECT observacao, revisao, decisao_tipo, justificativa_tipo
       FROM dbo.manifestacao_tipo
       WHERE id_atribuicao = ?
     ''';
@@ -173,13 +173,34 @@ class ManifestacaoController {
       throw ApiError(400, 'Observação deve ter até 5000 caracteres.');
     }
 
-    final vinculos = validarVinculos(dados['vinculos']);
-    const sql = 'EXEC dbo.sp_salvar_manifestacao ?, ?, ?, ?, ?';
+    final decisaoTipo = dados['decisao_tipo'];
+    if (decisaoTipo != 'MANTER' && decisaoTipo != 'DESCONTINUAR') {
+      throw ApiError(400, 'Escolha manter ou sugerir descontinuação do Tipo de Processo.');
+    }
+    final justificativaTipo = dados['justificativa_tipo'];
+    if (justificativaTipo is! String || justificativaTipo.length > 2000) {
+      throw ApiError(400, 'A justificativa do Tipo deve ter até 2000 caracteres.');
+    }
+    if (decisaoTipo == 'DESCONTINUAR' && justificativaTipo.trim().isEmpty) {
+      throw ApiError(400, 'Justifique a sugestão de descontinuação.');
+    }
+    final vinculos = decisaoTipo == 'MANTER'
+        ? validarVinculos(dados['vinculos'])
+        : <Map<String, dynamic>>[];
+    const sql = 'EXEC dbo.sp_salvar_manifestacao ?, ?, ?, ?, ?, ?, ?';
 
     try {
       final resultado = await banco.query(
         sql,
-        params: [idUsuario, idAtribuicao, revisao as int, observacao, jsonEncode(vinculos)],
+        params: [
+          idUsuario,
+          idAtribuicao,
+          revisao as int,
+          observacao,
+          jsonEncode(vinculos),
+          decisaoTipo as String,
+          justificativaTipo.trim(),
+        ],
         operation: 'salvar_manifestacao',
       );
       return {'revisao': int.parse(resultado.first['revisao'].toString())};
@@ -219,6 +240,7 @@ class ManifestacaoController {
 
     const sqlTiposProcesso = '''
       SELECT atribuicao.id_atribuicao, tipo.nome, manifestacao.observacao,
+        manifestacao.decisao_tipo, manifestacao.justificativa_tipo,
         CASE WHEN visualizacao.id_atribuicao IS NULL THEN 'N' ELSE 'S' END AS visualizado,
         (
           SELECT COUNT(*)
@@ -245,10 +267,16 @@ class ManifestacaoController {
       ORDER BY tipo.nome
     ''';
     final tiposProcesso = await banco.query(sqlTiposProcesso, params: [idConsulta, idOrgao]);
+    for (final tipo in tiposProcesso) {
+      if (tipo['decisao_tipo'] == 'DESCONTINUAR') tipo['pendentes'] = 0;
+      if (tipo['decisao_tipo'] == null) tipo['pendentes'] = int.parse(tipo['pendentes'].toString()) + 1;
+    }
 
     const sqlDecisoes = '''
       SELECT atribuicao.id_atribuicao, assunto.*, decisao.acao, decisao.justificativa
       FROM dbo.consulta_orgao_tipo atribuicao
+      JOIN dbo.manifestacao_tipo manifestacao
+        ON manifestacao.id_atribuicao = atribuicao.id_atribuicao AND manifestacao.decisao_tipo = 'MANTER'
       JOIN dbo.manifestacao_vinculo decisao
         ON decisao.id_atribuicao = atribuicao.id_atribuicao
       JOIN dbo.assunto assunto
@@ -274,6 +302,8 @@ class ManifestacaoController {
 
     for (final tipo in tipos) {
       if (tipo['visualizado'] != 'S') return false;
+      if (tipo['decisao_tipo'] == null) return false;
+      if (tipo['decisao_tipo'] == 'DESCONTINUAR' && (tipo['justificativa_tipo']?.toString().trim() ?? '').isEmpty) return false;
       if (int.parse(tipo['pendentes'].toString()) != 0) return false;
     }
     return true;
@@ -312,6 +342,8 @@ class ManifestacaoController {
       51037: 'Visualize todos os Tipos de Processo antes de finalizar.',
       51038: 'Marque manter ou remover em todos os vínculos existentes.',
       51039: 'O órgão não tem Tipos de Processo atribuídos nesta consulta.',
+      51041: 'Decida manter ou sugerir descontinuação para todos os Tipos de Processo.',
+      51042: 'Justifique a sugestão de descontinuação.',
       51040: 'Observação ou justificativa excede o limite de caracteres.',
     };
 
@@ -324,4 +356,3 @@ class ManifestacaoController {
     return ApiError(status, mensagem);
   }
 }
-
