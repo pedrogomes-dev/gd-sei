@@ -23,6 +23,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   int idUsuarioAtual = 0;
   int inicio = 0;
   int total = 0;
+  Map<String, int> quantidades = {};
   int numeroRequisicao = 0;
   String situacao = 'TODOS';
   String pesquisaAplicada = '';
@@ -88,6 +89,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
       setState(() {
         usuarios = resultado['itens'] as List;
+        quantidades = Map<String, dynamic>.from(resultado['quantidades'] as Map? ?? {})
+            .map((chave, valor) => MapEntry(chave, int.parse(valor.toString())));
         total = int.parse(resultado['total'].toString());
         temProximaPagina = resultado['mais'] == true;
         inicio = pagina;
@@ -110,7 +113,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   void alterarSituacao(String valor) {
-    setState(() => situacao = valor);
+    setState(() => situacao = situacao == valor ? 'TODOS' : valor);
     pesquisar();
   }
 
@@ -196,6 +199,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         orgaos: orgaos,
         idOrgao: idOrgao,
         situacao: situacao,
+        quantidades: quantidades,
         carregando: carregando,
         pesquisar: () => pesquisar(),
         alterarOrgao: alterarOrgao,
@@ -274,3 +278,4 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 }
+
