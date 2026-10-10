@@ -273,9 +273,10 @@ class _TipoScreenState extends State<TipoScreen> {
           ),
           const SizedBox(height: 16),
           Text(finalizada ? 'Manifestação finalizada — somente leitura.' : 'Rascunho compartilhado pelo órgão.'),
-          ExpansionTile(
-            title: const Text('Propriedades do Tipo de Processo'),
+          Column(
+            
             children: [
+              const Text('Propriedades do Tipo de Processo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: PropriedadesProcesso(processo: tipo),
@@ -298,7 +299,7 @@ class _TipoScreenState extends State<TipoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Assuntos atualmente vinculados', style: Theme.of(context).textTheme.titleMedium),
+          Text('Assuntos atualmente vinculados', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 18)),
           const SizedBox(height: 20),
           if (assuntos.isEmpty) const Text('Nenhum vínculo existente.'),
           for (final registro in assuntos)
@@ -327,7 +328,7 @@ class _TipoScreenState extends State<TipoScreen> {
           children: [
             const StatusTag('ADICIONAR'),
             const SizedBox(height: 12),
-            Text('ID $idAssunto · $codigo — $descricao'),
+            Text('Código $codigo — $descricao'),
             const SizedBox(height: 16),
             JustificativaField(
               controlador: justificativas[idAssunto]!,

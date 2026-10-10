@@ -52,7 +52,7 @@ class ResumoTipoCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('ID $idAssunto · $codigo', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+              Text('CÓDIGO $codigo', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
               const SizedBox(height: 6),
               Text(decisao['descricao'].toString()),
             ],

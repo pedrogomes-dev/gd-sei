@@ -73,9 +73,13 @@ class AssuntoVinculadoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ID $idAssunto · $codigo', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
-          const SizedBox(height: 8),
-          Text(assunto['descricao'].toString(), style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: [
+            Text('CÓDIGO $codigo  -  ', style: const TextStyle(fontSize: 17, color: Colors.blueGrey)),
+            Text(assunto['descricao'].toString(), style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+          
           const SizedBox(height: 16),
           decisoes(),
           if (exibirJustificativa)
@@ -87,14 +91,12 @@ class AssuntoVinculadoCard extends StatelessWidget {
               children: [campoJustificativa()],
             ),
           const SizedBox(height: 8),
-          ExpansionTile(
-            tilePadding: EdgeInsets.zero,
-            title: const Text('Consultar propriedades', style: TextStyle(fontSize: 14)),
-            children: [
+          Column(
+            children:[
+            //ATENÇÃO GPT, MODIFICAR AQUI, SEGUIR AQUELA IDEIA DOS CARDS
               for (final campo in assunto.entries)
                 if (campo.key != 'versao' && campo.key != 'sin_ultima') propertyTile(campo),
-            ],
-          ),
+          ]),
         ],
       ),
     );
