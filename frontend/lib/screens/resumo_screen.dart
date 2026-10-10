@@ -92,22 +92,61 @@ class _ResumoScreenState extends State<ResumoScreen> {
     return '$dia/$mes/$ano às $hora:$minuto (horário local)';
   }
 
-  Widget totalDecisoes(List<dynamic> decisoes, String acao, String titulo, IconData icone, Color cor) {
-    int quantidade = 0;
-    for (final decisao in decisoes) {
-      if (decisao['acao'] == acao) quantidade++;
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icone, size: 20, color: cor),
-        const SizedBox(width: 8),
-        Text('$titulo: $quantidade', style: const TextStyle(fontWeight: FontWeight.w600)),
-      ],
+  int contarDecisoes(List<dynamic> decisoes, String acao) {
+    return decisoes.where((decisao) => decisao['acao'] == acao).length;
+  }
+
+  int contarTiposPendentes(List<dynamic> tipos) {
+    return tipos.where((tipo) {
+      return tipo['visualizado'] != 'S' ||
+          tipo['decisao_tipo'] == null ||
+          int.parse(tipo['pendentes'].toString()) > 0;
+    }).length;
+  }
+
+  Widget indicador(String titulo, int quantidade, String unidade, IconData icone, Color cor) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xffe2e8f0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(icone, size: 20, color: cor),
+            const SizedBox(width: 8),
+            Expanded(child: Text(titulo, style: TextStyle(color: cor, fontWeight: FontWeight.w600))),
+          ]),
+          const SizedBox(height: 12),
+          Text('$quantidade', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 4),
+          Text(unidade, style: const TextStyle(color: Colors.blueGrey)),
+        ],
+      ),
     );
   }
 
-  Widget cabecalho(Map<String, dynamic> grupo, List<dynamic> decisoes) {
+  Widget indicadores(List<dynamic> decisoes, List<dynamic> tipos) {
+    return LayoutBuilder(builder: (context, tamanho) {
+      final colunas = tamanho.maxWidth >= 900 ? 4 : tamanho.maxWidth >= 450 ? 2 : 1;
+      final largura = (tamanho.maxWidth - (colunas - 1) * 12) / colunas;
+      return Wrap(spacing: 12, runSpacing: 12, children: [
+        SizedBox(width: largura, child: indicador('Manutenções',
+            contarDecisoes(decisoes, 'MANTER'), 'Vínculos', Icons.check_circle_outline, Colors.blue.shade800)),
+        SizedBox(width: largura, child: indicador('Remoções',
+            contarDecisoes(decisoes, 'REMOVER'), 'Vínculos', Icons.remove_circle_outline, Colors.red.shade800)),
+        SizedBox(width: largura, child: indicador('Inclusões',
+            contarDecisoes(decisoes, 'ADICIONAR'), 'Vínculos', Icons.add_circle_outline, Colors.green.shade800)),
+        SizedBox(width: largura, child: indicador('Pendentes',
+            contarTiposPendentes(tipos), 'Tipos de Processo', Icons.pending_actions, const Color(0xff9a4300))),
+      ]);
+    });
+  }
+
+  Widget cabecalho(Map<String, dynamic> grupo, List<dynamic> decisoes, List<dynamic> tipos) {
     final finalizada = grupo['status'] == 'FINALIZADA';
     final data = grupo['data_finalizacao'];
 
@@ -129,15 +168,7 @@ class _ResumoScreenState extends State<ResumoScreen> {
               child: Text('Finalizada em ' + dataFinalizacao(data), style: const TextStyle(color: Colors.blueGrey)),
             ),
           const SizedBox(height: 24),
-          Wrap(
-            spacing: 32,
-            runSpacing: 12,
-            children: [
-              totalDecisoes(decisoes, 'MANTER', 'Manutenções', Icons.check_circle_outline, Colors.blue),
-              totalDecisoes(decisoes, 'REMOVER', 'Remoções', Icons.remove_circle_outline, Colors.red),
-              totalDecisoes(decisoes, 'ADICIONAR', 'Inclusões', Icons.add_circle_outline, Colors.green),
-            ],
-          ),
+          indicadores(decisoes, tipos),
           const SizedBox(height: 16),
           Text(
             finalizada
@@ -195,7 +226,7 @@ class _ResumoScreenState extends State<ResumoScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
       children: [
-        cabecalho(grupo, decisoes),
+        cabecalho(grupo, decisoes, tipos),
         for (final tipo in tipos)
           ResumoTipoCard(
             tipo: Map<String, dynamic>.from(tipo as Map),
