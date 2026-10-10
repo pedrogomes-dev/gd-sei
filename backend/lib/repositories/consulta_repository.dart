@@ -21,14 +21,30 @@ class ConsultaRepository {
     'ORDER BY c.nome,o.sigla,t.nome', params:[userId]);
 
   Future<Map<String,dynamic>> detail(int userId, int id) async {
-    final rows = await db.query('SELECT t.*,a.id_atribuicao,a.id_consulta,a.id_orgao,co.status, '
-      "CASE WHEN v.id_atribuicao IS NULL THEN 'N' ELSE 'S' END AS visualizado "
-      'FROM dbo.consulta_orgao_tipo a '
-      'JOIN dbo.usuario_orgao u ON u.id_orgao=a.id_orgao AND u.id_usuario=? '
-      'JOIN dbo.tipo_procedimento t ON t.versao=a.versao AND t.id_tipo_procedimento=a.id_tipo_procedimento '
-      'JOIN dbo.consulta_orgao co ON co.id_consulta=a.id_consulta AND co.id_orgao=a.id_orgao '
-      'LEFT JOIN dbo.visualizacao_tipo v ON v.id_atribuicao=a.id_atribuicao '
-      'WHERE a.id_atribuicao=?',params:[userId,id]);
+    const sqlTipo = '''
+      SELECT tipo.*, atribuicao.id_atribuicao, atribuicao.id_consulta,
+        atribuicao.id_orgao, grupo.status,
+        hipotese.nome AS hipotese_legal_nome,
+        hipotese.base_legal AS hipotese_legal_base,
+        hipotese.descricao AS hipotese_legal_descricao,
+        hipotese.sin_ativo AS hipotese_legal_ativa,
+        CASE WHEN visualizacao.id_atribuicao IS NULL THEN 'N' ELSE 'S' END AS visualizado
+      FROM dbo.consulta_orgao_tipo atribuicao
+      JOIN dbo.usuario_orgao usuario
+        ON usuario.id_orgao = atribuicao.id_orgao AND usuario.id_usuario = ?
+      JOIN dbo.tipo_procedimento tipo
+        ON tipo.versao = atribuicao.versao
+        AND tipo.id_tipo_procedimento = atribuicao.id_tipo_procedimento
+      JOIN dbo.consulta_orgao grupo
+        ON grupo.id_consulta = atribuicao.id_consulta
+        AND grupo.id_orgao = atribuicao.id_orgao
+      LEFT JOIN dbo.visualizacao_tipo visualizacao
+        ON visualizacao.id_atribuicao = atribuicao.id_atribuicao
+      LEFT JOIN dbo.hipotese_legal hipotese
+        ON hipotese.id_hipotese_legal = tipo.id_hipotese_legal_sugestao
+      WHERE atribuicao.id_atribuicao = ?
+    ''';
+    final rows = await db.query(sqlTipo, params: [userId, id]);
     if (rows.isEmpty) throw ApiError(404,'Tipo não encontrado para seus órgãos');
     final row=rows.first;
     final subjects=await db.query('SELECT s.*,r.sequencia FROM dbo.rel_tipo_procedimento_assunto r '

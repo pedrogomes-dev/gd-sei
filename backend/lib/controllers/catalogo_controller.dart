@@ -46,37 +46,53 @@ class CatalogoController {
     final parametros = <Object>[versao];
     final condicoes = <String>[];
     for (final campo in campos) {
-      condicoes.add("$campo LIKE ? ESCAPE '~'");
+      condicoes.add("registro.$campo LIKE ? ESCAPE '~'");
       parametros.add('%$texto%');
     }
 
     final id = int.tryParse(pesquisa);
     if (Validacoes.inteiroSqlValido(id)) {
-      condicoes.add('$chave = ?');
+      condicoes.add('registro.$chave = ?');
       parametros.add(id!);
     }
 
     final pesquisaSql = condicoes.join(' OR ');
-    var filtro = 'versao = ? AND ($pesquisaSql)';
+    var filtro = 'registro.versao = ? AND ($pesquisaSql)';
     if (situacao != 'TODOS') {
-      filtro += ' AND sin_ativo = ?';
+      filtro += ' AND registro.sin_ativo = ?';
       parametros.add(situacao);
     }
 
     final sqlQuantidade = '''
       SELECT COUNT_BIG(*) AS total
-      FROM dbo.$tabela
+      FROM dbo.$tabela registro
       WHERE $filtro
     ''';
     final quantidade = await banco.query(
       sqlQuantidade, params: parametros, operation: 'contar_catalogo',
     );
 
+    var camposHipotese = '';
+    var vinculoHipotese = '';
+    if (categoria != 'assuntos') {
+      camposHipotese = '''
+        , hipotese.nome AS hipotese_legal_nome
+        , hipotese.base_legal AS hipotese_legal_base
+        , hipotese.descricao AS hipotese_legal_descricao
+        , hipotese.sin_ativo AS hipotese_legal_ativa
+      ''';
+      vinculoHipotese = '''
+        LEFT JOIN dbo.hipotese_legal hipotese
+          ON hipotese.id_hipotese_legal = registro.id_hipotese_legal_sugestao
+      ''';
+    }
+
     final sqlRegistros = '''
-      SELECT *
-      FROM dbo.$tabela
+      SELECT registro.* $camposHipotese
+      FROM dbo.$tabela registro
+      $vinculoHipotese
       WHERE $filtro
-      ORDER BY $chave
+      ORDER BY registro.$chave
       OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY
     ''';
     final registros = await banco.query(
