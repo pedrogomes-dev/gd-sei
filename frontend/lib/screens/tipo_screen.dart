@@ -257,7 +257,7 @@ class _TipoScreenState extends State<TipoScreen> {
     return SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: [   
           LayoutBuilder(builder: (context, tamanho) {
             final estado = Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -270,18 +270,19 @@ class _TipoScreenState extends State<TipoScreen> {
                     StatusTag(tipo['status'].toString()),
                     StatusTag(
                       visualizado ? 'VISUALIZADO' : 'PENDENTE',
-                      label: visualizado ? 'Visualizado' : 'Visualização pendente',
+                      label: visualizado ? 'Visualizado' : 'Pendente',
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Text(finalizada ? 'Manifestação finalizada — somente leitura.' : 'Rascunho compartilhado pelo órgão.'),
+                
               ],
             );
-            final titulo = Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.headlineSmall);
+            final titulo = Text(tipo['nome'].toString(), style: Theme.of(context).textTheme.headlineMedium);
             if (tamanho.maxWidth < 800) {
               return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 titulo,
+                //GPT, por algum motivo não está aparecendo o text abaixo.. gostaria dele abaixo do título.
+                Text(finalizada ? 'Manifestação finalizada — somente leitura.' : 'Rascunho compartilhado pelo órgão.'),
                 const SizedBox(height: 16),
                 estado,
               ]);
@@ -296,7 +297,6 @@ class _TipoScreenState extends State<TipoScreen> {
           Column(
             
             children: [
-              const Text('Propriedades do Tipo de Processo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: PropriedadesProcesso(processo: tipo),
@@ -336,38 +336,40 @@ class _TipoScreenState extends State<TipoScreen> {
   }
 
   Widget decisaoProcesso() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Este Tipo de Processo deve ser mantido?', style: TextStyle(fontWeight: FontWeight.w600)),
-      const SizedBox(height: 12),
-      Wrap(spacing: 12, runSpacing: 8, children: [
-        ChoiceChip(
-          label: const Text('Manter'),
-          avatar: const Icon(Icons.check_circle_outline, color: Colors.blue),
-          selected: decisaoTipo == 'MANTER',
-          onSelected: finalizada || salvando ? null : (selecionado) => escolherDecisaoTipo(selecionado ? 'MANTER' : null),
-        ),
-        ChoiceChip(
-          label: const Text('Sugerir descontinuação'),
-          avatar: const Icon(Icons.block, color: Colors.red),
-          selected: decisaoTipo == 'DESCONTINUAR',
-          onSelected: finalizada || salvando ? null : (selecionado) => escolherDecisaoTipo(selecionado ? 'DESCONTINUAR' : null),
-        ),
+    return 
+    Center( child:
+      Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 8),
+        Wrap(spacing: 12, runSpacing: 4, alignment: WrapAlignment.center, children: [
+          ChoiceChip(
+            label: const Text('Manter Tipo de Processo'),
+            avatar: const Icon(Icons.check_circle_outline, color: Colors.blue),
+            selected: decisaoTipo == 'MANTER',
+            onSelected: finalizada || salvando ? null : (selecionado) => escolherDecisaoTipo(selecionado ? 'MANTER' : null),
+          ),
+          ChoiceChip(
+            label: const Text('Sugerir Descontinuação'),
+            avatar: const Icon(Icons.block, color: Colors.red),
+            selected: decisaoTipo == 'DESCONTINUAR',
+            onSelected: finalizada || salvando ? null : (selecionado) => escolherDecisaoTipo(selecionado ? 'DESCONTINUAR' : null),
+          ),
+        ]),
+        if (decisaoTipo == 'DESCONTINUAR') ...[
+          const SizedBox(height: 16),
+          const Text('Proposta para avaliação da SETIC. Os vínculos com Assuntos não serão considerados nesta submissão.'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: justificativaTipo,
+            readOnly: finalizada,
+            enabled: !salvando,
+            maxLength: 2000,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Justificativa da descontinuação'),
+            onChanged: (_) => marcarAlteracao(),
+          ),
+        ],
       ]),
-      if (decisaoTipo == 'DESCONTINUAR') ...[
-        const SizedBox(height: 16),
-        const Text('Proposta para avaliação da SETIC. Os vínculos com Assuntos não serão considerados nesta submissão.'),
-        const SizedBox(height: 12),
-        TextField(
-          controller: justificativaTipo,
-          readOnly: finalizada,
-          enabled: !salvando,
-          maxLength: 2000,
-          maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Justificativa da descontinuação'),
-          onChanged: (_) => marcarAlteracao(),
-        ),
-      ],
-    ]);
+    );
   }
 
   Widget indicadorVinculos(String titulo, int quantidade, IconData icone, Color cor) {
