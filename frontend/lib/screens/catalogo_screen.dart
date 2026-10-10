@@ -78,21 +78,91 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         ])),
       ]);
   }
+  void filtrarEstado(String opcao) {
+    setState(() => state = state == opcao ? 'TODOS' : opcao);
+    search();
+  }
+
+  Widget cardEstado(String opcao, String titulo, IconData icone, Color cor) {
+    final selecionado = state == opcao;
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      child: Material(
+        color: selecionado ? cor.withValues(alpha: 0.08) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: selecionado ? cor : const Color(0xffe2e8f0), width: selecionado ? 2 : 1),
+        ),
+        child: InkWell(
+          onTap: busy ? null : () => filtrarEstado(opcao),
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              Icon(icone, color: cor),
+              const SizedBox(width: 12),
+              Expanded(child: Text(titulo, style: TextStyle(color: cor, fontWeight: FontWeight.w600))),
+              if (selecionado) Icon(Icons.check_circle, color: cor, size: 18),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget filtrosEstado() {
+    return LayoutBuilder(builder: (context, tamanho) {
+      final colunas = tamanho.maxWidth >= 600 ? 3 : 1;
+      final largura = (tamanho.maxWidth - (colunas - 1) * 12) / colunas;
+      return Wrap(spacing: 12, runSpacing: 12, children: [
+        SizedBox(width: largura, child: cardEstado('TODOS', 'Todos', Icons.list_alt, Colors.blue.shade800)),
+        SizedBox(width: largura, child: cardEstado('S', 'Ativos', Icons.check_circle_outline, Colors.green.shade800)),
+        SizedBox(width: largura, child: cardEstado('N', 'Inativos', Icons.block, Colors.red.shade800)),
+      ]);
+    });
+  }
+
+  Widget barraPesquisa() {
+    final campo = TextField(
+      controller: query,
+      maxLength: 250,
+      decoration: InputDecoration(
+        labelText: subjects ? 'Buscar por ID, código ou descrição' : 'Buscar por ID, nome ou descrição',
+        prefixIcon: const Icon(Icons.search),
+      ),
+      onSubmitted: (_) { if (!busy) search(); },
+    );
+    final botao = FilledButton.icon(
+      onPressed: busy ? null : () => search(),
+      icon: const Icon(Icons.search),
+      label: const Text('Pesquisar'),
+    );
+    return LayoutBuilder(builder: (context, tamanho) {
+      if (tamanho.maxWidth < 500) {
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          campo,
+          const SizedBox(height: 12),
+          Align(alignment: Alignment.centerRight, child: botao),
+        ]);
+      }
+      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: campo),
+        const SizedBox(width: 16),
+        Padding(padding: const EdgeInsets.only(top: 8), child: botao),
+      ]);
+    });
+  }
+
   @override Widget build(BuildContext context)=>AppShell(title:subjects?'Catálogo de Assuntos':'Catálogo de Tipos de Processo',
     section:subjects?'assuntos':'catalogo-tipos',trail:[subjects?'Assuntos':'Tipos de Processo'],
     child:ListView(padding:const EdgeInsets.fromLTRB(32,0,32,32),children:[
         const Text('Catálogo único da base publicada, incluindo registros ativos e inativos.',style:TextStyle(color:Colors.blueGrey)),
         const SizedBox(height:12),Text(version==null?'':'Versão da base: $version',style:const TextStyle(color:Colors.blueGrey)),
         const SizedBox(height:24),SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-          TextField(controller:query,maxLength:250,
-            decoration:InputDecoration(labelText:subjects?'Buscar por ID, código ou descrição':'Buscar por ID, nome ou descrição',prefixIcon:const Icon(Icons.search)),
-            onSubmitted:(_){if(!busy)search();}),
-          const SizedBox(height:16),Wrap(spacing:8,runSpacing:8,children:[
-            for(final option in const {'TODOS':'Todos','S':'Ativos','N':'Inativos'}.entries)
-              ChoiceChip(label:Text(option.value),selected:state==option.key,
-                onSelected:busy?null:(_){setState((){state=option.key;});search();}),
-          ]),
-          const SizedBox(height:16),FilledButton.icon(onPressed:busy?null:()=>search(),icon:const Icon(Icons.search),label:const Text('Pesquisar')),
+          barraPesquisa(),
+          const SizedBox(height: 16),
+          filtrosEstado(),
         ])),
         if(error!=null)Padding(padding:const EdgeInsets.only(bottom:20),child:Text(error!)),
         if(busy)const LinearProgressIndicator(),
