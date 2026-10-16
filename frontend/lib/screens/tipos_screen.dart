@@ -26,6 +26,28 @@ class _TiposScreenState extends State<TiposScreen> {
     _=>true,
   };
 
+  bool isViewed(dynamic row)=>row['visualizado']=='S';
+  bool isEvaluated(dynamic row)=>isViewed(row)&&pending(row)==0;
+
+  String evaluationStatus(dynamic row) {
+    if(row['status']=='FINALIZADA')return 'FINALIZADA';
+    return isEvaluated(row)?'MANTER':'PENDENTE';
+  }
+
+  String evaluationLabel(dynamic row) {
+    if(row['status']=='FINALIZADA')return 'Finalizada';
+    if(!isViewed(row))return 'Não visualizado';
+    if(row['decisao_tipo']==null)return 'Decisão sobre o Tipo pendente';
+    if(row['decisao_tipo']=='DESCONTINUAR')return 'Descontinuação proposta';
+    final pendingLinks=pending(row);
+    return pendingLinks==0?'Avaliação completa':'$pendingLinks vínculos pendentes';
+  }
+
+  Widget evaluationTag(dynamic row)=>StatusTag(
+    evaluationStatus(row),
+    label:evaluationLabel(row),
+  );
+
   Widget filterCards(List<dynamic> rows) {
     final options=[
       ('TODOS','Todos',Icons.list_alt,Colors.blue.shade800),
@@ -125,20 +147,7 @@ class _TiposScreenState extends State<TiposScreen> {
                       child:Text(r['nome'].toString(),maxLines:3,overflow:TextOverflow.ellipsis),
                     )),
                     DataCell(Text(r['sigla'].toString())),
-                    DataCell(r['status']=='FINALIZADA'
-                      ?const StatusTag('FINALIZADA')
-                      :StatusTag(
-                        r['visualizado']=='S'&&pending(r)==0?'MANTER':'PENDENTE',
-                        label:r['visualizado']!='S'
-                          ?'Não visualizado'
-                          :r['decisao_tipo']==null
-                            ?'Decisão sobre o Tipo pendente'
-                            :r['decisao_tipo']=='DESCONTINUAR'
-                              ?'Descontinuação proposta'
-                              :pending(r)==0
-                                ?'Avaliação completa'
-                                :'${pending(r)} vínculos pendentes',
-                      )),
+                    DataCell(evaluationTag(r)),
                     DataCell(Align(
                       alignment:Alignment.centerRight,
                       child:OutlinedButton(
