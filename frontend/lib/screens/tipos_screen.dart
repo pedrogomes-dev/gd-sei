@@ -31,7 +31,10 @@ class _TiposScreenState extends State<TiposScreen> {
 
   String evaluationStatus(dynamic row) {
     if(row['status']=='FINALIZADA')return 'FINALIZADA';
-    return isEvaluated(row)?'MANTER':'PENDENTE';
+    if(!isViewed(row))return 'NAO_VISUALIZADO';
+    if(row['decisao_tipo']=='DESCONTINUAR')return 'DESCONTINUAR';
+    if(isEvaluated(row))return 'AVALIADO';
+    return 'EM_AVALIACAO';
   }
 
   String evaluationLabel(dynamic row) {
