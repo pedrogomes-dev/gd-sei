@@ -21,6 +21,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
   bool busy=false,more=false;
   List<dynamic> items=[];
   List<dynamic> links=[];
+  List<dynamic> typeOrgs=[];
   final Set<int> expanded={};
   String? error;
   bool get subjects=>widget.kind=='assuntos';
@@ -34,6 +35,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       if (mounted && request == generation) setState(() {
         items = result['itens'] as List<dynamic>;
         links = result['vinculos'] as List<dynamic>? ?? [];
+        typeOrgs = result['orgaos_tipos'] as List<dynamic>? ?? [];
         expanded.clear();
         quantidades = Map<String, dynamic>.from(result['quantidades'] as Map? ?? {})
             .map((key, value) => MapEntry(key, int.parse(value.toString())));
@@ -77,6 +79,16 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         ) == id)
         .map((item) => Map<String, dynamic>.from(item as Map))
         .toList();
+  }
+
+  String orgsForType(dynamic idType) {
+    final siglas=typeOrgs
+        .where((item)=>item['id_tipo_procedimento'].toString()==idType.toString())
+        .map((item)=>(item['sigla']??'').toString())
+        .where((sigla)=>sigla.isNotEmpty)
+        .toSet()
+        .toList();
+    return siglas.join(', ');
   }
 
   Widget resultTable() {
@@ -144,8 +156,9 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       if (isExpanded) {
         for (final link in related) {
           final active=(link[subjects?'tipo_sin_ativo':'assunto_sin_ativo']).toString();
+          final orgs=subjects?orgsForType(link['id_tipo_procedimento']):'';
           final description=subjects
-              ? (link['tipo_nome']??'—').toString()
+              ? '${link['tipo_nome']??'—'}${orgs.isEmpty?'':' — $orgs'}'
               : '${link['assunto_codigo']??'—'} — ${link['assunto_descricao']??'—'}';
           rows.add(TableRow(
             decoration:const BoxDecoration(color:Color(0xfff8fafc)),
