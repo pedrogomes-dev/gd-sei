@@ -15,6 +15,10 @@ class StatusTag extends StatelessWidget {
       'ADICIONAR' => ('Incluir', Colors.green, Icons.add_circle_outline),
       'VISUALIZADO' => ('Visualizado', Colors.blue, Icons.visibility_outlined),
       'FINALIZADA' => ('Finalizada', Colors.green, Icons.lock_outline),
+      'AVALIADO' => ('Avaliado', Colors.green, Icons.check_circle_outline),
+      'DESCONTINUAR' => ('Descontinuação proposta', Colors.green, Icons.cancel_outlined),
+      'EM_AVALIACAO' => ('Em avaliação', Colors.brown, Icons.pending_outlined),
+      'NAO_VISUALIZADO' => ('Não visualizado', Colors.red, Icons.visibility_off_outlined),
       'RASCUNHO' => ('Rascunho', Colors.amber, Icons.edit_outlined),
       _ => ('Pendente', Colors.amber, Icons.pending_outlined),
     };
