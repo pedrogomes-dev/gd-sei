@@ -18,6 +18,68 @@ class _TiposScreenState extends State<TiposScreen> {
     await Navigator.pushNamed(context,path);
     if(mounted)refresh();
   }
+  bool matchesFilter(dynamic r,String option)=>switch(option){
+    'PENDENTES'=>r['status']=='RASCUNHO'&&(r['visualizado']!='S'||pending(r)>0),
+    'VISUALIZADOS'=>r['visualizado']=='S',
+    'FINALIZADAS'=>r['status']=='FINALIZADA',
+    _=>true,
+  };
+
+  Widget filterCard(String option,String title,IconData icon,Color color,int count) {
+    final selected=filter==option;
+    return Semantics(
+      button:true,
+      selected:selected,
+      child:Material(
+        color:selected?color.withValues(alpha:0.08):Colors.white,
+        shape:RoundedRectangleBorder(
+          borderRadius:BorderRadius.circular(10),
+          side:BorderSide(color:selected?color:const Color(0xffe2e8f0),width:selected?2:1),
+        ),
+        child:InkWell(
+          onTap:()=>setState(()=>filter=option),
+          borderRadius:BorderRadius.circular(10),
+          child:Padding(
+            padding:const EdgeInsets.all(16),
+            child:Row(children:[
+              Icon(icon,color:color),
+              const SizedBox(width:12),
+              Expanded(child:Text(title,style:TextStyle(color:color,fontWeight:FontWeight.w600))),
+              Text('$count',style:TextStyle(color:color,fontSize:24,fontWeight:FontWeight.bold)),
+              if(selected)...[const SizedBox(width:8),Icon(Icons.check_circle,color:color,size:18)],
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget filterCards(List<dynamic> rows) {
+    final options=[
+      ('TODOS','Todos',Icons.list_alt,Colors.blue.shade800),
+      ('PENDENTES','Pendentes',Icons.pending_actions,Colors.amber.shade800),
+      ('VISUALIZADOS','Visualizados',Icons.visibility_outlined,Colors.blueGrey.shade700),
+      ('FINALIZADAS','Finalizadas',Icons.check_circle_outline,Colors.green.shade800),
+    ];
+    return LayoutBuilder(builder:(context,size){
+      final columns=size.maxWidth>=900?4:size.maxWidth>=600?2:1;
+      final width=(size.maxWidth-(columns-1)*12)/columns;
+      return Wrap(
+        spacing:12,runSpacing:12,
+        children:[
+          for(final option in options)
+            SizedBox(
+              width:width,
+              child:filterCard(
+                option.$1,option.$2,option.$3,option.$4,
+                rows.where((r)=>matchesFilter(r,option.$1)).length,
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
   @override Widget build(BuildContext context)=>AppShell(
     title:widget.summaries?'Resumo e submissão':'Tipos de Processo atribuídos',
     section:widget.summaries?'resumos':'tipos',trail:[widget.summaries?'Resumo e submissão':'Tipos de Processo atribuídos'],
@@ -32,10 +94,7 @@ class _TiposScreenState extends State<TiposScreen> {
       final groups=<String,dynamic>{for(final r in scoped)'${r['id_consulta']}/${r['id_orgao']}':r};
       final visible=scoped.where((r){
         if(!'${r['nome']} ${r['id_tipo_procedimento']} ${r['sigla']} ${r['consulta']}'.toLowerCase().contains(searchText.trim().toLowerCase()))return false;
-        return switch(filter){
-          'PENDENTES'=>r['status']=='RASCUNHO'&&(r['visualizado']!='S'||pending(r)>0),
-          'VISUALIZADOS'=>r['visualizado']=='S',
-          'FINALIZADAS'=>r['status']=='FINALIZADA',_=>true};
+        return matchesFilter(r,filter);
       }).toList();
       return ListView(padding:const EdgeInsets.fromLTRB(32,0,32,32),children:[
         const Text('Revise os Tipos de Processo e seus vínculos. A manifestação é compartilhada pelo órgão.',style:TextStyle(color:Colors.blueGrey)),
@@ -62,23 +121,57 @@ class _TiposScreenState extends State<TiposScreen> {
         if(!widget.summaries)...[
           SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             TextField(decoration:const InputDecoration(labelText:'Buscar por nome ou ID do Tipo de Processo',prefixIcon:Icon(Icons.search)),onChanged:(v)=>setState((){searchText=v;})),
-            const SizedBox(height:16),Wrap(spacing:8,runSpacing:8,children:[
-              for(final option in const {'TODOS':'Todos','PENDENTES':'Pendentes','VISUALIZADOS':'Visualizados','FINALIZADAS':'Finalizadas'}.entries)
-                ChoiceChip(label:Text(option.value),selected:filter==option.key,onSelected:(_)=>setState((){filter=option.key;}))]),
+            const SizedBox(height:16),filterCards(scoped),
             const SizedBox(height:20),Text('${visible.length} de ${scoped.length} Tipos de Processo',style:const TextStyle(color:Colors.blueGrey)),
             const SizedBox(height:12),
             if(visible.isEmpty)const Text('Nenhum Tipo de Processo corresponde à busca e ao filtro.')
-            else SingleChildScrollView(scrollDirection:Axis.horizontal,child:DataTable(
-              headingRowColor:const WidgetStatePropertyAll(Color(0xfff5f7fa)),dataRowMinHeight:68,dataRowMaxHeight:88,columnSpacing:24,
-              columns:const [DataColumn(label:Text('ID')),DataColumn(label:Text('Tipo de Processo')),DataColumn(label:Text('Órgão')),DataColumn(label:Text('Revisão')),DataColumn(label:Text(''))],
-              rows:visible.map((r)=>DataRow(cells:[
-                DataCell(Text(r['id_tipo_procedimento'].toString())),
-                DataCell(SizedBox(width:340,child:Text(r['nome'].toString(),maxLines:3,overflow:TextOverflow.ellipsis))),
-                DataCell(Text(r['sigla'].toString())),
-                DataCell(r['status']=='FINALIZADA'?const StatusTag('FINALIZADA'):StatusTag(r['visualizado']=='S'&&pending(r)==0?'MANTER':'PENDENTE',
-                  label:r['visualizado']!='S'?'Não visualizado':r['decisao_tipo']==null?'Decisão sobre o Tipo pendente':r['decisao_tipo']=='DESCONTINUAR'?'Descontinuação proposta':pending(r)==0?'Revisão completa':'${pending(r)} vínculos pendentes')),
-                DataCell(TextButton(onPressed:()=>open('/tipos/${r['id_atribuicao']}'),child:const Text('Abrir'))),
-              ])).toList())),
+            else LayoutBuilder(builder:(context,constraints){
+              const minWidth=900.0;
+              final width=constraints.maxWidth<minWidth?minWidth:constraints.maxWidth;
+              return SingleChildScrollView(
+                scrollDirection:Axis.horizontal,
+                child:SizedBox(width:width,child:DataTable(
+                  headingRowColor:const WidgetStatePropertyAll(Color(0xfff5f7fa)),
+                  dataRowMinHeight:68,dataRowMaxHeight:96,columnSpacing:24,
+                  columns:const [
+                    DataColumn(label:Text('ID')),
+                    DataColumn(label:Text('Tipo de Processo')),
+                    DataColumn(label:Text('Órgão')),
+                    DataColumn(label:Text('Revisão')),
+                    DataColumn(label:Text('')),
+                  ],
+                  rows:visible.map((r)=>DataRow(cells:[
+                    DataCell(Text(r['id_tipo_procedimento'].toString())),
+                    DataCell(SizedBox(
+                      width:constraints.maxWidth>=1100?520:400,
+                      child:Text(r['nome'].toString(),maxLines:3,overflow:TextOverflow.ellipsis),
+                    )),
+                    DataCell(Text(r['sigla'].toString())),
+                    DataCell(r['status']=='FINALIZADA'
+                      ?const StatusTag('FINALIZADA')
+                      :StatusTag(
+                        r['visualizado']=='S'&&pending(r)==0?'MANTER':'PENDENTE',
+                        label:r['visualizado']!='S'
+                          ?'Não visualizado'
+                          :r['decisao_tipo']==null
+                            ?'Decisão sobre o Tipo pendente'
+                            :r['decisao_tipo']=='DESCONTINUAR'
+                              ?'Descontinuação proposta'
+                              :pending(r)==0
+                                ?'Revisão completa'
+                                :'${pending(r)} vínculos pendentes',
+                      )),
+                    DataCell(Align(
+                      alignment:Alignment.centerRight,
+                      child:OutlinedButton(
+                        onPressed:()=>open('/tipos/${r['id_atribuicao']}'),
+                        child:const Text('Abrir'),
+                      ),
+                    )),
+                  ]).toList(),
+                )),
+              );
+            }),
           ])),
         ],
       ]);
