@@ -96,7 +96,34 @@ class CatalogoController {
       ''';
     }
 
-    final sqlRegistros = '''
+    // Nos Assuntos, a ordem é pré-ordem da árvore, independente da paginação.
+    // O vínculo pai/filho é sempre restrito à mesma versão publicada.
+    final sqlRegistros = categoria == 'assuntos' ? '''
+      WITH arvore AS (
+        SELECT raiz.versao, raiz.id_assunto, 0 AS nivel_hierarquia,
+          CAST(raiz.codigo_estruturado AS nvarchar(max)) AS caminho
+        FROM dbo.assunto raiz
+        WHERE raiz.versao = ?
+          AND (raiz.id_assunto_pai IS NULL OR NOT EXISTS (
+            SELECT 1 FROM dbo.assunto pai
+            WHERE pai.versao = raiz.versao AND pai.id_assunto = raiz.id_assunto_pai
+          ))
+        UNION ALL
+        SELECT filho.versao, filho.id_assunto, arvore.nivel_hierarquia + 1,
+          CAST(arvore.caminho + N'/' + filho.codigo_estruturado AS nvarchar(max))
+        FROM dbo.assunto filho
+        JOIN arvore ON filho.versao = arvore.versao
+          AND filho.id_assunto_pai = arvore.id_assunto
+      )
+      SELECT registro.*, arvore.nivel_hierarquia
+      FROM dbo.assunto registro
+      JOIN arvore ON arvore.versao = registro.versao
+        AND arvore.id_assunto = registro.id_assunto
+      WHERE $filtro
+      ORDER BY arvore.caminho, registro.id_assunto
+      OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY
+      OPTION (MAXRECURSION 100)
+    ''' : '''
       SELECT registro.* $camposHipotese
       FROM dbo.$tabela registro
       $vinculoHipotese
@@ -105,7 +132,9 @@ class CatalogoController {
       OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY
     ''';
     final registros = await banco.query(
-      sqlRegistros, params: [...parametros, inicio], operation: 'consultar_catalogo',
+      sqlRegistros,
+      params: [if (categoria == 'assuntos') versao, ...parametros, inicio],
+      operation: 'consultar_catalogo',
     );
 
     return {
