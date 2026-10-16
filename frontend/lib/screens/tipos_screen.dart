@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/display_fields.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/inicio/indicador_card.dart';
 
 class TiposScreen extends StatefulWidget {
   final bool summaries;
@@ -19,60 +20,37 @@ class _TiposScreenState extends State<TiposScreen> {
     if(mounted)refresh();
   }
   bool matchesFilter(dynamic r,String option)=>switch(option){
-    'PENDENTES'=>r['status']=='RASCUNHO'&&(r['visualizado']!='S'||pending(r)>0),
-    'VISUALIZADOS'=>r['visualizado']=='S',
-    'FINALIZADAS'=>r['status']=='FINALIZADA',
+    'PENDENTES'=>r['visualizado']!='S',
+    'EM_AVALIACAO'=>r['visualizado']=='S'&&pending(r)>0,
+    'AVALIADOS'=>r['visualizado']=='S'&&pending(r)==0,
     _=>true,
   };
-
-  Widget filterCard(String option,String title,IconData icon,Color color,int count) {
-    final selected=filter==option;
-    return Semantics(
-      button:true,
-      selected:selected,
-      child:Material(
-        color:selected?color.withValues(alpha:0.08):Colors.white,
-        shape:RoundedRectangleBorder(
-          borderRadius:BorderRadius.circular(10),
-          side:BorderSide(color:selected?color:const Color(0xffe2e8f0),width:selected?2:1),
-        ),
-        child:InkWell(
-          onTap:()=>setState(()=>filter=option),
-          borderRadius:BorderRadius.circular(10),
-          child:Padding(
-            padding:const EdgeInsets.all(16),
-            child:Row(children:[
-              Icon(icon,color:color),
-              const SizedBox(width:12),
-              Expanded(child:Text(title,style:TextStyle(color:color,fontWeight:FontWeight.w600))),
-              Text('$count',style:TextStyle(color:color,fontSize:24,fontWeight:FontWeight.bold)),
-              if(selected)...[const SizedBox(width:8),Icon(Icons.check_circle,color:color,size:18)],
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget filterCards(List<dynamic> rows) {
     final options=[
       ('TODOS','Todos',Icons.list_alt,Colors.blue.shade800),
-      ('PENDENTES','Pendentes',Icons.pending_actions,Colors.amber.shade800),
-      ('VISUALIZADOS','Visualizados',Icons.visibility_outlined,Colors.blueGrey.shade700),
-      ('FINALIZADAS','Finalizadas',Icons.check_circle_outline,Colors.green.shade800),
+      ('PENDENTES','Pendentes',Icons.pending_actions,Colors.red.shade800),
+      ('EM_AVALIACAO','Em avaliação',Icons.edit_outlined,const Color(0xff9a4300)),
+      ('AVALIADOS','Avaliados',Icons.fact_check_outlined,Colors.green.shade800),
     ];
     return LayoutBuilder(builder:(context,size){
       final columns=size.maxWidth>=900?4:size.maxWidth>=600?2:1;
-      final width=(size.maxWidth-(columns-1)*12)/columns;
+      final width=(size.maxWidth-(columns-1)*16)/columns;
       return Wrap(
-        spacing:12,runSpacing:12,
+        spacing:16,runSpacing:16,
         children:[
           for(final option in options)
             SizedBox(
               width:width,
-              child:filterCard(
-                option.$1,option.$2,option.$3,option.$4,
-                rows.where((r)=>matchesFilter(r,option.$1)).length,
+              child:IndicadorCard(
+                titulo:option.$2,
+                selecionado:filter==option.$1,
+                quantidade:rows.where((r)=>matchesFilter(r,option.$1)).length,
+                icone:option.$3,
+                cor:option.$4,
+                aoSelecionar:()=>setState((){
+                  filter=filter==option.$1?'TODOS':option.$1;
+                }),
               ),
             ),
         ],
@@ -111,7 +89,7 @@ class _TiposScreenState extends State<TiposScreen> {
           return SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Row(children:[Expanded(child:Text(g['sigla'].toString(),style:Theme.of(context).textTheme.titleLarge)),StatusTag(g['status'].toString())]),
             const SizedBox(height:12),Text(g['consulta'].toString()),const SizedBox(height:20),
-            Text('$viewed de ${items.length} Tipos de Processo visualizados · $reviewed de ${items.length} revisados'),
+            Text('$viewed de ${items.length} Tipos de Processo visualizados · $reviewed de ${items.length} avaliados'),
             const SizedBox(height:10),LinearProgressIndicator(value:reviewed/items.length,minHeight:6,borderRadius:BorderRadius.circular(4)),
             const SizedBox(height:20),Align(alignment:Alignment.centerRight,child:OutlinedButton.icon(icon:Icon(finalized?Icons.assignment_outlined:Icons.send_outlined),
               onPressed:()=>open('/resumo?consulta=${g['id_consulta']}&orgao=${g['id_orgao']}'),
@@ -137,7 +115,7 @@ class _TiposScreenState extends State<TiposScreen> {
                     DataColumn(label:Text('ID')),
                     DataColumn(label:Text('Tipo de Processo')),
                     DataColumn(label:Text('Órgão')),
-                    DataColumn(label:Text('Revisão')),
+                    DataColumn(label:Text('Avaliação')),
                     DataColumn(label:Text('')),
                   ],
                   rows:visible.map((r)=>DataRow(cells:[
@@ -158,7 +136,7 @@ class _TiposScreenState extends State<TiposScreen> {
                             :r['decisao_tipo']=='DESCONTINUAR'
                               ?'Descontinuação proposta'
                               :pending(r)==0
-                                ?'Revisão completa'
+                                ?'Avaliação completa'
                                 :'${pending(r)} vínculos pendentes',
                       )),
                     DataCell(Align(
