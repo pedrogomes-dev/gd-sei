@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class IndicadorCard extends StatelessWidget {
   final String titulo;
   final int quantidade;
-  final int quantidadeOrgaos;
+  final int? quantidadeOrgaos;
   final VoidCallback aoSelecionar;
   final IconData icone;
   final Color cor;
@@ -13,7 +13,7 @@ class IndicadorCard extends StatelessWidget {
     super.key,
     required this.titulo,
     required this.quantidade,
-    required this.quantidadeOrgaos,
+    this.quantidadeOrgaos,
     required this.aoSelecionar,
     required this.icone,
     required this.cor,
@@ -49,7 +49,7 @@ class IndicadorCard extends StatelessWidget {
               const SizedBox(height: 12),
               Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 Text('$quantidade', style: Theme.of(context).textTheme.headlineMedium),
-                Text('($quantidadeOrgaos $orgaos)'),
+                if (quantidadeOrgaos != null) Text('($quantidadeOrgaos $orgaos)'),
               ]),
             ],
           ),
