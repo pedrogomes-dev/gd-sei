@@ -83,7 +83,19 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         ...items.map((row)=>TableRow(children:[
           IconButton(tooltip:'Propriedades',icon:const Icon(Icons.info_outline),onPressed:()=>properties(Map<String,dynamic>.from(row as Map))),
           if(subjects)cell(Text((row['codigo_estruturado']??'—').toString())),
-          cell(Text((row[subjects?'descricao':'nome']??'—').toString())),
+          cell(subjects ? Padding(
+            padding: EdgeInsets.only(left: (int.tryParse(
+              (row['nivel_hierarquia'] ?? 0).toString(),
+            ) ?? 0).clamp(0, 12) * 20.0),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if ((int.tryParse((row['nivel_hierarquia'] ?? 0).toString()) ?? 0) > 0)
+                const Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: Icon(Icons.subdirectory_arrow_right, size: 18, color: Colors.blueGrey),
+                ),
+              Expanded(child: Text((row['descricao'] ?? '—').toString())),
+            ]),
+          ) : Text((row['nome'] ?? '—').toString())),
           cell(Align(alignment:Alignment.centerLeft,child:row['sin_ativo']=='S'?const StatusTag('ATIVO'):row['sin_ativo']=='N'?const StatusTag('INATIVO'):const StatusTag('PENDENTE',label:'Não informado'))),
         ])),
       ]);
