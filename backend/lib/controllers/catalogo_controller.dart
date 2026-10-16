@@ -137,7 +137,30 @@ class CatalogoController {
       operation: 'consultar_catalogo',
     );
 
+    // A base possui poucos vínculos; carregá-los de uma vez mantém a expansão
+    // totalmente local no frontend e evita uma API específica por clique.
+    final vinculos = await banco.query('''
+      SELECT
+        rel.id_tipo_procedimento,
+        tipo.nome AS tipo_nome,
+        tipo.sin_ativo AS tipo_sin_ativo,
+        rel.id_assunto_proxy AS id_assunto,
+        assunto.codigo_estruturado AS assunto_codigo,
+        assunto.descricao AS assunto_descricao,
+        assunto.sin_ativo AS assunto_sin_ativo
+      FROM dbo.rel_tipo_procedimento_assunto rel
+      JOIN dbo.tipo_procedimento tipo
+        ON tipo.versao = rel.versao
+       AND tipo.id_tipo_procedimento = rel.id_tipo_procedimento
+      JOIN dbo.assunto assunto
+        ON assunto.versao = rel.versao
+       AND assunto.id_assunto = rel.id_assunto_proxy
+      WHERE rel.versao = ?
+      ORDER BY rel.id_tipo_procedimento, rel.sequencia
+    ''', params: [versao], operation: 'consultar_vinculos_catalogo');
+
     return {
+      'vinculos': vinculos,
       'itens': registros.take(50).toList(),
       'mais': registros.length > 50,
       'versao': versao,
