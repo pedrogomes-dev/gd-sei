@@ -159,8 +159,21 @@ class CatalogoController {
       ORDER BY rel.id_tipo_procedimento, rel.sequencia
     ''', params: [versao], operation: 'consultar_vinculos_catalogo');
 
+    final orgaosTipos = await banco.query('''
+      SELECT DISTINCT
+        atribuicao.id_tipo_procedimento,
+        orgao.id_orgao,
+        orgao.sigla,
+        orgao.nome
+      FROM dbo.consulta_orgao_tipo atribuicao
+      JOIN dbo.orgao orgao ON orgao.id_orgao = atribuicao.id_orgao
+      WHERE atribuicao.versao = ?
+      ORDER BY atribuicao.id_tipo_procedimento, orgao.sigla
+    ''', params: [versao], operation: 'consultar_orgaos_tipos_catalogo');
+
     return {
       'vinculos': vinculos,
+      'orgaos_tipos': orgaosTipos,
       'itens': registros.take(50).toList(),
       'mais': registros.length > 50,
       'versao': versao,
