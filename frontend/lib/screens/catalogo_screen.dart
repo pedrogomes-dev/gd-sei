@@ -20,6 +20,8 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
   int offset=0,generation=0;
   bool busy=false,more=false;
   List<dynamic> items=[];
+  List<dynamic> links=[];
+  final Set<int> expanded={};
   String? error;
   bool get subjects=>widget.kind=='assuntos';
   @override void dispose(){query.dispose();super.dispose();}
@@ -31,6 +33,8 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       final result=await ApiService().catalog(widget.kind,text,page,version:next||previous?version:null,state:state);
       if (mounted && request == generation) setState(() {
         items = result['itens'] as List<dynamic>;
+        links = result['vinculos'] as List<dynamic>? ?? [];
+        expanded.clear();
         quantidades = Map<String, dynamic>.from(result['quantidades'] as Map? ?? {})
             .map((key, value) => MapEntry(key, int.parse(value.toString())));
         total = int.parse(result['total'].toString());
@@ -63,42 +67,126 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       ),
     );
   }
+  List<Map<String, dynamic>> linksFor(Map<String, dynamic> row) {
+    final id = int.parse(
+      row[subjects ? 'id_assunto' : 'id_tipo_procedimento'].toString(),
+    );
+    return links
+        .where((item) => int.parse(
+          (item[subjects ? 'id_assunto' : 'id_tipo_procedimento']).toString(),
+        ) == id)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
   Widget resultTable() {
-    Widget cell(Widget child)=>Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:16),child:child);
+    Widget cell(Widget child)=>Padding(
+      padding:const EdgeInsets.symmetric(horizontal:12,vertical:16),
+      child:child,
+    );
     final descriptionColumn=subjects?2:1;
+    final rows=<TableRow>[
+      TableRow(decoration:const BoxDecoration(color:Color(0xfff5f7fa)),children:[
+        const SizedBox.shrink(),
+        if(subjects)cell(const Text('Código')),
+        cell(const Text('Descrição')),
+        cell(const Text('Estado')),
+      ]),
+    ];
+
+    for (final item in items) {
+      final row=Map<String,dynamic>.from(item as Map);
+      final id=int.parse(
+        row[subjects?'id_assunto':'id_tipo_procedimento'].toString(),
+      );
+      final related=linksFor(row);
+      final isExpanded=expanded.contains(id);
+
+      rows.add(TableRow(children:[
+        Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+          IconButton(
+            tooltip:isExpanded?'Recolher vínculos':'Exibir vínculos',
+            icon:Icon(isExpanded?Icons.expand_more:Icons.chevron_right),
+            onPressed:related.isEmpty?null:()=>setState(() {
+              isExpanded?expanded.remove(id):expanded.add(id);
+            }),
+          ),
+          IconButton(
+            tooltip:'Propriedades',
+            icon:const Icon(Icons.info_outline),
+            onPressed:()=>properties(row),
+          ),
+        ]),
+        if(subjects)cell(Text((row['codigo_estruturado']??'—').toString())),
+        cell(subjects ? Padding(
+          padding: EdgeInsets.only(left: (int.tryParse(
+            (row['nivel_hierarquia'] ?? 0).toString(),
+          ) ?? 0).clamp(0, 12) * 20.0),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if ((int.tryParse((row['nivel_hierarquia'] ?? 0).toString()) ?? 0) > 0)
+              const Padding(
+                padding: EdgeInsets.only(right: 6),
+                child: Icon(Icons.subdirectory_arrow_right, size: 18, color: Colors.blueGrey),
+              ),
+            Expanded(child: Text((row['descricao'] ?? '—').toString())),
+          ]),
+        ) : Text((row['nome'] ?? '—').toString())),
+        cell(Align(
+          alignment:Alignment.centerLeft,
+          child:row['sin_ativo']=='S'
+              ?const StatusTag('ATIVO')
+              :row['sin_ativo']=='N'
+                  ?const StatusTag('INATIVO')
+                  :const StatusTag('PENDENTE',label:'Não informado'),
+        )),
+      ]));
+
+      if (isExpanded) {
+        for (final link in related) {
+          final active=(link[subjects?'tipo_sin_ativo':'assunto_sin_ativo']).toString();
+          final description=subjects
+              ? (link['tipo_nome']??'—').toString()
+              : '${link['assunto_codigo']??'—'} — ${link['assunto_descricao']??'—'}';
+          rows.add(TableRow(
+            decoration:const BoxDecoration(color:Color(0xfff8fafc)),
+            children:[
+              const SizedBox.shrink(),
+              if(subjects)cell(const Text('↳',textAlign:TextAlign.right)),
+              cell(Padding(
+                padding:const EdgeInsets.only(left:20),
+                child:Row(children:[
+                  const Icon(Icons.link,size:16,color:Colors.blueGrey),
+                  const SizedBox(width:8),
+                  Expanded(child:Text(description)),
+                ]),
+              )),
+              cell(Align(
+                alignment:Alignment.centerLeft,
+                child:active=='S'
+                    ?const StatusTag('ATIVO')
+                    :active=='N'
+                        ?const StatusTag('INATIVO')
+                        :const StatusTag('PENDENTE',label:'Não informado'),
+              )),
+            ],
+          ));
+        }
+      }
+    }
+
     return Table(
       columnWidths:{
-        0:const FixedColumnWidth(48),
+        0:const FixedColumnWidth(96),
         if(subjects)1:const FixedColumnWidth(100),
         descriptionColumn:const FlexColumnWidth(),
         descriptionColumn+1:const FixedColumnWidth(120),
       },
       defaultVerticalAlignment:TableCellVerticalAlignment.middle,
-      border:const TableBorder(horizontalInside:BorderSide(color:Color(0xffe2e8f0))),
-      children:[
-        TableRow(decoration:const BoxDecoration(color:Color(0xfff5f7fa)),children:[
-          const SizedBox.shrink(),if(subjects)cell(const Text('Código')),
-          cell(const Text('Descrição')),cell(const Text('Estado')),
-        ]),
-        ...items.map((row)=>TableRow(children:[
-          IconButton(tooltip:'Propriedades',icon:const Icon(Icons.info_outline),onPressed:()=>properties(Map<String,dynamic>.from(row as Map))),
-          if(subjects)cell(Text((row['codigo_estruturado']??'—').toString())),
-          cell(subjects ? Padding(
-            padding: EdgeInsets.only(left: (int.tryParse(
-              (row['nivel_hierarquia'] ?? 0).toString(),
-            ) ?? 0).clamp(0, 12) * 20.0),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if ((int.tryParse((row['nivel_hierarquia'] ?? 0).toString()) ?? 0) > 0)
-                const Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: Icon(Icons.subdirectory_arrow_right, size: 18, color: Colors.blueGrey),
-                ),
-              Expanded(child: Text((row['descricao'] ?? '—').toString())),
-            ]),
-          ) : Text((row['nome'] ?? '—').toString())),
-          cell(Align(alignment:Alignment.centerLeft,child:row['sin_ativo']=='S'?const StatusTag('ATIVO'):row['sin_ativo']=='N'?const StatusTag('INATIVO'):const StatusTag('PENDENTE',label:'Não informado'))),
-        ])),
-      ]);
+      border:const TableBorder(
+        horizontalInside:BorderSide(color:Color(0xffe2e8f0)),
+      ),
+      children:rows,
+    );
   }
   void filtrarEstado(String opcao) {
     setState(() => state = state == opcao ? 'TODOS' : opcao);
