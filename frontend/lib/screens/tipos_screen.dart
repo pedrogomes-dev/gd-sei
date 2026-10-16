@@ -41,9 +41,9 @@ class _TiposScreenState extends State<TiposScreen> {
     if(row['status']=='FINALIZADA')return 'Finalizada';
     if(!isViewed(row))return 'Não visualizado';
     if(row['decisao_tipo']==null)return 'Decisão sobre o Tipo pendente';
-    if(row['decisao_tipo']=='DESCONTINUAR')return 'Descontinuação proposta';
+    if(row['decisao_tipo']=='DESCONTINUAR')return 'Descontinuar';
     final pendingLinks=pending(row);
-    return pendingLinks==0?'Avaliação completa':'$pendingLinks vínculos pendentes';
+    return pendingLinks==0?'Avaliado':'$pendingLinks vínculos pendentes';
   }
 
   Widget evaluationTag(dynamic row)=>StatusTag(
@@ -55,7 +55,7 @@ class _TiposScreenState extends State<TiposScreen> {
     final options=[
       ('TODOS','Todos',Icons.list_alt,Colors.blue.shade800),
       ('PENDENTES','Pendentes',Icons.pending_actions,Colors.red.shade800),
-      ('EM_AVALIACAO','Em avaliação',Icons.edit_outlined,const Color(0xff9a4300)),
+      ('EM_AVALIACAO','Em avaliação',Icons.edit_outlined,Colors.amber.shade900),
       ('AVALIADOS','Avaliados',Icons.fact_check_outlined,Colors.green.shade800),
     ];
     return LayoutBuilder(builder:(context,size){

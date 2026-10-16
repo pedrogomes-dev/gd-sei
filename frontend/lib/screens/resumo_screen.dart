@@ -141,7 +141,7 @@ class _ResumoScreenState extends State<ResumoScreen> {
         SizedBox(width: largura, child: indicador('Inclusões',
             contarDecisoes(decisoes, 'ADICIONAR'), 'Vínculos', Icons.add_circle_outline, Colors.green.shade800)),
         SizedBox(width: largura, child: indicador('Pendentes',
-            contarTiposPendentes(tipos), 'Tipos de Processo', Icons.pending_actions, const Color(0xff9a4300))),
+            contarTiposPendentes(tipos), 'Tipos de Processo', Icons.pending_actions, Colors.amber.shade900)),
       ]);
     });
   }

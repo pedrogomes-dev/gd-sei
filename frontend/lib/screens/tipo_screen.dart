@@ -360,7 +360,7 @@ class _TipoScreenState extends State<TipoScreen> {
           ),
           ChoiceChip(
             label: const Text('Sugerir Descontinuação'),
-            avatar: const Icon(Icons.block, color: Colors.red),
+            avatar: const Icon(Icons.cancel_outlined, color: Colors.red),
             selected: decisaoTipo == 'DESCONTINUAR',
             onSelected: finalizada || salvando ? null : (selecionado) => escolherDecisaoTipo(selecionado ? 'DESCONTINUAR' : null),
           ),

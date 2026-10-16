@@ -118,8 +118,8 @@ class ResumoTipoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final pendentes = tipo['pendentes'].toString();
     final descontinuar = tipo['decisao_tipo'] == 'DESCONTINUAR';
-    final revisao = tipo['decisao_tipo'] == null ? 'Decisão sobre o Tipo pendente'
-        : descontinuar ? 'Avaliação dos vínculos dispensada'
+    final revisao = tipo['decisao_tipo'] == null ? 'Aguardando Avaliação'
+        : descontinuar ? 'Avaliação dispensada'
         : pendentes == '0' ? 'Revisão completa' : '$pendentes vínculos pendentes';
     final observacao = tipo['observacao']?.toString() ?? '';
 
@@ -143,8 +143,8 @@ class ResumoTipoCard extends StatelessWidget {
               children: [
                 if (tipo['decisao_tipo'] != null)
                   botaoResumo(
-                    descontinuar ? 'Sugestão de descontinuação' : 'Manter Tipo de Processo',
-                    descontinuar ? Icons.block : Icons.check_circle_outline,
+                    descontinuar ? 'Sugestão de Descontinuação' : 'Manter Tipo de Processo',
+                    descontinuar ? Icons.cancel_outlined : Icons.check_circle_outline,
                     descontinuar ? Colors.red.shade800 : Colors.blue.shade800,
                   ),
                 botaoResumo(
