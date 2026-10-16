@@ -136,7 +136,7 @@ class _TiposScreenState extends State<TiposScreen> {
                             :r['decisao_tipo']=='DESCONTINUAR'
                               ?'Descontinuação proposta'
                               :pending(r)==0
-                                ?'Revisão completa'
+                                ?'Avaliação completa'
                                 :'${pending(r)} vínculos pendentes',
                       )),
                     DataCell(Align(
