@@ -168,7 +168,7 @@ class _TiposScreenState extends State<TiposScreen> {
                         child:const Text('Abrir'),
                       ),
                     )),
-                  ]).toList(),
+                  ])).toList(),
                 )),
               );
             }),
