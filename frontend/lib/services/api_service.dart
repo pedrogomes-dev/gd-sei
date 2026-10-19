@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/browser_client.dart';
+import 'api_exception.dart';
 
 class ApiService {
   static const baseUrl=String.fromEnvironment('API_BASE_URL',defaultValue:'http://localhost:8080');
@@ -10,7 +11,8 @@ class ApiService {
       _client.post(uri,headers:{'Content-Type':'application/json'},body:jsonEncode(data)))
       .timeout(timeout);
     final decoded=jsonDecode(response.body);
-    if(response.statusCode!=200) throw Exception(decoded is Map ? decoded['error'] : 'Falha na API');
+    if(response.statusCode!=200) throw ApiException(response.statusCode,
+      decoded is Map ? decoded['error']?.toString() ?? 'Falha na API' : 'Falha na API');
     return decoded;
   }
   Future<Map<String,dynamic>> profile() async => await request('/api/auth/me') as Map<String,dynamic>;

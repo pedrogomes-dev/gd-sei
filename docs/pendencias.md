@@ -15,6 +15,10 @@ Texto/binário vazio no ODBC foi corrigido e verificado no SQL Server. Catálogo
 administração e nova distribuição reutilizam IndicadorCard. Esses itens não
 permanecem como defeitos abertos.
 
+O botão de nova tentativa em Início/Tipos/Resumo e submissão agora abre o login
+para HTTP 401 e limpa a pilha protegida. Quatro testes de navegação/repetição
+passaram; falta homologar com sessão real. Outros erros mantêm a recarga.
+
 ## 2. Testes e homologações pendentes
 
 | Prioridade | Pendência | Situação efetiva |

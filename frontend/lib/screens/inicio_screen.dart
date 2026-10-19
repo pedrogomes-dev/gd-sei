@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/display_fields.dart';
 import '../widgets/inicio/indicador_card.dart';
 import '../widgets/inicio/tabela_orgaos.dart';
 
@@ -19,7 +20,7 @@ class _InicioScreenState extends State<InicioScreen> {
   int? idConsulta;
   Map<String, dynamic>? dados;
   bool carregando = true;
-  String? erro;
+  Object? erro;
   String filtro = 'Todos';
 
   @override
@@ -53,7 +54,7 @@ class _InicioScreenState extends State<InicioScreen> {
         dados = resultado;
       });
     } catch (falha) {
-      if (mounted) setState(() => erro = falha.toString());
+      if (mounted) setState(() => erro = falha);
     } finally {
       if (mounted) setState(() => carregando = false);
     }
@@ -226,11 +227,7 @@ class _InicioScreenState extends State<InicioScreen> {
 
   Widget conteudo() {
     if (carregando) return const Center(child: CircularProgressIndicator());
-    if (erro != null) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Text(erro!),
-      const SizedBox(height: 16),
-      OutlinedButton(onPressed: carregar, child: const Text('Tentar novamente')),
-    ]));
+    if (erro != null) return Center(child: ApiErrorMessage(error: erro!, onRetry: carregar));
     if (rodadas.isEmpty) return const Center(child: Text('Nenhuma rodada de avaliação disponível para seu acesso.'));
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),

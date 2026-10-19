@@ -55,6 +55,13 @@ As rotas POST mantêm a validação de Origin existente no servidor. ALLOWED_ORI
 
 ## Verificação
 
+Em Início, Tipos atribuídos e Resumo e submissão, o botão **Tentar novamente**
+abre o login quando a API responde HTTP 401. A navegação remove as telas
+protegidas do histórico. Para outros erros, o botão repete o carregamento.
+O frontend preserva o status HTTP em `ApiException`, sem comparar mensagens.
+O teste `frontend/test/api_error_message_test.dart` cobre esses comportamentos
+com navegação Flutter simulada; a homologação com sessão real continua pendente.
+
 No backend:
 
 ```sh
