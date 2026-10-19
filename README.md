@@ -35,7 +35,13 @@ flutter run -d chrome --web-port 3000 --dart-define=API_BASE_URL=http://localhos
 
 ## Banco
 
-Crie um banco vazio no SQL Server 2016 SP1 ou posterior. Execute `database/001_base.sql` e `database/002_publicacao.sql`, nessa ordem, em ferramenta que interprete `GO`. Scripts de instalação não são migrações repetíveis. Carregue manualmente assuntos, tipos e vínculos nessa ordem e publique:
+Crie um banco vazio no SQL Server 2016 SP1 ou posterior, compatibilidade >=130.
+Siga a sequência completa em [docs/instalacao_banco.md](docs/instalacao_banco.md):
+`001 → 009 → 002 → carga/publicação → 004 → 005 → 006 → 007 → 008`.
+O complemento 009 provisiona a hierarquia e as referências usadas pelo código;
+não carrega dados. Use uma ferramenta que interprete `GO`. Os scripts antigos
+de instalação não são migrações repetíveis. Carregue manualmente assuntos
+(incluindo `id_assunto_pai` explícito), tipos e vínculos nessa ordem e publique:
 
 ```sql
 EXEC dbo.sp_publicar_versao_sei
