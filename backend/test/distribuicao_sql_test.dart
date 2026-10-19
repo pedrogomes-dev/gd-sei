@@ -15,23 +15,33 @@ Future<void> main() async {
     'orgaos_anteriores': [0],
     'orgaos': [0, 9],
   });
-  var sql = fake.sqlGravacao;
-  for (final tabela in [
-    'usuario',
-    'versao_base',
-    'tipo_procedimento',
-    'tipo_procedimento_restricao',
-    'orgao',
-    'auditoria'
-  ]) {
-    sql = sql.replaceAll(RegExp('dbo\\.$tabela\\b'), '#$tabela');
+  String sqlTemporario(String sql) {
+    for (final tabela in [
+      'usuario',
+      'versao_base',
+      'tipo_procedimento',
+      'tipo_procedimento_restricao',
+      'orgao',
+      'auditoria'
+    ]) {
+      sql = sql.replaceAll(RegExp('dbo\\.$tabela\\b'), '#$tabela');
+    }
+    conferir(!sql.contains('dbo.'),
+        'O teste não pode acessar tabelas persistentes.');
+    sql = sql.replaceAll("@Resource='carga_atribuicoes'",
+        "@Resource='teste_distribuicao_${DateTime.now().microsecondsSinceEpoch}'");
+    conferir(!sql.contains("'carga_atribuicoes'"),
+        'O teste não pode usar a trava de carga da aplicação.');
+    return sql;
   }
-  conferir(
-      !sql.contains('dbo.'), 'O teste não pode acessar tabelas persistentes.');
-  sql = sql.replaceAll("@Resource='carga_atribuicoes'",
-      "@Resource='teste_distribuicao_${DateTime.now().microsecondsSinceEpoch}'");
-  conferir(!sql.contains("'carga_atribuicoes'"),
-      'O teste não pode usar a trava de carga da aplicação.');
+
+  final sql = sqlTemporario(fake.sqlGravacao);
+  await AdministracaoController(fake).vincularDistribuicaoEmLote(1, {
+    'versao': 0,
+    'tipos': [7, 8],
+    'orgaos': [0, 9],
+  });
+  final sqlLote = sqlTemporario(fake.sqlLote);
   final config = DatabaseConfig.fromEnvironment();
   final banco = DatabaseRepository(config);
   final client = DartOdbc();
@@ -103,8 +113,64 @@ Future<void> main() async {
         'Remoção afetou outro Tipo.');
     conferir((await client.execute('SELECT * FROM #auditoria')).length == 2,
         'Auditoria da remoção ausente.');
+
+    Future<Map<String, dynamic>?> vincularLote(
+        List<int> tipos, List<int> orgaos,
+        {int administrador = 1, int versao = 1, int? erroEsperado}) async {
+      try {
+        final resultado = await client.execute(sqlLote, params: [
+          administrador,
+          versao,
+          jsonEncode(tipos),
+          jsonEncode(orgaos),
+        ]);
+        conferir(
+            erroEsperado == null, 'Lote deveria falhar com $erroEsperado.');
+        return resultado.single;
+      } catch (erro) {
+        final codigo = banco.failure(erro, 'teste_temporario').code;
+        if (erroEsperado != null && codigo == erroEsperado) return null;
+        rethrow;
+      }
+    }
+
+    await client.execute('INSERT #tipo_procedimento VALUES(1,8)');
+    await vincularLote([7, 8], [0, 9], administrador: 2, erroEsperado: 51401);
+    await vincularLote([7, 8], [0, 9], administrador: 3, erroEsperado: 51401);
+    await vincularLote([7, 8], [0, 9], versao: 0, erroEsperado: 51402);
+    await vincularLote([7, 999], [0, 9], erroEsperado: 51403);
+    await vincularLote([7, 8], [0, 999], erroEsperado: 51405);
+    conferir(
+        (await client.execute('SELECT * FROM #tipo_procedimento_restricao'))
+                .length ==
+            1,
+        'Lote inválido gravou parcialmente.');
+    conferir((await client.execute('SELECT * FROM #auditoria')).length == 2,
+        'Lote inválido não foi revertido.');
+    final incluidos = await vincularLote([7, 8], [0, 9]);
+    conferir(
+        incluidos!['vinculos_incluidos'].toString() == '4' &&
+            incluidos['tipos_alterados'].toString() == '2',
+        'Inclusão do lote incorreta.');
+    final repetido = await vincularLote([7, 8], [0, 9]);
+    conferir(repetido!['vinculos_incluidos'].toString() == '0',
+        'Lote repetido duplicou vínculos.');
+    final atuais =
+        await client.execute('SELECT * FROM #tipo_procedimento_restricao');
+    conferir(
+        atuais.length == 5 &&
+            atuais.any((r) =>
+                r['id_tipo_procedimento'].toString() == '8' &&
+                r['id_orgao'].toString() == '12'),
+        'O lote removeu vínculos atuais.');
+    final trilha = await client.execute(
+        "SELECT detalhe FROM #auditoria WHERE evento='DISTRIBUICAO_TIPOS'");
+    conferir(trilha.length == 2, 'Auditoria do lote ausente.');
+    final detalheLote = jsonDecode(trilha.first['detalhe'].toString());
+    conferir((detalheLote['vinculos_incluidos'] as List).length == 4,
+        'Auditoria dos pares incluídos incorreta.');
     print(
-        'Integração SQL: múltiplos órgãos, remoção, autorização, conflitos, versão e auditoria: OK. Somente tabelas temporárias; dados da aplicação preservados.');
+        'Integração SQL individual/lote: preservação, atomicidade, repetição sem duplicatas, autorização, versão e auditoria: OK. Somente tabelas temporárias.');
   } finally {
     // As tabelas temporárias são eliminadas pelo SQL Server ao desconectar.
     await client.disconnect();

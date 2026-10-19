@@ -23,8 +23,8 @@ permanecem como defeitos abertos.
 | Alta | Distribuição com duas sessões e carga 006 | Teste SQL passou em tabelas temporárias para conflitos, autorização, versão, rollback e auditoria. Conferir duas sessões reais, carga simultânea e permissões da credencial de produção. |
 | Alta | Decisão do Tipo e submissão | Confirmar 008 instalada, manter/descontinuar, justificativas, Tipo sem vínculos, concorrência, órgão 0 e bloqueio após finalizar. |
 | Alta | Instalação/publicação em banco descartável | 009, atualização de 002 e database/tests/publicacao_hierarquia.sql estão versionados. Instalação/migração com escrita ainda não executada. |
-| Média | Interface, filtros e totais no navegador | Distribuição: 627 Tipos lidos, seleção múltipla, filtros combinados, mais de 50 resultados e telas estreitas. Conferir também Home/Tipos, catálogo e administração. Build Web e testes do diálogo passaram; inspeção visual não executada. |
-| Média | Cobertura automatizada e CI | Quatro testes Flutter do editor passaram. Programas Dart de códigos, autenticação, Home e distribuição passaram. Não há CI nem cobertura completa dos fluxos. |
+| Média | Interface, filtros e totais no navegador | Conferir seleção de Tipos entre páginas/filtros, checkbox do cabeçalho, limpar seleção e vínculo em lote preservando vínculos. Conferir também Home/Tipos, catálogo e administração. Testes do diálogo e integração SQL executados; inspeção visual da tela completa não executada. |
+| Média | Cobertura automatizada e CI | Seis testes Flutter do editor, programas Dart e integração SQL temporária cobrem edição individual e inclusão em lote. Não há CI nem cobertura completa dos fluxos. |
 
 Comandos da funcionalidade: `dart run test/distribuicao_test.dart`,
 `dart run test/distribuicao_sql_test.dart`, `flutter test --no-pub` e

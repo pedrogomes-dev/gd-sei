@@ -227,6 +227,11 @@ class Router {
       json(request, await administracao.consultarDistribuicao(idAdministrador));
       return;
     }
+    if (metodo == 'POST' && caminho == '/api/admin/distribuicao/vincular') {
+      json(request, await administracao.vincularDistribuicaoEmLote(
+        idAdministrador, await body(request)));
+      return;
+    }
     final rotaDistribuicao =
         RegExp(r'^/api/admin/distribuicao/tipos/(\d+)$').firstMatch(caminho);
     if (metodo == 'POST' && rotaDistribuicao != null) {

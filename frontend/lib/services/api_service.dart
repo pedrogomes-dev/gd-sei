@@ -43,6 +43,14 @@ class ApiService {
     });
   }
 
+  Future<Map<String, dynamic>> vincularDistribuicaoEmLote(
+    int versao, List<int> tipos, List<int> orgaos,
+  ) async {
+    return await request('/api/admin/distribuicao/vincular', data: {
+      'versao': versao, 'tipos': tipos, 'orgaos': orgaos,
+    }) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> listarUsuarios(
     String pesquisa,
     String situacao,

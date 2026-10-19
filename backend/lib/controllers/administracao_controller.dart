@@ -158,17 +158,17 @@ class AdministracaoController {
     };
   }
 
-  List<int> validarOrgaosDistribuicao(dynamic valor) {
+  List<int> validarIdsDistribuicao(dynamic valor, String campo) {
     if (valor is! List || valor.length > 2000) {
-      throw ApiError(400, 'Lista de órgãos inválida.');
+      throw ApiError(400, 'Lista de $campo inválida.');
     }
-    final orgaos = <int>{};
+    final ids = <int>{};
     for (final id in valor) {
-      if (!Validacoes.inteiroSqlValido(id) || !orgaos.add(id as int)) {
-        throw ApiError(400, 'Lista de órgãos inválida ou duplicada.');
+      if (!Validacoes.inteiroSqlValido(id) || !ids.add(id as int)) {
+        throw ApiError(400, 'Lista de $campo inválida ou duplicada.');
       }
     }
-    return orgaos.toList()..sort();
+    return ids.toList()..sort();
   }
 
   Future<void> salvarDistribuicao(
@@ -181,8 +181,9 @@ class AdministracaoController {
     if (!Validacoes.inteiroSqlValido(versao) || (versao as int) < 0) {
       throw ApiError(400, 'Versão inválida.');
     }
-    final anteriores = validarOrgaosDistribuicao(dados['orgaos_anteriores']);
-    final selecionados = validarOrgaosDistribuicao(dados['orgaos']);
+    final anteriores =
+        validarIdsDistribuicao(dados['orgaos_anteriores'], 'órgãos');
+    final selecionados = validarIdsDistribuicao(dados['orgaos'], 'órgãos');
     const sql = '''
       SET NOCOUNT ON; SET XACT_ABORT ON;
       BEGIN TRY
@@ -246,20 +247,102 @@ class AdministracaoController {
           ],
           operation: 'salvar_distribuicao');
     } on DatabaseFailure catch (erro) {
-      const mensagens = {
-        51400: (409, 'Distribuição ocupada. Tente novamente.'),
-        51401: (403, 'Acesso restrito à administração.'),
-        51402: (409, 'A base publicada mudou. Atualize a listagem.'),
-        51403: (404, 'Tipo de Processo inexistente nesta versão.'),
-        51404: (
-          409,
-          'Os vínculos foram alterados. Atualize a listagem antes de editar.'
-        ),
-        51405: (400, 'Órgão inexistente.'),
-      };
-      final mensagem = mensagens[erro.code];
-      if (mensagem == null) rethrow;
-      throw ApiError(mensagem.$1, mensagem.$2);
+      throw traduzirErroDistribuicao(erro);
+    }
+  }
+
+  Object traduzirErroDistribuicao(DatabaseFailure erro) {
+    const mensagens = {
+      51400: (409, 'Distribuição ocupada. Tente novamente.'),
+      51401: (403, 'Acesso restrito à administração.'),
+      51402: (409, 'A base publicada mudou. Atualize a listagem.'),
+      51403: (404, 'Tipo de Processo inexistente nesta versão.'),
+      51404: (
+        409,
+        'Os vínculos foram alterados. Atualize a listagem antes de editar.'
+      ),
+      51405: (400, 'Órgão inexistente.'),
+    };
+    final mensagem = mensagens[erro.code];
+    if (mensagem == null) return erro;
+    return ApiError(mensagem.$1, mensagem.$2);
+  }
+
+  Future<Map<String, dynamic>> vincularDistribuicaoEmLote(
+    int idAdministrador,
+    Map<String, dynamic> dados,
+  ) async {
+    await verificarAdministrador(idAdministrador);
+    final versao = dados['versao'];
+    if (!Validacoes.inteiroSqlValido(versao) || (versao as int) < 0) {
+      throw ApiError(400, 'Versão inválida.');
+    }
+    final tipos = validarIdsDistribuicao(dados['tipos'], 'Tipos de Processo');
+    final orgaos = validarIdsDistribuicao(dados['orgaos'], 'órgãos');
+    if (tipos.isEmpty || orgaos.isEmpty) {
+      throw ApiError(400, 'Selecione ao menos um Tipo de Processo e um órgão.');
+    }
+    const sql = '''
+      SET NOCOUNT ON; SET XACT_ABORT ON;
+      BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @administrador int=?, @versao int=?,
+          @tiposJson nvarchar(max)=?, @orgaosJson nvarchar(max)=?, @lock int;
+        EXEC @lock=sys.sp_getapplock @Resource='carga_atribuicoes',
+          @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=15000;
+        IF @lock<0 THROW 51400,'Distribuicao ocupada.',1;
+        IF NOT EXISTS(SELECT 1 FROM dbo.usuario WITH(HOLDLOCK)
+          WHERE id_usuario=@administrador AND sin_ativo='S' AND sin_admin='S')
+          THROW 51401,'Administrador nao autorizado.',1;
+        IF @versao<>(SELECT MAX(versao) FROM dbo.versao_base WITH(HOLDLOCK))
+          THROW 51402,'A base publicada mudou.',1;
+        DECLARE @tipos TABLE(id_tipo_procedimento int PRIMARY KEY);
+        DECLARE @orgaos TABLE(id_orgao int PRIMARY KEY);
+        DECLARE @novos TABLE(id_tipo_procedimento int,id_orgao int);
+        INSERT @tipos SELECT CONVERT(int,value) FROM OPENJSON(@tiposJson);
+        INSERT @orgaos SELECT CONVERT(int,value) FROM OPENJSON(@orgaosJson);
+        IF EXISTS(SELECT 1 FROM @tipos t WHERE NOT EXISTS(
+          SELECT 1 FROM dbo.tipo_procedimento WITH(HOLDLOCK)
+          WHERE versao=@versao AND id_tipo_procedimento=t.id_tipo_procedimento))
+          THROW 51403,'Tipo inexistente nesta versao.',1;
+        IF EXISTS(SELECT 1 FROM @orgaos o WHERE NOT EXISTS(
+          SELECT 1 FROM dbo.orgao WITH(HOLDLOCK) WHERE id_orgao=o.id_orgao))
+          THROW 51405,'Orgao inexistente.',1;
+        -- Somente acrescenta os pares ausentes; preserva vínculos atuais.
+        INSERT dbo.tipo_procedimento_restricao(id_tipo_procedimento,id_orgao)
+          OUTPUT inserted.id_tipo_procedimento,inserted.id_orgao INTO @novos
+          SELECT t.id_tipo_procedimento,o.id_orgao FROM @tipos t CROSS JOIN @orgaos o
+          WHERE NOT EXISTS(SELECT 1 FROM dbo.tipo_procedimento_restricao r WITH(UPDLOCK,HOLDLOCK)
+            WHERE r.id_tipo_procedimento=t.id_tipo_procedimento AND r.id_orgao=o.id_orgao);
+        DECLARE @detalhe nvarchar(max)=(
+          SELECT @versao AS versao,JSON_QUERY(@tiposJson) AS tipos,
+            JSON_QUERY(@orgaosJson) AS orgaos,
+            JSON_QUERY((SELECT id_tipo_procedimento,id_orgao FROM @novos
+              ORDER BY id_tipo_procedimento,id_orgao FOR JSON PATH)) AS vinculos_incluidos
+          FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
+        INSERT dbo.auditoria(id_usuario,evento,detalhe)
+          VALUES(@administrador,'DISTRIBUICAO_TIPOS',@detalhe);
+        COMMIT;
+        SELECT COUNT(*) AS vinculos_incluidos,
+          COUNT(DISTINCT id_tipo_procedimento) AS tipos_alterados FROM @novos;
+      END TRY
+      BEGIN CATCH
+        IF XACT_STATE()<>0 ROLLBACK;
+        THROW;
+      END CATCH;
+    ''';
+    try {
+      final resultado = await banco.query(sql,
+          params: [
+            idAdministrador,
+            versao,
+            jsonEncode(tipos),
+            jsonEncode(orgaos),
+          ],
+          operation: 'vincular_distribuicao_lote');
+      return resultado.single;
+    } on DatabaseFailure catch (erro) {
+      throw traduzirErroDistribuicao(erro);
     }
   }
 
