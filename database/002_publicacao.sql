@@ -1,3 +1,5 @@
+-- Instalação nova: executar 001 e 009 antes deste script.
+-- Pode ser reaplicado para atualizar a procedure, sem publicar dados.
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
@@ -35,13 +37,24 @@ BEGIN
   IF EXISTS (SELECT 1 FROM dbo.ref_rel_tipo_procedimento_assunto
    GROUP BY id_tipo_procedimento,id_assunto_proxy HAVING COUNT(*)>1)
    THROW 51008, 'Vinculo Tipo x Assunto duplicado.', 1;
+  IF EXISTS (SELECT 1 FROM dbo.ref_assunto filho
+   WHERE filho.id_assunto_pai IS NOT NULL AND (
+    filho.id_assunto_pai=filho.id_assunto OR NOT EXISTS (
+     SELECT 1 FROM dbo.ref_assunto pai WHERE pai.id_assunto=filho.id_assunto_pai)))
+   THROW 51009, 'Pai de Assunto inexistente ou igual ao proprio Assunto.', 1;
+  -- Uma base antiga pode ter hierarquia apenas no snapshot. Não a perder
+  -- silenciosamente: a referência deve ser completada pela fonte oficial.
+  IF EXISTS (SELECT 1 FROM dbo.ref_assunto fonte
+   JOIN dbo.assunto anterior ON anterior.id_assunto=fonte.id_assunto AND anterior.sin_ultima='S'
+   WHERE anterior.id_assunto_pai IS NOT NULL AND fonte.id_assunto_pai IS NULL)
+   THROW 51010, 'Carregue a hierarquia explicita na referencia antes de publicar.', 1;
   SELECT @versao=ISNULL(MAX(versao),-1)+1 FROM dbo.versao_base WITH (UPDLOCK,HOLDLOCK);
   -- Registro pai precede as copias por causa das FKs; tudo participa da mesma transacao.
   INSERT dbo.versao_base(versao,usuario_carga,origem,observacao)
    VALUES(@versao,@usuario_carga,@origem,@observacao);
   UPDATE dbo.assunto SET sin_ultima='N' WHERE sin_ultima='S';
-  INSERT dbo.assunto(id_assunto,codigo_estruturado,descricao,observacao,idx_assunto,sin_ativo,prazo_intermediario,prazo_corrente,sta_destinacao,sin_estrutural,id_tabela_assuntos,versao,sin_ultima)
-   SELECT id_assunto,codigo_estruturado,descricao,observacao,idx_assunto,sin_ativo,prazo_intermediario,prazo_corrente,sta_destinacao,sin_estrutural,id_tabela_assuntos,@versao,'S' FROM dbo.ref_assunto;
+  INSERT dbo.assunto(id_assunto,codigo_estruturado,descricao,observacao,idx_assunto,sin_ativo,prazo_intermediario,prazo_corrente,sta_destinacao,sin_estrutural,id_tabela_assuntos,id_assunto_pai,versao,sin_ultima)
+   SELECT id_assunto,codigo_estruturado,descricao,observacao,idx_assunto,sin_ativo,prazo_intermediario,prazo_corrente,sta_destinacao,sin_estrutural,id_tabela_assuntos,id_assunto_pai,@versao,'S' FROM dbo.ref_assunto;
   UPDATE dbo.tipo_procedimento SET sin_ultima='N' WHERE sin_ultima='S';
   INSERT dbo.tipo_procedimento(id_tipo_procedimento,nome,descricao,sin_ativo,sta_nivel_acesso_sugestao,sin_interno,sin_ouvidoria,sin_individual,id_hipotese_legal_sugestao,sta_grau_sigilo_sugestao,id_plano_trabalho,sin_ouvidoria_anonimo,versao,sin_ultima)
    SELECT id_tipo_procedimento,nome,descricao,sin_ativo,sta_nivel_acesso_sugestao,sin_interno,sin_ouvidoria,sin_individual,id_hipotese_legal_sugestao,sta_grau_sigilo_sugestao,id_plano_trabalho,sin_ouvidoria_anonimo,@versao,'S' FROM dbo.ref_tipo_procedimento;
