@@ -55,6 +55,9 @@ As rotas POST mantêm a validação de Origin existente no servidor. ALLOWED_ORI
 
 ## Verificação
 
+O endereço raiz e rotas desconhecidas exibem o login. A tela provisória de
+"Estrutura inicial" foi removida, inclusive sua consulta de health no frontend.
+
 Em Início, Tipos atribuídos e Resumo e submissão, o botão **Tentar novamente**
 abre o login quando a API responde HTTP 401. A navegação remove as telas
 protegidas do histórico. Para outros erros, o botão repete o carregamento.

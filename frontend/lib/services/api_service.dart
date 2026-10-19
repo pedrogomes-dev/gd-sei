@@ -98,7 +98,6 @@ class ApiService {
     return await request(endereco) as Map<String, dynamic>;
   }
 
-  Future<String> health() async => (await request('/api/health'))['status'] as String;
   Future<void> login(String email,String token) async { await request('/api/auth/dev',data:{'email':email,'token':token}); }
   Future<Map<String, dynamic>> configurarAcesso() async {
     return await request('/api/auth/config') as Map<String, dynamic>;
