@@ -62,6 +62,12 @@ O frontend preserva o status HTTP em `ApiException`, sem comparar mensagens.
 O teste `frontend/test/api_error_message_test.dart` cobre esses comportamentos
 com navegação Flutter simulada; a homologação com sessão real continua pendente.
 
+O endpoint de logout também aceita sessão ausente, desconhecida ou revogada:
+limpa o cookie e retorna sucesso, permitindo que **Sair** abra o login. Sessões
+válidas são invalidadas e continuam gerando LOGOUT na auditoria; repetir a
+saída não duplica esse evento. Os testes HTTP de autenticação cobrem esses
+casos com banco e SMTP simulados. As demais rotas continuam exigindo sessão.
+
 No backend:
 
 ```sh

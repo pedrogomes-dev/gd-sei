@@ -74,6 +74,10 @@ Future<void> main() async {
           await auth.entrarEmail(request, dados);
           request.response.write('{}');
           break;
+        case '/logout':
+          await auth.logout(request);
+          request.response.write('{}');
+          break;
         case '/sessao':
           final id = await auth.authorize(request);
           request.response.write(jsonEncode({'id': id}));
@@ -144,7 +148,48 @@ Future<void> main() async {
     verificar(falha.status == 503, 'Falha de envio ignorada.');
     final cancelado = await chamar('/entrar', {'email': endereco, 'codigo': email.codigo!});
     verificar(cancelado.status == 401, 'Código do envio malsucedido foi aceito.');
-    print('Autenticação: cadastro ativo, auditoria, uso único, sessão, revogação e falha SMTP verificados.');
+    void conferirSaida(
+        ({int status, String corpo, List<Cookie> cookies}) resposta) {
+      verificar(resposta.status == 200, 'Logout exigiu uma sessão ativa.');
+      verificar(
+          resposta.cookies.single.name == 'sei_session' &&
+              resposta.cookies.single.maxAge == 0 &&
+              resposta.cookies.single.path == '/api',
+          'Logout não limpou o cookie da sessão.');
+    }
+
+    conferirSaida(await chamar('/logout', {}));
+    conferirSaida(await chamar('/logout', {},
+        cookies: [Cookie('sei_session', 'sessao-desconhecida')]));
+    conferirSaida(await chamar('/logout', {}, cookies: login.cookies));
+    verificar(banco.eventos.length == 1,
+        'Logout sem sessão gerou auditoria atribuída a usuário.');
+
+    email.falhar = false;
+    instante = instante.add(const Duration(minutes: 1));
+    await chamar('/codigo', {'email': endereco});
+    final novaSessao =
+        await chamar('/entrar', {'email': endereco, 'codigo': email.codigo!});
+    conferirSaida(await chamar('/logout', {}, cookies: novaSessao.cookies));
+    verificar(banco.eventos.last == 'LOGOUT',
+        'Logout de sessão válida não foi auditado.');
+    verificar(
+        (await chamar('/sessao', {}, cookies: novaSessao.cookies)).status ==
+            401,
+        'Sessão continuou válida após logout.');
+    final eventosAposSaida = banco.eventos.length;
+    conferirSaida(await chamar('/logout', {}, cookies: novaSessao.cookies));
+    verificar(banco.eventos.length == eventosAposSaida,
+        'Repetir logout duplicou auditoria.');
+
+    instante = instante.add(const Duration(minutes: 1));
+    await chamar('/codigo', {'email': endereco});
+    final antesRevogacao =
+        await chamar('/entrar', {'email': endereco, 'codigo': email.codigo!});
+    banco.versao++;
+    conferirSaida(await chamar('/logout', {}, cookies: antesRevogacao.cookies));
+    print(
+        'Autenticação: códigos, sessão, revogação, SMTP e logout válido/ausente/repetido/revogado: OK (banco e SMTP simulados).');
   } finally {
     cliente.close(force: true);
     await servidor.close(force: true);

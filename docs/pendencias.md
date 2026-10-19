@@ -18,6 +18,9 @@ permanecem como defeitos abertos.
 O botão de nova tentativa em Início/Tipos/Resumo e submissão agora abre o login
 para HTTP 401 e limpa a pilha protegida. Quatro testes de navegação/repetição
 passaram; falta homologar com sessão real. Outros erros mantêm a recarga.
+O logout agora aceita sessão já encerrada e limpa o cookie. Os testes HTTP
+cobrem saída sem sessão, cookie desconhecido/revogado, repetição e auditoria
+de sessão válida; falta homologar o menu Sair no navegador.
 
 ## 2. Testes e homologações pendentes
 
