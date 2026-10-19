@@ -21,3 +21,10 @@ check_parameters imprime o marcador sei-odbc-2-pointer-width e valida os tamanho
 ## Suporte às manifestações
 
 Textos acima de 4000 unidades UTF-16 usam SQL_WLONGVARCHAR (JSON de vínculos). Cursores com zero colunas retornam sem SQLFetch; erros de SQLFetch são propagados em vez de serem confundidos com fim dos dados. check_parameters inclui texto longo e caractere fora do BMP.
+
+## Valores vazios
+
+O leitor distingue NULL pelo indicador SQL_NULL_DATA, em vez de considerar
+qualquer buffer vazio como NULL. Texto vazio retorna string vazia e binário
+vazio retorna Uint8List vazia. check_parameters verifica esses casos e NULL
+com SELECTs, sem modificar o banco.

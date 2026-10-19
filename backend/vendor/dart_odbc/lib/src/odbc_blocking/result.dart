@@ -146,7 +146,8 @@ class _OdbcCursorImpl implements OdbcCursor {
     }
     final rc = sql.SQLFetch(hStmt);
     if (rc < 0) {
-      tryOdbc(rc, handle: hStmt, onException: FetchException(), beforeThrow: _close);
+      tryOdbc(rc,
+          handle: hStmt, onException: FetchException(), beforeThrow: _close);
     }
     if (rc == SQL_NO_DATA) {
       // implicit close on done or error
@@ -196,7 +197,7 @@ class _OdbcCursorImpl implements OdbcCursor {
           }
         }
 
-        if (collected.isEmpty) {
+        if (pColumnValueLength.value == SQL_NULL_DATA) {
           row[columnNames[i - 1]] = null;
         } else {
           row[columnNames[i - 1]] = Uint8List.fromList(collected);
@@ -245,7 +246,7 @@ class _OdbcCursorImpl implements OdbcCursor {
           }
         }
 
-        if (collectedUnits.isEmpty) {
+        if (pColumnValueLength.value == SQL_NULL_DATA) {
           row[columnNames[i - 1]] = null;
         } else {
           collectedUnits.removeWhere((e) => e == 0);
