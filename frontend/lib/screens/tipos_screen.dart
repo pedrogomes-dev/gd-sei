@@ -89,7 +89,7 @@ class _TiposScreenState extends State<TiposScreen> {
     actions:[IconButton(onPressed:refresh,tooltip:'Atualizar',icon:const Icon(Icons.refresh))],
     child:FutureBuilder<List<dynamic>>(future:future,builder:(context,snapshot){
       if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
-      if(snapshot.hasError)return Center(child:Column(mainAxisSize:MainAxisSize.min,children:[Text(snapshot.error.toString()),TextButton(onPressed:refresh,child:const Text('Tentar novamente'))]));
+      if(snapshot.hasError)return Center(child:ApiErrorMessage(error:snapshot.error!,onRetry:refresh));
       final rows=snapshot.data!;
       if(rows.isEmpty)return const Center(child:Text('Nenhum Tipo de Processo atribuído aos seus órgãos.'));
       final organs=<String,String>{for(final r in rows)r['id_orgao'].toString():r['sigla'].toString()};

@@ -164,15 +164,25 @@ class AuthService {
   }
 
   Future<void> logout(HttpRequest request) async {
-    final idUsuario = await authorize(request);
-    for (final anterior in request.cookies.where((item) => item.name == 'sei_session')) {
+    int? idUsuario;
+    try {
+      idUsuario = await authorize(request);
+    } on ApiError catch (erro) {
+      // Uma sessão já encerrada não pode impedir a saída para o login.
+      if (erro.status != 401) rethrow;
+    }
+    for (final anterior
+        in request.cookies.where((item) => item.name == 'sei_session')) {
       _sessions.remove(anterior.value);
     }
+    request.response.cookies.removeWhere((item) => item.name == 'sei_session');
     request.response.cookies.add(cookie('', expired: true));
+    if (idUsuario == null) return;
     const sql = '''
       INSERT dbo.auditoria(id_usuario, evento)
       VALUES (?, ?)
     ''';
-    await db.query(sql, params: [idUsuario, 'LOGOUT'], operation: 'logout_gravar_auditoria');
+    await db.query(sql,
+        params: [idUsuario, 'LOGOUT'], operation: 'logout_gravar_auditoria');
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'screens/initial_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/inicio_screen.dart';
 import 'screens/tipos_screen.dart';
@@ -42,7 +41,7 @@ class SeiApp extends StatelessWidget {
         final params=Uri.parse(name).queryParameters;
         screen=ResumoScreen(consulta:params['consulta']!,orgao:params['orgao']!);
       }
-      else { screen=InitialScreen(route:name); }
+      else { screen=const LoginScreen(); }
       return MaterialPageRoute<void>(settings: settings,
         builder: (_) => SelectionArea(child: screen));
     },
