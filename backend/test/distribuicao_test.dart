@@ -22,8 +22,10 @@ class BancoDistribuicaoTeste extends DatabaseRepository {
   bool publicado = true;
   int? falha;
   int gravacoes = 0;
+  int lotes = 0;
   List<Object> parametros = [];
   String sqlGravacao = '';
+  String sqlLote = '';
 
   BancoDistribuicaoTeste()
       : super(DatabaseConfig(
@@ -49,6 +51,16 @@ class BancoDistribuicaoTeste extends DatabaseRepository {
               {'id_usuario': 1}
             ]
           : [];
+    }
+    if (operation == 'vincular_distribuicao_lote') {
+      sqlLote = sql;
+      parametros = params;
+      if (falha != null)
+        throw DatabaseFailure(stage: 'teste', kind: 'teste', code: falha);
+      lotes++;
+      return [
+        {'vinculos_incluidos': 2, 'tipos_alterados': 2}
+      ];
     }
     if (sql.contains('MAX(versao)')) {
       if (operation != 'salvar_distribuicao') {
@@ -135,6 +147,12 @@ Future<void> main() async {
 
   const rota = '/api/admin/distribuicao';
   const edicao = '$rota/tipos/7';
+  const lote = '$rota/vincular';
+  Map<String, dynamic> dadosLote() => {
+        'versao': 0,
+        'tipos': [8, 7],
+        'orgaos': [9, 0]
+      };
   Map<String, dynamic> dados() => {
         'versao': 0,
         'orgaos_anteriores': [0],
@@ -146,6 +164,8 @@ Future<void> main() async {
         'Usuário comum consultou a distribuição.');
     conferir((await chamar(edicao, dados: dados())).status == 403,
         'Usuário comum gravou vínculos.');
+    conferir((await chamar(lote, dados: dadosLote())).status == 403,
+        'Usuário comum gravou lote.');
     conferir(banco.gravacoes == 0, 'Gravação sem perfil administrador.');
 
     banco.administrador = true;
@@ -206,12 +226,54 @@ Future<void> main() async {
           'Erro SQL ${caso.$1} não traduzido.');
     }
     banco.falha = null;
+    final inclusao = await chamar(lote, dados: dadosLote());
+    conferir(
+        inclusao.status == 200 && inclusao.dados['vinculos_incluidos'] == 2,
+        'Falha ao acrescentar vínculos em lote.');
+    conferir(banco.parametros.join('|') == '1|0|[7,8]|[0,9]',
+        'Parâmetros do lote incorretos.');
+    for (final campo in ['tipos', 'orgaos']) {
+      for (final invalido in [
+        null,
+        [],
+        '0',
+        [7, 7],
+        ['0'],
+        [2147483648],
+        List.filled(2001, 0)
+      ]) {
+        final entrada = dadosLote()..[campo] = invalido;
+        conferir((await chamar(lote, dados: entrada)).status == 400,
+            'Lista inválida aceita no lote: $campo');
+      }
+    }
+    for (final versao in [null, '0', -1, 2147483648]) {
+      conferir(
+          (await chamar(lote, dados: dadosLote()..['versao'] = versao))
+                  .status ==
+              400,
+          'Versão inválida aceita no lote.');
+    }
+    for (final caso in [
+      (51400, 409),
+      (51401, 403),
+      (51402, 409),
+      (51403, 404),
+      (51405, 400)
+    ]) {
+      banco.falha = caso.$1;
+      conferir((await chamar(lote, dados: dadosLote())).status == caso.$2,
+          'Erro SQL do lote não traduzido.');
+    }
+    banco.falha = null;
+    conferir(
+        banco.lotes == 1, 'Entradas inválidas chegaram à gravação em lote.');
     banco.publicado = false;
     conferir((await chamar(rota)).status == 404,
         'Base não publicada não foi tratada.');
     conferir(banco.gravacoes == 2, 'Entradas inválidas chegaram à gravação.');
     print(
-        'Distribuição: autorização HTTP, versão 0, órgão 0, múltiplos vínculos, remoção, validação e conflitos: OK (banco simulado).');
+        'Distribuição individual e em lote: autorização HTTP, versão/órgão 0, parâmetros, remoção e conflitos: OK (banco simulado).');
   } finally {
     cliente.close(force: true);
     await servidor.close(force: true);

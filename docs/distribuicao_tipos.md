@@ -16,6 +16,24 @@ lista todos os Tipos da maior versão publicada, inclusive inativos.
 - Durante o salvamento, seleção, saída e botões são bloqueados. Falhas mantêm
   o diálogo aberto com a mensagem recebida.
 
+## Vincular vários Tipos
+
+Marque os Tipos nas linhas ou pelo checkbox do cabeçalho, que seleciona somente
+a página atual. A seleção é mantida ao filtrar e paginar; a quantidade exibida
+inclui também os selecionados fora da página/filtro atual. Use **Limpar seleção**
+para desmarcar todos.
+
+**Vincular selecionados** abre a escolha de órgãos sem pré-seleção. É necessário
+escolher pelo menos um órgão. A ação acrescenta os órgãos escolhidos a todos os
+Tipos selecionados, preservando os vínculos já existentes e sem duplicar pares.
+A gravação é uma única transação: um Tipo/órgão inválido ou uma nova versão
+publicada impede o lote inteiro. Em caso de falha, a seleção permanece; após
+sucesso ela é limpa e a listagem é recarregada. Cancelar não grava nem limpa.
+
+O resultado informa vínculos novos e Tipos efetivamente alterados. Repetir um
+lote com os mesmos pares não duplica vínculos e pode resultar em zero inclusões.
+Remoção e substituição continuam disponíveis apenas na edição individual.
+
 O vínculo editado é `dbo.tipo_procedimento_restricao`, a distribuição atual
 usada na preparação de atribuições. Não altera `ref_*`, snapshots, atribuições,
 manifestações ou submissões de rodadas existentes. Depois da edição, aplicar a
@@ -28,16 +46,21 @@ vínculo da referência não retira atribuições anteriores.
 - `GET /api/admin/distribuicao`: retorna `versao`, `tipos`, `orgaos` e `vinculos`.
 - `POST /api/admin/distribuicao/tipos/{id}`: recebe `versao`, `orgaos_anteriores`
   e `orgaos` (arrays de IDs inteiros, sem duplicatas). Lista vazia é válida.
+- `POST /api/admin/distribuicao/vincular`: recebe `versao`, `tipos` e `orgaos`.
+  Os arrays devem ser não vazios, com IDs inteiros sem duplicatas. Retorna
+  `vinculos_incluidos` e `tipos_alterados`.
 
-Ambas as rotas exigem sessão e administrador ativo no backend. A transação
+Todas as rotas exigem sessão e administrador ativo no backend. A transação
 revalida perfil, versão publicada, existência do Tipo e dos órgãos. Preserva
-órgão 0 e versão 0. Compara os órgãos anteriores com o banco; conflito ou nova
-publicação retorna 409. Cancele a edição e atualize a listagem para tentar
+órgão 0 e versão 0. A edição individual compara os órgãos anteriores com o banco;
+conflito ou nova publicação retorna 409. Cancele a edição e atualize a listagem para tentar
 novamente. Não há sobrescrita automática.
 
 A gravação usa a trava `carga_atribuicoes` da procedure 006, altera somente os
 pares do Tipo selecionado e grava `DISTRIBUICAO_TIPO` em `auditoria`, com ator,
 versão e conjuntos antes/depois, na mesma transação.
+O lote registra `DISTRIBUICAO_TIPOS` com a versão, os IDs solicitados e os pares
+efetivamente incluídos. Compartilha a mesma trava da edição individual/carga 006.
 
 ## Instalação e permissões
 
@@ -57,8 +80,8 @@ Não exige publicação, ALTER ou exclusão de avaliações.
 - `dart run test/distribuicao_sql_test.dart`: SQL Server real com tabelas
   temporárias privadas e trava de teste; inclusão/remoção, perfil, versão,
   edição obsoleta, rollback e auditoria. Não grava em tabelas persistentes.
-- `flutter test --no-pub`: quatro testes de seleção múltipla, busca, cancelamento,
-  remoção, conflito e diálogo em tela estreita com texto ampliado.
+- `flutter test --no-pub`: seis testes de seleção múltipla, busca, cancelamento,
+  remoção, conflito, diálogo estreito, exigência de órgão e falha no lote.
 - Leitura real da distribuição e sintaxe SQL por PARSEONLY, sem gravação
   persistente. `flutter build web --no-pub` concluído.
 

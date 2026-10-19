@@ -20,6 +20,7 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
   List<dynamic> tipos = [];
   List<dynamic> orgaos = [];
   final vinculos = <int, Set<int>>{};
+  final selecionados = <int>{};
   int? versao;
   int pagina = 0;
   String estado = 'TODOS';
@@ -51,6 +52,8 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
         tipos = dados['tipos'] as List;
         orgaos = dados['orgaos'] as List;
         versao = int.parse(dados['versao'].toString());
+        selecionados.retainAll(tipos
+            .map((tipo) => int.parse(tipo['id_tipo_procedimento'].toString())));
         vinculos.clear();
         for (final item in dados['vinculos'] as List) {
           final id = int.parse(item['id_tipo_procedimento'].toString());
@@ -113,6 +116,66 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Vínculos atualizados.')));
     await carregar();
+  }
+
+  void selecionarPagina(List<dynamic> itens, bool marcado) {
+    final ids =
+        itens.map((tipo) => int.parse(tipo['id_tipo_procedimento'].toString()));
+    setState(() {
+      if (marcado) {
+        selecionados.addAll(ids);
+      } else {
+        selecionados.removeAll(ids);
+      }
+    });
+  }
+
+  Future<void> vincularSelecionados() async {
+    final ids = selecionados.toList()..sort();
+    Map<String, dynamic>? resultado;
+    final alterou = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => TipoOrgaosEditor(
+        nomeTipo: '${ids.length} Tipos de Processo selecionados',
+        emLote: true,
+        orgaos: orgaos,
+        vinculados: const {},
+        salvar: (escolhidos) async {
+          resultado =
+              await api.vincularDistribuicaoEmLote(versao!, ids, escolhidos);
+        },
+      ),
+    );
+    if (!mounted || alterou != true) return;
+    setState(() => selecionados.clear());
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            '${resultado!['vinculos_incluidos']} vínculos acrescentados em ${resultado!['tipos_alterados']} Tipos de Processo.')));
+    await carregar();
+  }
+
+  Widget acoesSelecao() {
+    return Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text('${selecionados.length} Tipos selecionados'),
+          FilledButton.icon(
+            onPressed: selecionados.isEmpty ? null : vincularSelecionados,
+            icon: const Icon(Icons.add_link),
+            label: const Text('Vincular selecionados'),
+          ),
+          TextButton(
+            onPressed: selecionados.isEmpty
+                ? null
+                : () => setState(() => selecionados.clear()),
+            child: const Text('Limpar seleção'),
+          ),
+          const Text(
+              'O cabeçalho seleciona esta página. A seleção é mantida ao filtrar ou paginar.'),
+        ]);
   }
 
   Widget indicadores(List<dynamic> base) {
@@ -212,6 +275,8 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
     return SectionCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('${lista.length} Tipos de Processo encontrados'),
+      const SizedBox(height: 12),
+      acoesSelecao(),
       const SizedBox(height: 16),
       if (itens.isEmpty)
         const Text('Nenhum Tipo de Processo encontrado.')
@@ -220,8 +285,10 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: tamanho.maxWidth < 850 ? 850 : tamanho.maxWidth,
+              width: tamanho.maxWidth < 900 ? 900 : tamanho.maxWidth,
               child: DataTable(
+                onSelectAll: (marcado) =>
+                    selecionarPagina(itens, marcado == true),
                 headingRowColor:
                     const WidgetStatePropertyAll(Color(0xfff5f7fa)),
                 columnSpacing: 24,
@@ -237,20 +304,27 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
                 ],
                 rows: [
                   for (final tipo in itens)
-                    DataRow(cells: [
-                      DataCell(Text(tipo['id_tipo_procedimento'].toString())),
-                      DataCell(SizedBox(
-                          width: 300,
-                          child: Text(tipo['nome'].toString(),
-                              maxLines: 3, overflow: TextOverflow.ellipsis))),
-                      DataCell(StatusTag(
-                          tipo['sin_ativo'] == 'S' ? 'ATIVO' : 'INATIVO')),
-                      DataCell(Text('${orgaosTipo(tipo).length} órgãos')),
-                      DataCell(OutlinedButton.icon(
-                          onPressed: () => editar(tipo),
-                          icon: const Icon(Icons.account_tree_outlined),
-                          label: const Text('Vincular órgãos'))),
-                    ])
+                    DataRow(
+                        selected: selecionados.contains(
+                            int.parse(tipo['id_tipo_procedimento'].toString())),
+                        onSelectChanged: (marcado) =>
+                            selecionarPagina([tipo], marcado == true),
+                        cells: [
+                          DataCell(
+                              Text(tipo['id_tipo_procedimento'].toString())),
+                          DataCell(SizedBox(
+                              width: 300,
+                              child: Text(tipo['nome'].toString(),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis))),
+                          DataCell(StatusTag(
+                              tipo['sin_ativo'] == 'S' ? 'ATIVO' : 'INATIVO')),
+                          DataCell(Text('${orgaosTipo(tipo).length} órgãos')),
+                          DataCell(OutlinedButton.icon(
+                              onPressed: () => editar(tipo),
+                              icon: const Icon(Icons.account_tree_outlined),
+                              label: const Text('Vincular órgãos'))),
+                        ])
                 ],
               ),
             ),

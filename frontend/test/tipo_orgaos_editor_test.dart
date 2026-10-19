@@ -14,6 +14,7 @@ void main() {
     required Future<void> Function(List<int>) salvar,
     Set<int> vinculados = const {0},
     TextScaler escala = TextScaler.noScaling,
+    bool emLote = false,
   }) async {
     await tester.pumpWidget(MaterialApp(
         builder: (context, child) => MediaQuery(
@@ -28,6 +29,7 @@ void main() {
                         nomeTipo: 'Tipo de teste',
                         orgaos: orgaos,
                         vinculados: vinculados,
+                        emLote: emLote,
                         salvar: salvar),
                   ),
               child: const Text('Abrir'));
@@ -99,5 +101,38 @@ void main() {
     expect(find.text('2 órgãos selecionados'), findsOneWidget);
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('lote exige órgão e permite escolher vários sem seleção inicial',
+      (tester) async {
+    List<int>? gravados;
+    await abrir(tester,
+        emLote: true, vinculados: {}, salvar: (ids) async => gravados = ids);
+    expect(find.textContaining('Os vínculos atuais serão preservados'),
+        findsOneWidget);
+    await tester.tap(find.text('Vincular'));
+    await tester.pumpAndSettle();
+    expect(find.text('Selecione ao menos um órgão.'), findsOneWidget);
+    expect(gravados, isNull);
+    await tester.tap(find.text('ORG ZERO'));
+    await tester.tap(find.text('ORG NOVE'));
+    await tester.tap(find.text('Vincular'));
+    await tester.pumpAndSettle();
+    expect(gravados, [0, 9]);
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('falha no lote mantém órgãos selecionados para nova tentativa',
+      (tester) async {
+    await abrir(tester,
+        emLote: true,
+        vinculados: {},
+        salvar: (_) async => throw Exception('Lote não gravado.'));
+    await tester.tap(find.text('ORG ZERO'));
+    await tester.tap(find.text('Vincular'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Lote não gravado'), findsOneWidget);
+    expect(find.text('1 órgãos selecionados'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
   });
 }

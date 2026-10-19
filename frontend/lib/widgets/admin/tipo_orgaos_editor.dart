@@ -5,6 +5,7 @@ class TipoOrgaosEditor extends StatefulWidget {
   final List<dynamic> orgaos;
   final Set<int> vinculados;
   final Future<void> Function(List<int>) salvar;
+  final bool emLote;
 
   const TipoOrgaosEditor({
     super.key,
@@ -12,6 +13,7 @@ class TipoOrgaosEditor extends StatefulWidget {
     required this.orgaos,
     required this.vinculados,
     required this.salvar,
+    this.emLote = false,
   });
 
   @override
@@ -25,6 +27,10 @@ class _TipoOrgaosEditorState extends State<TipoOrgaosEditor> {
   bool salvando = false;
 
   Future<void> salvar() async {
+    if (widget.emLote && selecionados.isEmpty) {
+      setState(() => erro = 'Selecione ao menos um órgão.');
+      return;
+    }
     setState(() {
       salvando = true;
       erro = null;
@@ -76,7 +82,8 @@ class _TipoOrgaosEditorState extends State<TipoOrgaosEditor> {
     return PopScope(
       canPop: !salvando,
       child: AlertDialog(
-        title: const Text('Vincular órgãos'),
+        title:
+            Text(widget.emLote ? 'Vincular selecionados' : 'Vincular órgãos'),
         content: SizedBox(
           width: 640,
           child: SingleChildScrollView(
@@ -87,6 +94,12 @@ class _TipoOrgaosEditorState extends State<TipoOrgaosEditor> {
                 Text(widget.nomeTipo,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
+                if (widget.emLote)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: Text(
+                        'Os órgãos escolhidos serão acrescentados a todos os Tipos selecionados. Os vínculos atuais serão preservados.'),
+                  ),
                 const Text(
                     'Altera a distribuição de referência. As atribuições e avaliações das rodadas existentes são preservadas.'),
                 const SizedBox(height: 16),
@@ -118,7 +131,8 @@ class _TipoOrgaosEditorState extends State<TipoOrgaosEditor> {
               onPressed: salvando ? null : () => Navigator.pop(context),
               child: const Text('Cancelar')),
           FilledButton(
-              onPressed: salvando ? null : salvar, child: const Text('Salvar')),
+              onPressed: salvando ? null : salvar,
+              child: Text(widget.emLote ? 'Vincular' : 'Salvar')),
         ],
       ),
     );
