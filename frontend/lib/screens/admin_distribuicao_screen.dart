@@ -159,23 +159,34 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
     return Wrap(
         spacing: 12,
         runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text('${selecionados.length} Tipos selecionados'),
-          FilledButton.icon(
-            onPressed: selecionados.isEmpty ? null : vincularSelecionados,
-            icon: const Icon(Icons.add_link),
-            label: const Text('Vincular selecionados'),
-          ),
-          TextButton(
-            onPressed: selecionados.isEmpty
-                ? null
-                : () => setState(() => selecionados.clear()),
-            child: const Text('Limpar seleção'),
-          ),
-          const Text(
-              'O cabeçalho seleciona esta página. A seleção é mantida ao filtrar ou paginar.'),
-        ]);
+        crossAxisAlignment: WrapCrossAlignment.start,
+            
+            children: [
+              
+              Row(
+                
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('${selecionados.length} Tipos selecionados'),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: selecionados.isEmpty
+                        ? null
+                        : () => setState(() => selecionados.clear()),
+                    child: const Text('Limpar seleção'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: selecionados.isEmpty ? null : vincularSelecionados,
+                    icon: const Icon(Icons.add_link),
+                    label: const Text('Vincular selecionados'),
+                  ),
+          
+              ],
+            ),
+       
+          
+          
+    ]);
   }
 
   Widget indicadores(List<dynamic> base) {
@@ -354,9 +365,9 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
   Widget build(BuildContext context) {
     final base = pesquisados;
     return AppShell(
-      title: 'Distribuição de Tipos de Processo',
+      title: 'Atribuição de Tipos de Processo',
       section: 'admin-distribuicao',
-      trail: const ['Distribuição de Tipos de Processo'],
+      trail: const ['Atribuição de Tipos de Processo'],
       actions: [
         IconButton(
             onPressed: carregando ? null : carregar,
@@ -379,7 +390,7 @@ class _AdminDistribuicaoScreenState extends State<AdminDistribuicaoScreen> {
                   ])),
             if (!carregando && erro == null && versao != null) ...[
               Text(
-                  'Distribuição de referência · Base publicada $versao. As rodadas existentes são preservadas.'),
+                  'Atribuição de referência · Base publicada $versao. As rodadas existentes são preservadas.'),
               const SizedBox(height: 16),
               filtros(base),
               tabela(base.where(corresponde).toList()),

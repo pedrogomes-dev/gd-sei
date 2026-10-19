@@ -64,7 +64,7 @@ class _AppShellState extends State<AppShell> {
           const SizedBox(height:24),
           const Padding(padding:EdgeInsets.all(12),child:Text('ADMINISTRAÇÃO',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:Colors.blueGrey))),
           item('Usuários',Icons.manage_accounts_outlined,'admin-usuarios','/admin/usuarios'),
-          item('Distribuição de Tipos',Icons.account_tree_outlined,'admin-distribuicao','/admin/distribuicao'),
+          item('Atribuição',Icons.account_tree_outlined,'admin-distribuicao','/admin/distribuicao'),
         ]):const SizedBox.shrink()),
     ])));
   Widget item(String label,IconData icon,String section,String path)=>Padding(
