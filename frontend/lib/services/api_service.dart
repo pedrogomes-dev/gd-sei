@@ -26,6 +26,23 @@ class ApiService {
     return await request('/api/admin/orgaos') as List<dynamic>;
   }
 
+  Future<Map<String, dynamic>> consultarDistribuicao() async {
+    return await request('/api/admin/distribuicao') as Map<String, dynamic>;
+  }
+
+  Future<void> salvarDistribuicao(
+    int idTipo,
+    int versao,
+    List<int> anteriores,
+    List<int> orgaos,
+  ) async {
+    await request('/api/admin/distribuicao/tipos/$idTipo', data: {
+      'versao': versao,
+      'orgaos_anteriores': anteriores,
+      'orgaos': orgaos,
+    });
+  }
+
   Future<Map<String, dynamic>> listarUsuarios(
     String pesquisa,
     String situacao,

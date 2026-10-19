@@ -132,6 +132,137 @@ class AdministracaoController {
     return '%$texto%';
   }
 
+  Future<Map<String, dynamic>> consultarDistribuicao(
+      int idAdministrador) async {
+    await verificarAdministrador(idAdministrador);
+    final versoes =
+        await banco.query('SELECT MAX(versao) AS versao FROM dbo.versao_base');
+    final valor = versoes.single['versao'];
+    if (valor == null) throw ApiError(404, 'Nenhuma base publicada.');
+    final versao = int.parse(valor.toString());
+    final tipos = await banco.query('''
+      SELECT id_tipo_procedimento, nome, sin_ativo
+      FROM dbo.tipo_procedimento WHERE versao = ?
+      ORDER BY nome, id_tipo_procedimento
+    ''', params: [versao], operation: 'listar_tipos_distribuicao');
+    final vinculos = await banco.query('''
+      SELECT id_tipo_procedimento, id_orgao
+      FROM dbo.tipo_procedimento_restricao
+      ORDER BY id_tipo_procedimento, id_orgao
+    ''', operation: 'listar_vinculos_distribuicao');
+    return {
+      'versao': versao,
+      'tipos': tipos,
+      'vinculos': vinculos,
+      'orgaos': await listarOrgaos(idAdministrador),
+    };
+  }
+
+  List<int> validarOrgaosDistribuicao(dynamic valor) {
+    if (valor is! List || valor.length > 2000) {
+      throw ApiError(400, 'Lista de órgãos inválida.');
+    }
+    final orgaos = <int>{};
+    for (final id in valor) {
+      if (!Validacoes.inteiroSqlValido(id) || !orgaos.add(id as int)) {
+        throw ApiError(400, 'Lista de órgãos inválida ou duplicada.');
+      }
+    }
+    return orgaos.toList()..sort();
+  }
+
+  Future<void> salvarDistribuicao(
+    int idAdministrador,
+    int idTipo,
+    Map<String, dynamic> dados,
+  ) async {
+    await verificarAdministrador(idAdministrador);
+    final versao = dados['versao'];
+    if (!Validacoes.inteiroSqlValido(versao) || (versao as int) < 0) {
+      throw ApiError(400, 'Versão inválida.');
+    }
+    final anteriores = validarOrgaosDistribuicao(dados['orgaos_anteriores']);
+    final selecionados = validarOrgaosDistribuicao(dados['orgaos']);
+    const sql = '''
+      SET NOCOUNT ON; SET XACT_ABORT ON;
+      BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @administrador int=?, @tipo int=?, @versao int=?,
+          @antes nvarchar(max)=?, @depois nvarchar(max)=?, @lock int;
+        -- Mesma trava da carga 006: uma carga vê a distribuição inteira.
+        EXEC @lock=sys.sp_getapplock @Resource='carga_atribuicoes',
+          @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=15000;
+        IF @lock<0 THROW 51400,'Distribuicao ocupada.',1;
+        IF NOT EXISTS(SELECT 1 FROM dbo.usuario WITH(HOLDLOCK)
+          WHERE id_usuario=@administrador AND sin_ativo='S' AND sin_admin='S')
+          THROW 51401,'Administrador nao autorizado.',1;
+        IF @versao<>(SELECT MAX(versao) FROM dbo.versao_base WITH(HOLDLOCK))
+          THROW 51402,'A base publicada mudou.',1;
+        IF NOT EXISTS(SELECT 1 FROM dbo.tipo_procedimento WITH(HOLDLOCK)
+          WHERE versao=@versao AND id_tipo_procedimento=@tipo)
+          THROW 51403,'Tipo inexistente nesta versao.',1;
+        DECLARE @anteriores TABLE(id_orgao int PRIMARY KEY);
+        DECLARE @selecionados TABLE(id_orgao int PRIMARY KEY);
+        INSERT @anteriores SELECT CONVERT(int,value) FROM OPENJSON(@antes);
+        INSERT @selecionados SELECT CONVERT(int,value) FROM OPENJSON(@depois);
+        IF EXISTS(SELECT id_orgao FROM @anteriores EXCEPT
+          SELECT id_orgao FROM dbo.tipo_procedimento_restricao WITH(UPDLOCK,HOLDLOCK)
+          WHERE id_tipo_procedimento=@tipo)
+          OR EXISTS(SELECT id_orgao FROM dbo.tipo_procedimento_restricao WITH(UPDLOCK,HOLDLOCK)
+          WHERE id_tipo_procedimento=@tipo EXCEPT SELECT id_orgao FROM @anteriores)
+          THROW 51404,'Vinculos alterados por outro administrador.',1;
+        IF EXISTS(SELECT 1 FROM @selecionados s WHERE NOT EXISTS(
+          SELECT 1 FROM dbo.orgao WITH(HOLDLOCK) WHERE id_orgao=s.id_orgao))
+          THROW 51405,'Orgao inexistente.',1;
+        -- Somente a distribuição atual; não altera rodadas ou avaliações.
+        DELETE FROM dbo.tipo_procedimento_restricao
+          WHERE id_tipo_procedimento=@tipo AND id_orgao NOT IN(
+            SELECT id_orgao FROM @selecionados);
+        INSERT dbo.tipo_procedimento_restricao(id_tipo_procedimento,id_orgao)
+          SELECT @tipo,s.id_orgao FROM @selecionados s WHERE NOT EXISTS(
+            SELECT 1 FROM dbo.tipo_procedimento_restricao r
+            WHERE r.id_tipo_procedimento=@tipo AND r.id_orgao=s.id_orgao);
+        DECLARE @detalhe nvarchar(max)=(
+            SELECT @tipo AS id_tipo_procedimento,@versao AS versao,
+              JSON_QUERY(@antes) AS orgaos_antes,JSON_QUERY(@depois) AS orgaos_depois
+            FOR JSON PATH,WITHOUT_ARRAY_WRAPPER);
+        INSERT dbo.auditoria(id_usuario,evento,detalhe)
+          VALUES(@administrador,'DISTRIBUICAO_TIPO',@detalhe);
+        COMMIT;
+      END TRY
+      BEGIN CATCH
+        IF XACT_STATE()<>0 ROLLBACK;
+        THROW;
+      END CATCH;
+    ''';
+    try {
+      await banco.query(sql,
+          params: [
+            idAdministrador,
+            idTipo,
+            versao,
+            jsonEncode(anteriores),
+            jsonEncode(selecionados),
+          ],
+          operation: 'salvar_distribuicao');
+    } on DatabaseFailure catch (erro) {
+      const mensagens = {
+        51400: (409, 'Distribuição ocupada. Tente novamente.'),
+        51401: (403, 'Acesso restrito à administração.'),
+        51402: (409, 'A base publicada mudou. Atualize a listagem.'),
+        51403: (404, 'Tipo de Processo inexistente nesta versão.'),
+        51404: (
+          409,
+          'Os vínculos foram alterados. Atualize a listagem antes de editar.'
+        ),
+        51405: (400, 'Órgão inexistente.'),
+      };
+      final mensagem = mensagens[erro.code];
+      if (mensagem == null) rethrow;
+      throw ApiError(mensagem.$1, mensagem.$2);
+    }
+  }
+
   Future<Map<String, dynamic>> buscarUsuario(
     int idAdministrador,
     int idUsuario,
@@ -309,4 +440,3 @@ class AdministracaoController {
     }
   }
 }
-
