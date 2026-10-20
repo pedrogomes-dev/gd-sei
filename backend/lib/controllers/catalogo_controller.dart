@@ -78,7 +78,9 @@ class CatalogoController {
       WHERE $filtro
     ''';
     final quantidade = await banco.query(
-      sqlQuantidade, params: parametros, operation: 'contar_catalogo',
+      sqlQuantidade,
+      params: parametros,
+      operation: 'contar_catalogo',
     );
 
     var camposHipotese = '';
@@ -98,7 +100,8 @@ class CatalogoController {
 
     // Nos Assuntos, a ordem é pré-ordem da árvore, independente da paginação.
     // O vínculo pai/filho é sempre restrito à mesma versão publicada.
-    final sqlRegistros = categoria == 'assuntos' ? '''
+    final sqlRegistros = categoria == 'assuntos'
+        ? '''
       WITH arvore AS (
         SELECT raiz.versao, raiz.id_assunto, 0 AS nivel_hierarquia,
           CAST(raiz.codigo_estruturado AS nvarchar(max)) AS caminho
@@ -123,7 +126,8 @@ class CatalogoController {
       ORDER BY arvore.caminho, registro.id_assunto
       OFFSET ? ROWS FETCH NEXT 51 ROWS ONLY
       OPTION (MAXRECURSION 100)
-    ''' : '''
+    '''
+        : '''
       SELECT registro.* $camposHipotese
       FROM dbo.$tabela registro
       $vinculoHipotese
@@ -147,7 +151,12 @@ class CatalogoController {
         rel.id_assunto_proxy AS id_assunto,
         assunto.codigo_estruturado AS assunto_codigo,
         assunto.descricao AS assunto_descricao,
-        assunto.sin_ativo AS assunto_sin_ativo
+        assunto.sin_ativo AS assunto_sin_ativo,
+        assunto.sin_estrutural,
+        assunto.prazo_corrente,
+        assunto.prazo_intermediario,
+        assunto.sta_destinacao,
+        assunto.observacao
       FROM dbo.rel_tipo_procedimento_assunto rel
       JOIN dbo.tipo_procedimento tipo
         ON tipo.versao = rel.versao
@@ -182,4 +191,3 @@ class CatalogoController {
     };
   }
 }
-
