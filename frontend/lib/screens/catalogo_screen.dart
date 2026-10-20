@@ -82,14 +82,15 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
     }
   }
 
-  void properties(Map<String, dynamic> row) {
+  void properties(Map<String, dynamic> row, {bool? subject}) {
+    final isSubject = subject ?? subjects;
     showDialog<void>(
       context: context,
       builder: (context) => SelectionArea(
         child: AlertDialog(
           title: Row(children: [
             Expanded(
-                child: Text(subjects
+                child: Text(isSubject
                     ? 'Propriedades do Assunto'
                     : 'Propriedades do Tipo de Processo')),
             IconButton(
@@ -100,7 +101,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
           content: SizedBox(
             width: 760,
             child: SingleChildScrollView(
-              child: subjects
+              child: isSubject
                   ? PropriedadesAssunto(assunto: row)
                   : PropriedadesProcesso(processo: row),
             ),
@@ -228,7 +229,18 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
           rows.add(TableRow(
             decoration: const BoxDecoration(color: Color(0xfff8fafc)),
             children: [
-              const SizedBox.shrink(),
+              if (subjects)
+                const SizedBox.shrink()
+              else
+                IconButton(
+                  tooltip: 'Propriedades do Assunto',
+                  icon: const Icon(Icons.info_outline),
+                  onPressed: () => properties({
+                    ...link,
+                    'codigo_estruturado': link['assunto_codigo'],
+                    'descricao': link['assunto_descricao'],
+                  }, subject: true),
+                ),
               if (subjects) cell(const Text('↳', textAlign: TextAlign.right)),
               cell(Padding(
                 padding: const EdgeInsets.only(left: 20),
