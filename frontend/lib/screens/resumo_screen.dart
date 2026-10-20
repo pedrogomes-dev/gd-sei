@@ -20,6 +20,49 @@ class _ResumoScreenState extends State<ResumoScreen> {
   late Future<Map<String, dynamic>> carregamento;
   bool finalizando = false;
   String? erro;
+  static const tiposPorPagina = 20;
+  int pagina = 0;
+  final rolagem = ScrollController();
+
+  @override
+  void dispose() {
+    rolagem.dispose();
+    super.dispose();
+  }
+
+  void mudarPagina(int destino) {
+    setState(() => pagina = destino);
+    if (rolagem.hasClients) rolagem.jumpTo(0);
+  }
+
+  Widget paginacao(int total, int atual) {
+    final paginas = (total / tiposPorPagina).ceil();
+    final inicio = atual * tiposPorPagina;
+    final fim = (inicio + tiposPorPagina).clamp(0, total);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+              'Página ${atual + 1} de $paginas · Exibindo ${inicio + 1}–$fim de $total Tipos de Processo'),
+          TextButton(
+            onPressed:
+                finalizando || atual == 0 ? null : () => mudarPagina(atual - 1),
+            child: const Text('Anterior'),
+          ),
+          TextButton(
+            onPressed: finalizando || atual + 1 >= paginas
+                ? null
+                : () => mudarPagina(atual + 1),
+            child: const Text('Próxima'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -45,8 +88,12 @@ class _ResumoScreenState extends State<ResumoScreen> {
             'Após finalizar, não será possível alterar ou reabrir.',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Finalizar')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar')),
+            FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Finalizar')),
           ],
         ),
       ),
@@ -104,7 +151,8 @@ class _ResumoScreenState extends State<ResumoScreen> {
     }).length;
   }
 
-  Widget indicador(String titulo, int quantidade, String unidade, IconData icone, Color cor) {
+  Widget indicador(String titulo, int quantidade, String unidade,
+      IconData icone, Color cor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -118,7 +166,9 @@ class _ResumoScreenState extends State<ResumoScreen> {
           Row(children: [
             Icon(icone, size: 20, color: cor),
             const SizedBox(width: 8),
-            Expanded(child: Text(titulo, style: TextStyle(color: cor, fontWeight: FontWeight.w600))),
+            Expanded(
+                child: Text(titulo,
+                    style: TextStyle(color: cor, fontWeight: FontWeight.w600))),
           ]),
           const SizedBox(height: 12),
           Text('$quantidade', style: Theme.of(context).textTheme.headlineSmall),
@@ -131,24 +181,44 @@ class _ResumoScreenState extends State<ResumoScreen> {
 
   Widget indicadores(List<dynamic> decisoes, List<dynamic> tipos) {
     return LayoutBuilder(builder: (context, tamanho) {
-      final colunas = tamanho.maxWidth >= 900 ? 4 : tamanho.maxWidth >= 450 ? 2 : 1;
+      final colunas = tamanho.maxWidth >= 900
+          ? 4
+          : tamanho.maxWidth >= 450
+              ? 2
+              : 1;
       final largura = (tamanho.maxWidth - (colunas - 1) * 12) / colunas;
       return Wrap(spacing: 12, runSpacing: 12, children: [
-        SizedBox(width: largura, child: indicador('Manutenções',
-            contarDecisoes(decisoes, 'MANTER'), 'Vínculos', Icons.check_circle_outline, Colors.blue.shade800)),
-        SizedBox(width: largura, child: indicador('Remoções',
-            contarDecisoes(decisoes, 'REMOVER'), 'Vínculos', Icons.remove_circle_outline, Colors.red.shade800)),
-        SizedBox(width: largura, child: indicador('Inclusões',
-            contarDecisoes(decisoes, 'ADICIONAR'), 'Vínculos', Icons.add_circle_outline, Colors.green.shade800)),
-        SizedBox(width: largura, child: indicador('Pendentes',
-            contarTiposPendentes(tipos), 'Tipos de Processo', Icons.pending_actions, Colors.amber.shade900)),
+        SizedBox(
+            width: largura,
+            child: indicador('Manutenções', contarDecisoes(decisoes, 'MANTER'),
+                'Vínculos', Icons.check_circle_outline, Colors.blue.shade800)),
+        SizedBox(
+            width: largura,
+            child: indicador('Remoções', contarDecisoes(decisoes, 'REMOVER'),
+                'Vínculos', Icons.remove_circle_outline, Colors.red.shade800)),
+        SizedBox(
+            width: largura,
+            child: indicador('Inclusões', contarDecisoes(decisoes, 'ADICIONAR'),
+                'Vínculos', Icons.add_circle_outline, Colors.green.shade800)),
+        SizedBox(
+            width: largura,
+            child: indicador(
+                'Pendentes',
+                contarTiposPendentes(tipos),
+                'Tipos de Processo',
+                Icons.pending_actions,
+                Colors.amber.shade900)),
       ]);
     });
   }
 
-  Widget cabecalho(Map<String, dynamic> grupo, List<dynamic> decisoes, List<dynamic> tipos) {
+  Widget cabecalho(
+      Map<String, dynamic> grupo, List<dynamic> decisoes, List<dynamic> tipos) {
     final finalizada = grupo['status'] == 'FINALIZADA';
     final data = grupo['data_finalizacao'];
+    final visualizados =
+        tipos.where((tipo) => tipo['visualizado'] == 'S').length;
+    final avaliados = tipos.length - contarTiposPendentes(tipos);
 
     return SectionCard(
       child: Column(
@@ -156,7 +226,9 @@ class _ResumoScreenState extends State<ResumoScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: Text(grupo['sigla'].toString(), style: Theme.of(context).textTheme.titleLarge)),
+              Expanded(
+                  child: Text(grupo['sigla'].toString(),
+                      style: Theme.of(context).textTheme.titleLarge)),
               StatusTag(grupo['status'].toString()),
             ],
           ),
@@ -165,10 +237,20 @@ class _ResumoScreenState extends State<ResumoScreen> {
           if (data != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: Text('Finalizada em ' + dataFinalizacao(data), style: const TextStyle(color: Colors.blueGrey)),
+              child: Text('Finalizada em ' + dataFinalizacao(data),
+                  style: const TextStyle(color: Colors.blueGrey)),
             ),
           const SizedBox(height: 24),
           indicadores(decisoes, tipos),
+          const SizedBox(height: 20),
+          Text(
+              '$visualizados de ${tipos.length} Tipos de Processo visualizados · $avaliados de ${tipos.length} avaliados'),
+          const SizedBox(height: 10),
+          LinearProgressIndicator(
+            value: tipos.isEmpty ? 0 : avaliados / tipos.length,
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(4),
+          ),
           const SizedBox(height: 16),
           Text(
             finalizada
@@ -187,7 +269,8 @@ class _ResumoScreenState extends State<ResumoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Submissão do órgão', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Submissão do órgão',
+              style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Text(
             podeFinalizar
@@ -198,9 +281,11 @@ class _ResumoScreenState extends State<ResumoScreen> {
           Align(
             alignment: Alignment.centerRight,
             child: FilledButton.icon(
-              onPressed: finalizando || !podeFinalizar ? null : () => finalizar(dados),
+              onPressed:
+                  finalizando || !podeFinalizar ? null : () => finalizar(dados),
               icon: const Icon(Icons.send_outlined),
-              label: Text(finalizando ? 'Finalizando…' : 'Finalizar manifestação'),
+              label:
+                  Text(finalizando ? 'Finalizando…' : 'Finalizar manifestação'),
             ),
           ),
         ],
@@ -212,7 +297,8 @@ class _ResumoScreenState extends State<ResumoScreen> {
     final idAtribuicao = tipo['id_atribuicao'].toString();
     final vinculos = <dynamic>[];
     for (final decisao in decisoes) {
-      if (decisao['id_atribuicao'].toString() == idAtribuicao) vinculos.add(decisao);
+      if (decisao['id_atribuicao'].toString() == idAtribuicao)
+        vinculos.add(decisao);
     }
     return vinculos;
   }
@@ -223,11 +309,19 @@ class _ResumoScreenState extends State<ResumoScreen> {
     final decisoes = dados['decisoes'] as List;
     final finalizada = grupo['status'] == 'FINALIZADA';
 
+    final ultimaPagina =
+        tipos.isEmpty ? 0 : (tipos.length - 1) ~/ tiposPorPagina;
+    final atual = pagina.clamp(0, ultimaPagina);
+    final tiposDaPagina =
+        tipos.skip(atual * tiposPorPagina).take(tiposPorPagina);
+
     return ListView(
+      controller: rolagem,
       padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
       children: [
         cabecalho(grupo, decisoes, tipos),
-        for (final tipo in tipos)
+        if (tipos.isNotEmpty) paginacao(tipos.length, atual),
+        for (final tipo in tiposDaPagina)
           ResumoTipoCard(
             tipo: Map<String, dynamic>.from(tipo as Map),
             decisoes: decisoesDoTipo(decisoes, tipo),
@@ -236,7 +330,11 @@ class _ResumoScreenState extends State<ResumoScreen> {
             podeRevisar: dados['pode_revisar'] == true,
             abrirTipo: () => abrirTipo(tipo['id_atribuicao'].toString()),
           ),
-        if (erro != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: Text(erro!)),
+        if (tipos.isEmpty) const Text('Nenhum Tipo de Processo atribuído.'),
+        if (tipos.isNotEmpty) paginacao(tipos.length, atual),
+        if (erro != null)
+          Padding(
+              padding: const EdgeInsets.only(bottom: 16), child: Text(erro!)),
         if (!finalizada && dados['pode_revisar'] == true) submissao(dados),
       ],
     );
@@ -249,7 +347,10 @@ class _ResumoScreenState extends State<ResumoScreen> {
       section: 'resumos',
       trail: const ['Resumo e submissão', 'Manifestação'],
       actions: [
-        IconButton(onPressed: finalizando ? null : recarregar, tooltip: 'Atualizar', icon: const Icon(Icons.refresh)),
+        IconButton(
+            onPressed: finalizando ? null : recarregar,
+            tooltip: 'Atualizar',
+            icon: const Icon(Icons.refresh)),
       ],
       child: FutureBuilder<Map<String, dynamic>>(
         future: carregamento,
@@ -257,7 +358,8 @@ class _ResumoScreenState extends State<ResumoScreen> {
           if (resultado.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (resultado.hasError) return Center(child: Text(resultado.error.toString()));
+          if (resultado.hasError)
+            return Center(child: Text(resultado.error.toString()));
           return conteudo(resultado.data!);
         },
       ),
