@@ -34,6 +34,7 @@ class BuscaAssuntos extends StatelessWidget {
     final codigo = assunto['codigo_estruturado'];
     final descricao = assunto['descricao'];
     final jaIncluido = inclusoes.contains(idAssunto);
+    final estrutural = assunto['sin_estrutural'] == 'S';
 
     return Card(
       child: Column(
@@ -43,15 +44,26 @@ class BuscaAssuntos extends StatelessWidget {
             subtitle: Text(assunto['observacao']?.toString() ?? ''),
             trailing: ElevatedButton.icon(
               icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-              onPressed: salvando || jaIncluido ? null : () => proporInclusao(assunto),
+              onPressed: salvando || jaIncluido || estrutural
+                  ? null
+                  : () => proporInclusao(assunto),
               label: const Text('Propor inclusão'),
             ),
           ),
           ExpansionTile(
             title: const Text('Propriedades do Assunto'),
+            trailing: estrutural
+                ? const Tooltip(
+                    message:
+                        'Item apenas estrutural. Não pode ser vinculado a Tipos de Processo.',
+                    triggerMode: TooltipTriggerMode.tap,
+                    child: Icon(Icons.account_tree_outlined),
+                  )
+                : null,
             children: [
               for (final campo in assunto.entries)
-                if (campo.key != 'versao' && campo.key != 'sin_ultima') propertyTile(campo),
+                if (campo.key != 'versao' && campo.key != 'sin_ultima')
+                  propertyTile(campo),
             ],
           ),
         ],
@@ -77,7 +89,8 @@ class BuscaAssuntos extends StatelessWidget {
         const SizedBox(height: 12),
         ElevatedButton(
           onPressed: carregando || salvando ? null : () => pesquisar(false),
-          child: Text(carregando ? 'Pesquisando…' : 'Pesquisar Assuntos ativos'),
+          child:
+              Text(carregando ? 'Pesquisando…' : 'Pesquisar Assuntos ativos'),
         ),
         if (erro != null) Text(erro!),
         for (final assunto in resultados) resultadoAssunto(assunto),

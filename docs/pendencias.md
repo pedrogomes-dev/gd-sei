@@ -24,6 +24,11 @@ de sessão válida; falta homologar o menu Sair no navegador.
 
 ## 2. Testes e homologações pendentes
 
+- Assuntos apenas estruturais: homologar bloqueio de novas inclusões pela API,
+  tooltip/expansão e fluxo de avaliação. Duas propostas estruturais preexistentes
+  foram identificadas por leitura e preservadas para decisão de saneamento;
+  detalhes em `docs/assuntos_estruturais.md`.
+
 | Prioridade | Pendência | Situação efetiva |
 | --- | --- | --- |
 | Alta | Autorização com sessões reais | Comum não deve consultar/gravar distribuição, administrar usuários ou acessar avaliações de outro órgão. Admin sem vínculo consulta resumo, mas não edita/submete avaliações. Testes HTTP da distribuição usam sessão/banco simulados. |

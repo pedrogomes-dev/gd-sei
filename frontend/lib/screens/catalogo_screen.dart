@@ -160,17 +160,34 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       );
       final related = linksFor(row);
       final isExpanded = expanded.contains(id);
+      final estrutural = subjects && row['sin_estrutural'] == 'S';
+      var iconeExpansao = isExpanded ? Icons.expand_more : Icons.chevron_right;
+      var dicaExpansao = isExpanded ? 'Recolher vínculos' : 'Exibir vínculos';
+      if (estrutural) {
+        iconeExpansao = Icons.account_tree_outlined;
+        dicaExpansao =
+            'Item apenas estrutural. Não pode ser vinculado a Tipos de Processo.';
+      }
 
       rows.add(TableRow(children: [
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           IconButton(
-            tooltip: isExpanded ? 'Recolher vínculos' : 'Exibir vínculos',
-            icon: Icon(isExpanded ? Icons.expand_more : Icons.chevron_right),
-            onPressed: related.isEmpty
+            tooltip: dicaExpansao,
+            icon: Icon(iconeExpansao),
+            onPressed: related.isEmpty && !estrutural
                 ? null
-                : () => setState(() {
-                      isExpanded ? expanded.remove(id) : expanded.add(id);
-                    }),
+                : () {
+                    if (estrutural) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text(
+                            'Item apenas estrutural. Não pode ser vinculado a Tipos de Processo.'),
+                      ));
+                    }
+                    if (related.isNotEmpty)
+                      setState(() {
+                        isExpanded ? expanded.remove(id) : expanded.add(id);
+                      });
+                  },
           ),
           IconButton(
             tooltip: 'Propriedades',

@@ -236,6 +236,7 @@ class _TipoScreenState extends State<TipoScreen> {
   }
 
   void proporInclusao(Map<String, dynamic> assunto) {
+    if (assunto['sin_estrutural'] == 'S') return;
     final idAssunto = int.parse(assunto['id_assunto'].toString());
     setState(() {
       inclusoes[idAssunto] = assunto;
