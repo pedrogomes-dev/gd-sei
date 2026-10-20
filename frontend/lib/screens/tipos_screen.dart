@@ -107,10 +107,15 @@ class _TiposScreenState extends State<TiposScreen> {
           items:[const DropdownMenuItem(value:'TODOS',child:Text('Todos os meus órgãos')),...organs.entries.map((e)=>DropdownMenuItem(value:e.key,child:Text(e.value)))],
           onChanged:(v)=>setState((){organ=v!;}))),
         ...groups.values.map((g){
+          final items=scoped.where((r)=>r['id_consulta']==g['id_consulta']&&r['id_orgao']==g['id_orgao']).toList();
+          final viewed=items.where((r)=>r['visualizado']=='S').length;
+          final reviewed=items.where((r)=>r['visualizado']=='S'&&pending(r)==0).length;
           final finalized=g['status']=='FINALIZADA';
           return SectionCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Row(children:[Expanded(child:Text(g['sigla'].toString(),style:Theme.of(context).textTheme.titleLarge)),StatusTag(g['status'].toString())]),
             const SizedBox(height:12),Text(g['consulta'].toString()),const SizedBox(height:20),
+            Text('$viewed de ${items.length} Tipos de Processo visualizados · $reviewed de ${items.length} avaliados'),
+            const SizedBox(height:10),LinearProgressIndicator(value:reviewed/items.length,minHeight:6,borderRadius:BorderRadius.circular(4)),
             const SizedBox(height:20),Align(alignment:Alignment.centerRight,child:OutlinedButton.icon(icon:Icon(finalized?Icons.assignment_outlined:Icons.send_outlined),
               onPressed:()=>open('/resumo?consulta=${g['id_consulta']}&orgao=${g['id_orgao']}'),
               label:Text(finalized?'Consultar resumo':'Resumo e submissão'))),
