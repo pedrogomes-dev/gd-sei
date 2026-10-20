@@ -187,6 +187,7 @@ class ManifestacaoController {
     final vinculos = decisaoTipo == 'MANTER'
         ? validarVinculos(dados['vinculos'])
         : <Map<String, dynamic>>[];
+    await validarInclusoesEstruturais(idUsuario, idAtribuicao, vinculos);
     const sql = 'EXEC dbo.sp_salvar_manifestacao ?, ?, ?, ?, ?, ?, ?';
 
     try {
@@ -206,6 +207,41 @@ class ManifestacaoController {
       return {'revisao': int.parse(resultado.first['revisao'].toString())};
     } on DatabaseFailure catch (erro) {
       throw traduzirErro(erro);
+    }
+  }
+
+  Future<void> validarInclusoesEstruturais(
+    int idUsuario,
+    int idAtribuicao,
+    List<Map<String, dynamic>> vinculos,
+  ) async {
+    final inclusoes =
+        vinculos.where((vinculo) => vinculo['acao'] == 'ADICIONAR').toList();
+    if (inclusoes.isEmpty) return;
+
+    final dados = await consultas.detail(idUsuario, idAtribuicao);
+    final versao = int.parse(dados['tipo']['versao'].toString());
+    // Snapshots são imutáveis. Propostas já salvas são preservadas para saneamento.
+    const sql = r'''
+      SELECT assunto.id_assunto
+      FROM dbo.assunto assunto
+      JOIN OPENJSON(?) WITH (id_assunto int '$.id_assunto') inclusao
+        ON inclusao.id_assunto = assunto.id_assunto
+      WHERE assunto.versao = ? AND assunto.sin_estrutural = 'S'
+        AND NOT EXISTS (
+          SELECT 1 FROM dbo.manifestacao_vinculo existente
+          WHERE existente.id_atribuicao = ?
+            AND existente.versao = assunto.versao
+            AND existente.id_assunto = assunto.id_assunto
+            AND existente.acao = 'ADICIONAR'
+        )
+    ''';
+    final estruturais = await banco.query(sql,
+        params: [jsonEncode(inclusoes), versao, idAtribuicao],
+        operation: 'validar_inclusoes_estruturais');
+    if (estruturais.isNotEmpty) {
+      throw ApiError(400,
+          'Item apenas estrutural. Não pode ser vinculado a Tipos de Processo.');
     }
   }
 
