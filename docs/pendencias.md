@@ -1,48 +1,72 @@
-# Pendências consolidadas — 10/10/2026
+# Pendências — 19/10/2026
 
-Revisão da main no commit a81e23874bc7b0a1aac71202451c2d475eb605ce, considerando o histórico fornecido e a documentação. Nenhum PR estava aberto no início desta revisão; mudanças dos PRs 27, 28 e 29 já constam na main. A revisão foi estática: não substitui compilação, teste no navegador ou execução no SQL Server. A instalação efetiva do banco e a configuração do servidor não foram inspecionadas.
+Referência de desenvolvimento: `AGENTS.md`. Uma implementação ou compilação
+bem-sucedida não comprova homologação em produção.
 
-## Prioridades para concluir o primeiro release
+## 1. Defeitos confirmados
 
-| ID | Prioridade | Pendência | Evidência e conclusão esperada |
-| --- | --- | --- | --- |
-| T01 | Alta | Homologar autorização com usuário comum | Alterar órgão/consulta/atribuição diretamente na URL e pela API. Usuário comum sem vínculo deve ser impedido de consultar resumo, detalhes, registrar visualização, salvar e submeter. Administrador sem vínculo pode consultar resumo, mas não editar/submeter. Conferir também rotas administrativas e revogação após retirar vínculo/perfil. Regras presentes no código; teste solicitado pelo responsável ainda pendente. |
-| T02 | Alta | Homologar órgão 0 | Código da rota aceita zero apenas para órgão. Conferir Home → resumo, submissão autorizada e acesso negado sem vínculo. Atualizar e reiniciar backend antes do teste; sem migração específica. |
-| T03 | Alta | Homologar decisão do Tipo e concorrência | Confirmar aplicação de 008; testar manter, descontinuar com/sem justificativa, Tipo sem vínculos, rascunho preservado ao trocar decisão, resumo efetivo e submissão. Testar duas abas/usuários e bloqueio depois de finalizar. Scripts SQL existem, mas execução integral não está confirmada no histórico. |
-| T04 | Alta | Reproduzir instalação completa | Backend faz JOIN com dbo.hipotese_legal, mas database/ não contém criação/carga dessa tabela. A carga foi feita manualmente no banco do responsável. Versionar o script correspondente. 006 também depende da tabela tipo_procedimento_restricao já existente; documentar seu provisionamento. Corrigir a sequência de instalação para incluir 007 e 008 e validar em banco vazio. |
-| T05 | Alta | Preparar produção | Desativar DEV_AUTH_ENABLED; configurar HTTPS, origem exata, cookie Secure e SMTP. Definir permissões mínimas do usuário SQL, sem privilégios de carga/publicação/alteração de referência. Documentar implantação, backup/restauração e retorno à versão anterior. Nenhuma implantação produtiva foi verificada. |
-| T06 | Alta | Consolidar resultados para SETIC | Já existem acompanhamento por órgão e resumo, inclusive proposta de descontinuação. Falta consulta/exportação consolidada entre órgãos para comparar decisões, justificativas, inclusões e divergências por rodada/versão. Definir o formato com o responsável antes de implementar. |
-| T07 | Média | Atualizar documentação histórica | README, proxima_etapa, acesso_temporario, administracao, inicio e interface contradizem funcionalidades atuais. Ver detalhamento abaixo. |
-| T08 | Média | Concluir referência de grau de sigilo | Ainda exibido como código, com 0 = Não informado. Hipótese legal já integrada; nível de acesso 1/2 já traduzido. Falta referência confirmada dos demais códigos de sigilo, sem inferir significados. |
-| T09 | Média | Homologar ajustes visuais e contagens | Cards exclusivos da Home, filtro por card, contagens de catálogos/administração com mais de 50 resultados, filtro por órgão, pesquisa, descrições longas, escala de texto, datas e rolagem. Validar também Meus Tipos e resumo; a existência dos ajustes no código não comprova ausência de overflow no navegador. |
-| T10 | Média | Executar verificações reproduzíveis | dart analyze, flutter analyze, flutter build web; testes de autenticação, check_estados_inicio e scripts SQL de administração/manifestações/publicação em homologação. Não há pipeline de CI no repositório revisado. Automatizar checks básicos quando o ambiente estiver disponível. |
+| Prioridade | Pendência | Evidência |
+| --- | --- | --- |
+| Média | Cores semânticas de avaliação | StatusTag usa azul-cinza para DESCONTINUAR e âmbar para EM_AVALIACAO; AGENTS.md pede verde e marrom. |
+| Média | Runner de testes do backend | dart test falha por ausência de package:test. Os testes existentes são programas executados com dart run. |
+| Baixa | Avisos dos analisadores | Backend: DotEnv.map reservado a testes. Frontend: idAssunto não usado e três usos obsoletos de DropdownButtonFormField.value. Sem avisos novos na distribuição. |
 
-## Autenticação: implementada, com limites a decidir
+Texto/binário vazio no ODBC foi corrigido e verificado no SQL Server. Catálogo,
+administração e nova distribuição reutilizam IndicadorCard. Esses itens não
+permanecem como defeitos abertos.
 
-O histórico informa autenticação por e-mail validada. Não deve constar como funcionalidade faltante. Código de uso único, expiração, limite de tentativas, reenvio, SMTP e revogação administrativa estão implementados. Confirmar as configurações e o comportamento no servidor de produção.
+O botão de nova tentativa em Início/Tipos/Resumo e submissão agora abre o login
+para HTTP 401 e limpa a pilha protegida. Quatro testes de navegação/repetição
+passaram; falta homologar com sessão real. Outros erros mantêm a recarga.
+O logout agora aceita sessão já encerrada e limpa o cookie. Os testes HTTP
+cobrem saída sem sessão, cookie desconhecido/revogado, repetição e auditoria
+de sessão válida; falta homologar o menu Sair no navegador.
 
-Sessões e códigos ficam em memória; reiniciar o backend exige novo login. O desenho atual pressupõe uma única instância. Persistência e prazos configuráveis são decisões futuras, necessárias se houver requisito de sobreviver a reinício ou executar múltiplas instâncias. Não introduzir essa complexidade no MVP sem necessidade. Confirmar comportamento dos limites de solicitações atrás do proxy e porta/certificado SMTP na implantação.
+## 2. Testes e homologações pendentes
 
-LOGIN/LOGIN_DEV/LOGOUT já são auditados. Um relatório administrativo de último acesso/quantidade de acessos não está implementado; é evolução, não ausência de auditoria.
+| Prioridade | Pendência | Situação efetiva |
+| --- | --- | --- |
+| Alta | Autorização com sessões reais | Comum não deve consultar/gravar distribuição, administrar usuários ou acessar avaliações de outro órgão. Admin sem vínculo consulta resumo, mas não edita/submete avaliações. Testes HTTP da distribuição usam sessão/banco simulados. |
+| Alta | Distribuição com duas sessões e carga 006 | Teste SQL passou em tabelas temporárias para conflitos, autorização, versão, rollback e auditoria. Conferir duas sessões reais, carga simultânea e permissões da credencial de produção. |
+| Alta | Decisão do Tipo e submissão | Confirmar 008 instalada, manter/descontinuar, justificativas, Tipo sem vínculos, concorrência, órgão 0 e bloqueio após finalizar. |
+| Alta | Instalação/publicação em banco descartável | 009, atualização de 002 e database/tests/publicacao_hierarquia.sql estão versionados. Instalação/migração com escrita ainda não executada. |
+| Média | Interface, filtros e totais no navegador | Conferir seleção de Tipos entre páginas/filtros, checkbox do cabeçalho, limpar seleção e vínculo em lote preservando vínculos. Conferir também Home/Tipos, catálogo e administração. Testes do diálogo e integração SQL executados; inspeção visual da tela completa não executada. |
+| Média | Cobertura automatizada e CI | Seis testes Flutter do editor, programas Dart e integração SQL temporária cobrem edição individual e inclusão em lote. Não há CI nem cobertura completa dos fluxos. |
 
-## Divergências encontradas na documentação
+Comandos da funcionalidade: `dart run test/distribuicao_test.dart`,
+`dart run test/distribuicao_sql_test.dart`, `flutter test --no-pub` e
+`flutter build web --no-pub`. Analisadores executados com os avisos acima.
+Detalhes em `docs/distribuicao_tipos.md`. Dados persistentes não foram alterados.
 
-- README e docs/proxima_etapa.md ainda dizem que SMTP e autenticação por e-mail não foram implementados. docs/autenticacao_email.md descreve o funcionamento atual.
-- docs/administracao.md ainda trata o login por e-mail e a trilha de autenticação como etapa futura e sugere testar apenas com o bypass. Há login real e eventos de autenticação.
-- docs/acesso_temporario.md descreve confirmação manual de visualização. A interface registra visualização ao escolher Manter/Sugerir descontinuação; a decisão é persistida ao salvar.
-- docs/inicio.md descreve quatro indicadores sobrepostos, nomes antigos e Tipo sem vínculos concluído apenas por visualização. A regra atual tem cinco estados exclusivos: Aguardando, Visualizados, Analisados, Validando e Submetidos; decisão explícita é necessária.
-- docs/interface.md descreve usuário sem nome, catálogo por atribuição e endpoint com atribuicao. Hoje há nome cadastrado e catálogo único por versão publicada. Também afirma que propriedades não inferem unidades, embora os prazos numéricos agora exibam anos conforme orientação do responsável.
-- docs/proxima_etapa.md coloca cadastros administrativos e dashboards fora do MVP, apesar da administração de usuários e acompanhamento existentes.
-- A documentação das propriedades ainda menciona descrição extensa/inatividade da hipótese legal; a apresentação aprovada agora contém somente nome/base legal.
+## 3. Ajustes de documentação e instalação
 
-## Segundo release e evoluções fora do escopo atual
+| Prioridade | Pendência | Situação efetiva |
+| --- | --- | --- |
+| Alta | Hierarquia na referência | Banco inspecionado tem assunto.id_assunto_pai, mas não ref_assunto.id_assunto_pai. Homologar 009/002 e preparar carga explícita dos pais. O script histórico usou o último ponto do código; não incorporar essa inferência à publicação. |
+| Alta | Produção | Desativar DEV_AUTH_ENABLED, conferir HTTPS, origem, cookie Secure, SMTP e privilégios SQL mínimos, inclusive os da distribuição. Documentar backup/restauração e implantação. |
+| Média | Documentação histórica restante | README/proxima_etapa/administracao ainda tratam partes da autenticação como futuras. inicio/interface/acesso_temporario têm descrições antigas de estados, propriedades e visualização. Instalação está documentada em docs/instalacao_banco.md, mas falta homologá-la. |
 
-- Tipos de Documento × Assuntos, com seleção de categoria, indicadores e submissão independentes dos Tipos de Processo. Proposta discutida; não implementada.
-- Importação por interface, criação/gestão de rodadas e associação órgão × Tipo por interface: operações ainda manuais/SQL. Não constam como requisitos obrigatórios para concluir o MVP.
-- Reabertura, decisão final da SETIC e integração de alterações no SEI: sem implementação e fora do fluxo aprovado até aqui.
-- Correção/substituição de referências imutáveis e política de rótulos históricos: requer procedimento definido. A hipótese legal é uma referência atual, sem versão própria; atualizações de nomes podem alterar a exibição de rodadas antigas sem mudar o ID armazenado.
-- Rever a cópia local de dart_odbc quando houver correção upstream; preservar os patches documentados e testar parâmetros/textos longos no ambiente de destino. Conexão/HY104 e submissão básica já foram validadas no histórico, portanto não são pendências de implementação.
+As criações de hipotese_legal e tipo_procedimento_restricao estão versionadas
+em 009. A ausência dos scripts foi corrigida; carga e implantação são etapas
+distintas da existência dos scripts.
 
-## Critério de encerramento
+## 4. Funcionalidades futuras dependentes de decisão
 
-Registrar data, ambiente, responsável e resultado das homologações. Não marcar testes como concluídos apenas porque o PR foi integrado ou existe roteiro. As prioridades acima são recomendações da revisão; itens dependentes de nova decisão de produto permanecem separados das falhas e testes do release atual.
+- Exportação/consolidação entre órgãos para comparar decisões e divergências:
+  definir formato e escopo com o responsável.
+- Referência dos códigos de grau de sigilo ainda não confirmados: não inferir
+  significados. Nível de acesso e hipótese legal já possuem apresentação.
+- Importação por interface, gestão de rodadas e aplicação da distribuição em
+  rodadas pela interface. Edição da distribuição foi implementada; aplicação
+  em rodadas continua sendo uma operação SQL separada e explícita.
+- Tipos de Documento × Assuntos, reabertura, decisão final SETIC e integração
+  de alterações no SEI: não implementados; não são defeitos do MVP atual.
+- Sessões/códigos persistentes e múltiplas instâncias: desenho atual usa
+  memória e uma instância. Só ampliar se houver requisito.
+- Relatório de último acesso/quantidade de acessos. Eventos de autenticação
+  já são auditados.
+- Política de correção/substituição de referências imutáveis e de referências
+  atuais sem versão própria, como hipótese legal e distribuição.
+
+Registrar ambiente, data e resultado das homologações. Não marcar um item
+como testado apenas porque existe roteiro, código ou PR.

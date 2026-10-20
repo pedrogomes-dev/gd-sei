@@ -223,6 +223,26 @@ class Router {
     final metodo = request.method;
     final filtros = request.uri.queryParameters;
 
+    if (metodo == 'GET' && caminho == '/api/admin/distribuicao') {
+      json(request, await administracao.consultarDistribuicao(idAdministrador));
+      return;
+    }
+    if (metodo == 'POST' && caminho == '/api/admin/distribuicao/vincular') {
+      json(request, await administracao.vincularDistribuicaoEmLote(
+        idAdministrador, await body(request)));
+      return;
+    }
+    final rotaDistribuicao =
+        RegExp(r'^/api/admin/distribuicao/tipos/(\d+)$').firstMatch(caminho);
+    if (metodo == 'POST' && rotaDistribuicao != null) {
+      final idTipo =
+          lerIdentificador(rotaDistribuicao.group(1)!, permitirZero: true);
+      await administracao.salvarDistribuicao(
+          idAdministrador, idTipo, await body(request));
+      json(request, {'ok': true});
+      return;
+    }
+
     if (metodo == 'GET' && caminho == '/api/admin/orgaos') {
       final orgaos = await administracao.listarOrgaos(idAdministrador);
       json(request, orgaos);

@@ -1,4 +1,32 @@
 import 'package:flutter/material.dart';
+import '../services/api_exception.dart';
+
+class ApiErrorMessage extends StatelessWidget {
+  final Object error;
+  final VoidCallback onRetry;
+
+  const ApiErrorMessage({super.key, required this.error, required this.onRetry});
+
+  void tentarNovamente(BuildContext context) {
+    if (error is ApiException && (error as ApiException).statusCode == 401) {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+      return;
+    }
+    onRetry();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(error.toString()),
+      const SizedBox(height: 16),
+      OutlinedButton(
+        onPressed: () => tentarNovamente(context),
+        child: const Text('Tentar novamente'),
+      ),
+    ]);
+  }
+}
 
 // As etiquetas sempre combinam texto, ícone e cor.
 class StatusTag extends StatelessWidget {
