@@ -4,7 +4,7 @@
 
 A administração segue `Router → AdministracaoController → DatabaseRepository` (conexão existente). O controller valida os campos em blocos separados e executa consultas SQL multilinha. Não há repository ou service intermediário para essa funcionalidade. `Validacoes.emailValido` concentra a regex de formato básico de e-mail; backend e frontend possuem o mesmo helper simples, sem acrescentar pacote compartilhado.
 
-As telas coordenam carregamento e navegação. Formulário, filtros, tabela e cartão de histórico ficam em `frontend/lib/widgets/admin`. Mantidos StatefulWidget/setState e componentes Flutter padrão. A refatoração não altera a instalação SQL: quem já executou 007 não deve executá-lo novamente. Não é uma verificação de existência ou entrega do e-mail; isso será tratado na autenticação.
+As telas coordenam carregamento e navegação. Formulário, filtros, tabela e cartão de histórico ficam em `frontend/lib/widgets/admin`. Mantidos StatefulWidget/setState e componentes Flutter padrão. A refatoração não altera a instalação SQL: quem já executou 007 não deve executá-lo novamente. A autenticação por e-mail está implementada e homologada; a administração apenas mantém os dados e permissões utilizados por esse fluxo.
 
 Primeira etapa: cadastro/edição de nome e e-mail, múltiplos órgãos, acesso ativo/inativo, perfil administrador e histórico administrativo. Não exclui usuários ou manifestações. Não cria órgãos nem modifica sua distribuição de processos. Administrador continua precisando de vínculo com órgão para avaliar.
 
@@ -22,7 +22,7 @@ Nome e e-mail são obrigatórios ao salvar; e-mail é normalizado para minúscul
 
 `auditoria_administrativa` registra alvo, responsável, nome/e-mail do responsável no momento do evento, data UTC e snapshots de nome/e-mail/situação/perfil/órgãos. Trigger bloqueia UPDATE/DELETE. A aplicação só expõe consulta paginada; datas são apresentadas no fuso do navegador. Não registra tokens. A conta SQL da aplicação não deve ter ALTER/TRUNCATE nem privilégios de proprietário; conceder consulta e execução das procedures necessárias, evitando alterações diretas de usuários, vínculos e histórico.
 
-Alterar e-mail, situação, perfil ou órgãos incrementa `versao_sessao`. Cada requisição verifica a versão e o usuário ativo: sessões anteriores ficam inválidas mesmo após reativação. Sessões de desenvolvimento ainda são em memória e expiram em oito horas. Alterar somente o nome não revoga a sessão. A tela volta ao login após alterar as próprias permissões; alterar o e-mail do usuário de teste impede o login fixo existente. Não há bloqueio contra essa alteração.
+Alterar e-mail, situação, perfil ou órgãos incrementa `versao_sessao`. Cada requisição verifica a versão e o usuário ativo: sessões anteriores ficam inválidas mesmo após reativação. Sessões permanecem em memória e expiram em oito horas; por isso a implantação inicial deve usar uma única réplica do backend. Alterar somente o nome não revoga a sessão. A tela volta ao login após alterar as próprias permissões; alterar o e-mail do usuário de teste impede o login fixo existente. Não há bloqueio contra essa alteração.
 
 ## API
 
@@ -38,7 +38,7 @@ Todos os endpoints exigem administrador ativo no backend. IDs de órgãos não d
 
 O ambiente de edição não tem Dart/Flutter nem SQL Server: análise, compilação e testes SQL ainda precisam ser executados no destino. `database/tests/administracao.sql` usa fixtures com rollback, somente em homologação; identidades podem avançar. Testa criação, normalização, vínculos, revisão, snapshots, revogação, auto-desativação, autorização, duplicidade, órgão inválido e imutabilidade.
 
-No navegador: conferir lista, filtros combinados, total/paginação, nome longo e rolagem; criar/editar usuário, vincular/desvincular órgãos e verificar histórico; abrir a edição em duas abas e confirmar conflito na segunda. Conferir HTTP 403 nas rotas administrativas com usuário não administrador. Enquanto o login é fixo, essa última verificação pode ser feita retirando temporariamente o perfil do usuário de teste em base de homologação e restaurando-o por script do operador. Conferir também sessão inválida após alteração de permissão e após desativar/reativar, inclusive em outra aba. Preenchimento perdido por conflito deve ser reaplicado após recarregar.
+No navegador: conferir lista, filtros combinados, total/paginação, nome longo e rolagem; criar/editar usuário, vincular/desvincular órgãos e verificar histórico; abrir a edição em duas abas e confirmar conflito na segunda. Conferir HTTP 403 nas rotas administrativas com usuário não administrador. Conferir também sessão inválida após alteração de permissão e após desativar/reativar, inclusive em outra aba. Preenchimento perdido por conflito deve ser reaplicado após recarregar.
 
-Autenticação por e-mail, tokens de uso único, sessões persistentes, trilha de autenticação e indicadores de quantidade/último acesso pertencem à segunda etapa. Novos usuários cadastrados ainda não podem entrar pelo bypass fixo. Esta etapa não apresenta contadores de acesso incompletos como se fossem definitivos.
+A autenticação por e-mail e a trilha de login/logout estão implementadas e homologadas. Persistência compartilhada de sessões/códigos e indicadores consolidados de quantidade/último acesso permanecem fora do MVP atual.
 

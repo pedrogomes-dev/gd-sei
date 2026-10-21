@@ -25,13 +25,11 @@ Limites de interface/API: observação 5000 caracteres, justificativa 2000, pesq
 
 ## Validação
 
-O ambiente de criação não tem SDKs nem SQL Server. Verificações estruturais foram feitas; compilação e integração devem ser executadas no ambiente de destino.
+O fluxo funcional de manifestação e submissão foi homologado, incluindo decisões do Tipo, vínculos, justificativas, resumo, finalização e bloqueio posterior. A autenticação por e-mail também foi homologada.
 
-Em homologação, `database/tests/manifestacoes.sql` testa salvar/editar, auditoria, finalizar, revisão obsoleta, justificativa ausente, Tipo não visualizado, vínculo sem decisão, edição após finalização usuário sem vínculo com o órgão, inclusão de vínculo já existente, Assunto inexistente e duplicidades. Usa fixtures em transações desfeitas. IDs de identidade podem avançar. Não executar na base oficial.
+`database/tests/manifestacoes.sql` permanece como roteiro técnico para regressão em ambiente descartável. Não executar testes com escrita na base oficial.
 
-Verificação manual adicional: mesma tela aberta em dois navegadores; primeiro salva, segundo deve receber conflito. Pesquisar código, descrição, observação e índice; propor inclusão com e sem justificativa; confirmar bloqueio após finalizar em outra aba. Histórico antes/depois deve permanecer consultável no banco.
-
-Autenticação por e-mail e sessões persistentes continuam pendentes; o acesso de desenvolvimento atual é preservado.
+Persistência compartilhada de sessões não faz parte do MVP atual; o backend deve operar inicialmente com uma única réplica.
 
 ## Identificação visual e pesquisa
 
@@ -47,5 +45,5 @@ O Router encaminha a revisão, busca, salvamento, resumo e finalização para `M
 
 As telas `TipoScreen` e `ResumoScreen` coordenam o estado e as operações. Widgets em `frontend/lib/widgets/manifestacao` cuidam dos vínculos, justificativas, busca, informações do Assunto e resumo de cada Tipo. Os controllers de texto permanecem na tela de revisão, para conservar o preenchimento ao navegar. Mantidos o aviso de descarte, rascunho compartilhado, etiquetas, cores e bloqueio após finalização.
 
-Esta refatoração não modifica as procedures ou tabelas SQL e não exige reaplicar 005/007. As mesmas rotas e campos JSON são usados; métodos internos da API receberam nomes mais claros. Homologar análise/compilação, busca por ID e texto com paginação, manter/remover/incluir com justificativa, salvamento e recarga, aviso de descarte, resumo/contadores, informações de guarda/destinação, submissão e edição concorrente. Reutilizar `database/tests/manifestacoes.sql` apenas em homologação.
+Esta refatoração não modifica as procedures ou tabelas SQL e não exige reaplicar 005/007. As mesmas rotas e campos JSON são usados; métodos internos da API receberam nomes mais claros. Análise estática e testes automatizados permanecem controles independentes da homologação funcional já concluída.
 
