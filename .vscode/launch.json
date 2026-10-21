@@ -19,7 +19,7 @@
       "request": "launch",
       "cwd": "${workspaceFolder}/frontend",
       "program": "${workspaceFolder}/frontend/lib/main.dart",
-      "deviceId": "chrome",
+      "deviceId": "edge",
       "flutterMode": "debug",
       "toolArgs": [
         "--web-port=3000",
