@@ -9,5 +9,4 @@ Escolha o id_consulta correto e execute primeiro com @aplicar=0. Revise os grupo
 A carga apenas acrescenta pares ausentes em grupos não finalizados. Não reabre grupos, exclui atribuições, copia manifestações nem altera rodadas anteriores. Atualiza a revisão do grupo para impedir submissão de resumo obsoleto. Uma nova execução não duplica pares existentes.
 Avaliações finalizadas em outras rodadas são indicadas na prévia para decisão humana; não são automaticamente copiadas ou consideradas válidas. A aplicação não tem acesso direto ao banco do usuário.
 ## Validação
-Conferir catálogo com usuário sem atribuições, busca por ID/texto, ativos/inativos, paginação e versão. Conferir nomenclatura e rodadas antigas/finalizadas. Na homologação SQL, executar prévia, aplicar em rodada de teste, repetir e confirmar ausência de duplicação; verificar bloqueio de grupos finalizados e revisão obsoleta.
-Ambiente de edição sem Dart/Flutter e SQL Server: compilação e integração pendentes. Reiniciar backend/frontend após atualização.
+O catálogo e a interface principal foram homologados. A aplicação da distribuição pela procedure 006 continua sujeita ao teste concorrente específico documentado em `docs/distribuicao_tipos.md`. A instalação completa em banco novo permanece pendente.

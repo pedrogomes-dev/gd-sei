@@ -85,7 +85,4 @@ Não exige publicação, ALTER ou exclusão de avaliações.
 - Leitura real da distribuição e sintaxe SQL por PARSEONLY, sem gravação
   persistente. `flutter build web --no-pub` concluído.
 
-Homologação visual, sessões reais de administrador/usuário comum, concorrência
-entre duas sessões/carga 006 e permissões SQL de produção continuam pendentes.
-Os testes simulados/temporários não substituem essas verificações. Permanecem
-os avisos preexistentes dos analisadores.
+A homologação visual e a autorização com sessões reais foram concluídas. Permanecem pendentes o teste concorrente entre duas sessões/carga 006 e a conferência das permissões SQL efetivas de produção. Os testes simulados/temporários não substituem o cenário concorrente real.

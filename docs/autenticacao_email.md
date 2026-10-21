@@ -62,8 +62,7 @@ Em Início, Tipos atribuídos e Resumo e submissão, o botão **Tentar novamente
 abre o login quando a API responde HTTP 401. A navegação remove as telas
 protegidas do histórico. Para outros erros, o botão repete o carregamento.
 O frontend preserva o status HTTP em `ApiException`, sem comparar mensagens.
-O teste `frontend/test/api_error_message_test.dart` cobre esses comportamentos
-com navegação Flutter simulada; a homologação com sessão real continua pendente.
+O teste `frontend/test/api_error_message_test.dart` cobre esses comportamentos com navegação Flutter simulada; o fluxo com sessão real também foi homologado.
 
 O endpoint de logout também aceita sessão ausente, desconhecida ou revogada:
 limpa o cookie e retorna sucesso, permitindo que **Sair** abra o login. Sessões
@@ -82,6 +81,6 @@ dart test test/autenticacao_email_test.dart
 
 Os testes usam relógio controlado, banco e envio simulados; não acessam SQL Server nem enviam mensagens reais. Cobrem expiração, tentativas, reenvio, uso único, usuário ativo, alteração de permissões, auditoria, sessão e falha SMTP. Não foi possível executá-los neste ambiente, que não tem o SDK Dart/Flutter.
 
-No frontend, executar flutter pub get, flutter analyze e flutter build web. Depois testar envio real com um usuário cadastrado, prazo de chegada, validade, reenvio, logout e revogação administrativa. Confirmar a porta e o certificado do SMTP. Não ativar o fluxo em produção antes dessa validação.
+O envio SMTP real, validade/reenvio do código, login, logout e revogação administrativa foram homologados. Em produção, preservar a mesma configuração segura de SMTP, HTTPS e cookies descrita em `docs/producao.md`.
 
 Dependências de apoio no backend: mailer para o SMTP e crypto para HMAC-SHA256. Referências: https://pub.dev/packages/mailer e https://pub.dev/packages/crypto.

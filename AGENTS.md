@@ -138,16 +138,16 @@ Estados semânticos relevantes:
 - `EM_AVALIACAO`
 - `NAO_VISUALIZADO`
 
-Representação desejada:
+Representação atual, centralizada em `StatusTag`:
 
 ```text
-Avaliação completa       -> verde + check
-Descontinuação proposta  -> verde + X
-Vínculos pendentes       -> marrom + indicador de pendência
-Não visualizado          -> vermelho + indicador correspondente
+Avaliado / avaliação completa -> verde + check
+Descontinuação proposta       -> azul-cinza + X
+Em avaliação / vínculos pendentes -> âmbar + indicador de pendência
+Não visualizado              -> vermelho + indicador correspondente
 ```
 
-Verde significa decisão/avaliação concluída. A diferença entre manutenção e proposta de descontinuação deve ser comunicada também pelo ícone, não apenas pela cor.
+A documentação deve refletir o componente vigente. Não alterar cores ou ícones sem decisão explícita de interface.
 
 ## Catálogos
 

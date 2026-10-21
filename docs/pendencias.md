@@ -1,9 +1,8 @@
 # Pendências — 21/10/2026
 
-Referência de desenvolvimento: `AGENTS.md`. Uma implementação ou compilação
-bem-sucedida não comprova homologação em produção.
+Referência de desenvolvimento: `AGENTS.md`.
 
-## 1. Defeitos confirmados
+O fluxo principal do MVP está implementado e homologado. Não permanecem como pendências: autenticação SMTP real, manifestação/submissão, autorização entre usuário comum/admin/órgãos e homologação visual principal.
 
 | Prioridade | Pendência | Evidência |
 | --- | --- | --- |
@@ -24,15 +23,19 @@ passaram; falta homologar com sessão real. Outros erros mantêm a recarga.
 O logout agora aceita sessão já encerrada e limpa o cookie. Os testes HTTP
 cobrem saída sem sessão, cookie desconhecido/revogado, repetição e auditoria
 de sessão válida; falta homologar o menu Sair no navegador.
+## 1. Pendências de alta prioridade
 
-## 2. Testes e homologações pendentes
+| Prioridade | Pendência | Situação |
+| --- | --- | --- |
+| Alta | Instalação/publicação em banco descartável | Scripts e roteiros existem; falta executar e validar a sequência completa em banco novo. |
+| Alta | Distribuição com duas sessões e carga 006 | Testes técnicos existem; falta cenário concorrente real com duas sessões administrativas e carga/procedure 006. |
+| Alta | Implantação OpenShift | Dockerfiles e proxy estão versionados; build, implantação e smoke test no cluster ainda não foram executados. |
 
-- Assuntos apenas estruturais: homologar bloqueio de novas inclusões pela API,
-  tooltip/expansão e fluxo de avaliação. Duas propostas estruturais preexistentes
-  foram identificadas por leitura e preservadas para decisão de saneamento;
-  detalhes em `docs/assuntos_estruturais.md`.
+As referências atuais, inclusive a hierarquia de Assuntos, foram conferidas pelo responsável e estão corretas.
 
-| Prioridade | Pendência | Situação efetiva |
+## 2. Qualidade técnica
+
+| Prioridade | Pendência | Situação |
 | --- | --- | --- |
 | Alta | Autorização com sessões reais | Comum não deve consultar/gravar distribuição, administrar usuários ou acessar avaliações de outro órgão. Admin sem vínculo consulta resumo, mas não edita/submete avaliações. Testes HTTP da distribuição usam sessão/banco simulados. |
 | Alta | Distribuição com duas sessões e carga 006 | Teste SQL passou em tabelas temporárias para conflitos, autorização, versão, rollback e auditoria. Conferir duas sessões reais, carga simultânea e permissões da credencial de produção. |
@@ -45,36 +48,35 @@ Comandos da funcionalidade: `dart test test/distribuicao_test.dart`,
 `dart run test/distribuicao_sql.dart`, `flutter test` e
 `flutter build web`. Analisadores agora sem apontamentos.
 Detalhes em `docs/distribuicao_tipos.md`. Dados persistentes não foram alterados.
+| Média | Runner de testes do backend | Adequar os testes ao runner padrão `dart test` com `package:test`, preservando integrações que precisem permanecer executáveis separadamente. |
+| Média | CI | Criar pipeline mínima para análise, testes e build de backend/frontend, sem deploy automático. |
+| Baixa | Avisos dos analisadores | Corrigir avisos conhecidos de dotenv, variável não utilizada e APIs Flutter obsoletas. |
 
-## 3. Ajustes de documentação e instalação
+O comportamento atual do `StatusTag` deve ser preservado. Não existe pendência de alteração de suas cores.
 
-| Prioridade | Pendência | Situação efetiva |
-| --- | --- | --- |
-| Alta | Hierarquia na referência | Banco inspecionado tem assunto.id_assunto_pai, mas não ref_assunto.id_assunto_pai. Homologar 009/002 e preparar carga explícita dos pais. O script histórico usou o último ponto do código; não incorporar essa inferência à publicação. |
-| Alta | Produção | Desativar DEV_AUTH_ENABLED, conferir HTTPS, origem, cookie Secure, SMTP e privilégios SQL mínimos, inclusive os da distribuição. Documentar backup/restauração e implantação. |
-| Média | Documentação histórica restante | README/proxima_etapa/administracao ainda tratam partes da autenticação como futuras. inicio/interface/acesso_temporario têm descrições antigas de estados, propriedades e visualização. Instalação está documentada em docs/instalacao_banco.md, mas falta homologá-la. |
+## 3. Produção
 
-As criações de hipotese_legal e tipo_procedimento_restricao estão versionadas
-em 009. A ausência dos scripts foi corrigida; carga e implantação são etapas
-distintas da existência dos scripts.
+A formalização operacional está em `docs/producao.md`.
+
+Antes da disponibilização em produção, ainda é necessário:
+
+- concluir a homologação da instalação em banco novo;
+- concluir o teste concorrente da distribuição;
+- implantar e validar no OpenShift;
+- conferir as permissões SQL efetivas da credencial de produção;
+- manter backend com uma única réplica enquanto sessões/códigos forem armazenados em memória.
 
 ## 4. Funcionalidades futuras dependentes de decisão
 
-- Exportação/consolidação entre órgãos para comparar decisões e divergências:
-  definir formato e escopo com o responsável.
-- Referência dos códigos de grau de sigilo ainda não confirmados: não inferir
-  significados. Nível de acesso e hipótese legal já possuem apresentação.
-- Importação por interface, gestão de rodadas e aplicação da distribuição em
-  rodadas pela interface. Edição da distribuição foi implementada; aplicação
-  em rodadas continua sendo uma operação SQL separada e explícita.
-- Tipos de Documento × Assuntos, reabertura, decisão final SETIC e integração
-  de alterações no SEI: não implementados; não são defeitos do MVP atual.
-- Sessões/códigos persistentes e múltiplas instâncias: desenho atual usa
-  memória e uma instância. Só ampliar se houver requisito.
-- Relatório de último acesso/quantidade de acessos. Eventos de autenticação
-  já são auditados.
-- Política de correção/substituição de referências imutáveis e de referências
-  atuais sem versão própria, como hipótese legal e distribuição.
+- Exportação/consolidação entre órgãos para comparação de decisões e divergências.
+- Gestão de rodadas e aplicação da distribuição pela interface.
+- Tipos de Documento × Assuntos.
+- Reabertura de manifestação.
+- Decisão final SETIC.
+- Integração automática de alterações no SEI.
+- Persistência compartilhada de sessões/códigos e múltiplas instâncias.
+- Relatório de último acesso/quantidade de acessos.
+- Política de correção/substituição de referências imutáveis.
+- Referência oficial para códigos de grau de sigilo.
 
-Registrar ambiente, data e resultado das homologações. Não marcar um item
-como testado apenas porque existe roteiro, código ou PR.
+Registrar ambiente, data e resultado das homologações restantes. Não marcar um item como homologado apenas porque existe código, roteiro ou PR.
