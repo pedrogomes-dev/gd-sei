@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GD-SEI: Backend Dart",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend",
+      "program": "${workspaceFolder}/backend/bin/server.dart",
+      "env": {
+        "HOST": "127.0.0.1",
+        "PORT": "8080",
+        "ALLOWED_ORIGIN": "http://localhost:3000"
+      }
+    },
+    {
+      "name": "GD-SEI: Frontend Flutter Web",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "${workspaceFolder}/frontend/lib/main.dart",
+      "deviceId": "chrome",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--web-port=3000",
+        "--web-hostname=localhost",
+        "--dart-define=API_BASE_URL=http://localhost:8080"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "GD-SEI: Backend + Frontend",
+      "configurations": [
+        "GD-SEI: Backend Dart",
+        "GD-SEI: Frontend Flutter Web"
+      ],
+      "stopAll": true
+    }
+  ]
+}
