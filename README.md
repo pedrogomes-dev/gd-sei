@@ -57,6 +57,9 @@ Referências aceitam INSERT controlado, mas UPDATE/DELETE são bloqueados confor
 
 ## Git
 
+Runner padrão, comandos de testes, CI mínimo e limites das verificações:
+[docs/testes_ci.md](docs/testes_ci.md). O CI usa Dart 3.13.2 e Flutter 3.47.2.
+
 Repositório: https://github.com/pedrogomes-dev/gd-sei — branch `main`.
 
 ```bash

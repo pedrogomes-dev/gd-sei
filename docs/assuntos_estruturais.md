@@ -35,8 +35,8 @@ propostas preexistentes, ambas na versão 0: atribuição 2/Assunto 332 e
 atribuição 27/Assunto 319. Nenhum registro foi modificado. Esses resultados
 são uma fotografia da consulta, não uma garantia sobre alterações posteriores.
 
-Testes específicos: `dart run test/assuntos_estruturais_test.dart` (backend com
-banco simulado), `dart run test/assuntos_estruturais_sql_test.dart` (consulta
+Testes específicos: `dart test test/assuntos_estruturais_test.dart` (backend com
+banco simulado), `dart run test/assuntos_estruturais_sql.dart` (consulta
 real de elegibilidade, somente leitura, autorização simulada) e
 `flutter test --no-pub` (inclui seleção/tooltip/expansão).
 O teste SQL passou: rejeitou uma nova inclusão estrutural, aceitou um pai

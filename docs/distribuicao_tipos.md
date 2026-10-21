@@ -75,9 +75,9 @@ Não exige publicação, ALTER ou exclusão de avaliações.
 
 ## Verificações executadas e limites
 
-- `dart run test/distribuicao_test.dart`: rotas HTTP com sessão/banco simulados;
+- `dart test test/distribuicao_test.dart`: rotas HTTP com sessão/banco simulados;
   autorização, parâmetros, múltiplos órgãos, remoção e conflitos.
-- `dart run test/distribuicao_sql_test.dart`: SQL Server real com tabelas
+- `dart run test/distribuicao_sql.dart`: SQL Server real com tabelas
   temporárias privadas e trava de teste; inclusão/remoção, perfil, versão,
   edição obsoleta, rollback e auditoria. Não grava em tabelas persistentes.
 - `flutter test --no-pub`: seis testes de seleção múltipla, busca, cancelamento,

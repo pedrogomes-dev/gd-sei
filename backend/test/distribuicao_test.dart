@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:test/test.dart';
 
 import '../lib/config/database_config.dart';
 import '../lib/controllers/administracao_controller.dart';
@@ -105,7 +106,11 @@ class SessaoTeste extends AuthService {
   Future<int> authorize(HttpRequest request) async => 1;
 }
 
-Future<void> main() async {
+void main() {
+  test('distribuição HTTP com banco e sessão simulados', executarCenarios);
+}
+
+Future<void> executarCenarios() async {
   final banco = BancoDistribuicaoTeste();
   final admin = AdministracaoController(banco);
   final consultas = ConsultaRepository(banco);

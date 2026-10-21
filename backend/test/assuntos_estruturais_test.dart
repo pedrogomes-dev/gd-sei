@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:test/test.dart';
 
 import '../lib/config/database_config.dart';
 import '../lib/controllers/manifestacao_controller.dart';
@@ -79,7 +80,12 @@ class ConsultasTeste extends ConsultaRepository {
   }
 }
 
-Future<void> main() async {
+void main() {
+  test('assuntos estruturais: versão, autorização e preservação',
+      executarCenarios);
+}
+
+Future<void> executarCenarios() async {
   final banco = BancoTeste();
   final consultas = ConsultasTeste(banco);
   final controller = ManifestacaoController(banco, consultas);

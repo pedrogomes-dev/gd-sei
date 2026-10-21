@@ -75,8 +75,8 @@ No backend:
 ```sh
 dart pub get
 dart analyze
-dart run test/codigos_acesso_test.dart
-dart run test/autenticacao_email_test.dart
+dart test test/codigos_acesso_test.dart
+dart test test/autenticacao_email_test.dart
 ```
 
 Os testes usam relógio controlado, banco e envio simulados; não acessam SQL Server nem enviam mensagens reais. Cobrem expiração, tentativas, reenvio, uso único, usuário ativo, alteração de permissões, auditoria, sessão e falha SMTP. Não foi possível executá-los neste ambiente, que não tem o SDK Dart/Flutter.
