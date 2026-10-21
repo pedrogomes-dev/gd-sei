@@ -1,3 +1,5 @@
+import 'package:test/test.dart';
+
 import '../lib/models/api_error.dart';
 import '../lib/services/codigos_acesso.dart';
 
@@ -16,6 +18,10 @@ void deveNegar(void Function() operacao, int status) {
 }
 
 void main() {
+  test('códigos: uso único, expiração, reenvio e limites', executarCenarios);
+}
+
+void executarCenarios() {
   var instante = DateTime.utc(2026, 10, 9);
   final armazenamento = CodigosAcesso(relogio: () => instante);
   const email = 'teste@setic.ro.gov.br';
@@ -23,13 +29,16 @@ void main() {
 
   armazenamento.reservarEnvio(email, ip);
   final codigo = armazenamento.criar(email, 1, 2);
-  verificar(int.parse(codigo) >= 100000 && int.parse(codigo) <= 999999, 'Código fora da faixa.');
+  verificar(int.parse(codigo) >= 100000 && int.parse(codigo) <= 999999,
+      'Código fora da faixa.');
   deveNegar(() => armazenamento.consumir(email, codigo), 401);
   armazenamento.confirmarEnvio(email);
   armazenamento.liberarEnvio(email);
   final registro = armazenamento.consumir(email, codigo);
-  verificar(registro.idUsuario == 1 && registro.versaoSessao == 2, 'Cadastro perdido.');
-  verificar(registro.hash != codigo && registro.hash.length == 64, 'Código armazenado sem hash.');
+  verificar(registro.idUsuario == 1 && registro.versaoSessao == 2,
+      'Cadastro perdido.');
+  verificar(registro.hash != codigo && registro.hash.length == 64,
+      'Código armazenado sem hash.');
   deveNegar(() => armazenamento.consumir(email, codigo), 401);
   deveNegar(() => armazenamento.reservarEnvio(email, ip), 429);
 
@@ -58,7 +67,9 @@ void main() {
   instante = instante.add(const Duration(minutes: 1));
   armazenamento.reservarEnvio(email, ip);
   var novo = armazenamento.criar(email, 1, 2);
-  while (novo == anterior) { novo = armazenamento.criar(email, 1, 2); }
+  while (novo == anterior) {
+    novo = armazenamento.criar(email, 1, 2);
+  }
   armazenamento.confirmarEnvio(email);
   armazenamento.liberarEnvio(email);
   deveNegar(() => armazenamento.consumir(email, anterior), 401);
@@ -74,5 +85,6 @@ void main() {
   instante = instante.add(const Duration(minutes: 1));
   limitado.reservarEnvio('outro@setic.ro.gov.br', ip);
   limitado.liberarEnvio('outro@setic.ro.gov.br');
-  print('Códigos: uso único, expiração, tentativas, reenvio, hash e limite por IP verificados.');
+  print(
+      'Códigos: uso único, expiração, tentativas, reenvio, hash e limite por IP verificados.');
 }
