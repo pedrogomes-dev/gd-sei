@@ -1,4 +1,4 @@
-# Pendências — 19/10/2026
+# Pendências — 21/10/2026
 
 Referência de desenvolvimento: `AGENTS.md`. Uma implementação ou compilação
 bem-sucedida não comprova homologação em produção.
@@ -8,12 +8,15 @@ bem-sucedida não comprova homologação em produção.
 | Prioridade | Pendência | Evidência |
 | --- | --- | --- |
 | Média | Cores semânticas de avaliação | StatusTag usa azul-cinza para DESCONTINUAR e âmbar para EM_AVALIACAO; AGENTS.md pede verde e marrom. |
-| Média | Runner de testes do backend | dart test falha por ausência de package:test. Os testes existentes são programas executados com dart run. |
-| Baixa | Avisos dos analisadores | Backend: DotEnv.map reservado a testes. Frontend: idAssunto não usado e três usos obsoletos de DropdownButtonFormField.value. Sem avisos novos na distribuição. |
 
 Texto/binário vazio no ODBC foi corrigido e verificado no SQL Server. Catálogo,
 administração e nova distribuição reutilizam IndicadorCard. Esses itens não
 permanecem como defeitos abertos.
+
+Runner padrão do backend e os cinco apontamentos dos analisadores foram corrigidos.
+`dart test` executa seis testes; `flutter test` executa treze; ambos os analisadores
+estão sem apontamentos. CI mínimo preparado, ainda sem execução remota.
+Resultados e limites do format check incremental em `docs/testes_ci.md`.
 
 O botão de nova tentativa em Início/Tipos/Resumo e submissão agora abre o login
 para HTTP 401 e limpa a pilha protegida. Quatro testes de navegação/repetição
@@ -36,11 +39,11 @@ de sessão válida; falta homologar o menu Sair no navegador.
 | Alta | Decisão do Tipo e submissão | Confirmar 008 instalada, manter/descontinuar, justificativas, Tipo sem vínculos, concorrência, órgão 0 e bloqueio após finalizar. |
 | Alta | Instalação/publicação em banco descartável | 009, atualização de 002 e database/tests/publicacao_hierarquia.sql estão versionados. Instalação/migração com escrita ainda não executada. |
 | Média | Interface, filtros e totais no navegador | Conferir seleção de Tipos entre páginas/filtros, checkbox do cabeçalho, limpar seleção e vínculo em lote preservando vínculos. Conferir também Home/Tipos, catálogo e administração. Testes do diálogo e integração SQL executados; inspeção visual da tela completa não executada. |
-| Média | Cobertura automatizada e CI | Seis testes Flutter do editor, programas Dart e integração SQL temporária cobrem edição individual e inclusão em lote. Não há CI nem cobertura completa dos fluxos. |
+| Média | Cobertura automatizada e CI | Runner Dart e workflow mínimo preparados. Falta executar o CI remoto e ampliar cobertura dos fluxos completos. SQL permanece como executáveis separados, fora do CI. |
 
-Comandos da funcionalidade: `dart run test/distribuicao_test.dart`,
-`dart run test/distribuicao_sql_test.dart`, `flutter test --no-pub` e
-`flutter build web --no-pub`. Analisadores executados com os avisos acima.
+Comandos da funcionalidade: `dart test test/distribuicao_test.dart`,
+`dart run test/distribuicao_sql.dart`, `flutter test` e
+`flutter build web`. Analisadores agora sem apontamentos.
 Detalhes em `docs/distribuicao_tipos.md`. Dados persistentes não foram alterados.
 
 ## 3. Ajustes de documentação e instalação
