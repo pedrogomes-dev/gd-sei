@@ -29,17 +29,8 @@ O atalho abre o resumo do órgão. Administradores sem vínculo com aquele órg�
 
 ## Implementação e validação
 
-Não há migração nem nova tabela. InicioController consulta os dados existentes. A tela utiliza StatefulWidget, setState e dois widgets de apresentação: IndicadorCard e TabelaOrgaos.
+Não há migração nem nova tabela. `InicioController` consulta os dados existentes e a tela utiliza `StatefulWidget`, `setState`, `IndicadorCard` e `TabelaOrgaos`.
 
-Antes de integrar, executar no ambiente com Dart/Flutter e SQL Server:
-
-1. Rodar `dart analyze` no backend e `flutter analyze` e `flutter build web` no frontend.
-2. Entrar como administrador e como usuário vinculado a um único órgão; comparar totais e órgãos visíveis.
-3. Tentar consultar rodada e resumo de órgão não vinculado com usuário comum; o backend deve negar. Administrador sem vínculo deve consultar o resumo, mas ter as operações de edição/submissão negadas.
-4. Conferir atribuição não vista, vista com decisão parcial, completamente analisada, sem vínculos originais e submetida. Comparar com o resumo da mesma rodada.
-5. Conferir um Tipo de Processo atribuído a dois órgãos, duas versões da base e duas rodadas. Nenhuma contagem deve atravessar rodada, versão ou órgão.
-6. Testar busca, filtros, rodada sem órgãos, órgão sem atribuições, atualização após submissão e redimensionamento em telas largas e estreitas.
-
-Neste trabalho, as consultas de leitura foram verificadas com dados controlados em SQLite, usando a mesma lógica SQL portável. Isso valida contagens e escopo dos SELECTs; não substitui a execução no SQL Server nem a compilação Dart/Flutter.
+A navegação, os indicadores, a visualização por perfil e as restrições entre administrador, usuário comum e órgãos foram homologados. Análise estática, testes automatizados e implantação são controles independentes e não devem ser confundidos com essa homologação funcional.
 
 
