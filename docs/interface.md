@@ -1,6 +1,6 @@
 # Interface de revisão
 
-A interface autenticada utiliza cabeçalho com o e-mail real da sessão e órgãos vinculados, menu lateral agrupado em Validação/Catálogo e caminho de navegação. Em janelas estreitas o menu fica em uma gaveta. O cadastro atual não possui nome do usuário; a interface não presume um nome a partir do e-mail.
+A interface autenticada utiliza cabeçalho com nome/e-mail da sessão e órgãos vinculados, menu lateral agrupado em Validação/Catálogo/Administração e caminho de navegação. Em janelas estreitas o menu fica em uma gaveta.
 
 - Meus Tipos: seleção de órgão quando houver mais de um, resumo de progresso e tabela com busca/filtros. Revisão completa exige visualização e zero vínculos pendentes. O progresso usa todos os Tipos do órgão/consulta, independentemente do filtro textual.
 - Resumo e submissão: consultas agrupadas por órgão. Finalizadas oferecem Consultar resumo.
@@ -14,15 +14,7 @@ Nenhuma migração SQL necessária. Mantidos acesso temporário, publicação tr
 
 ## Homologação
 
-1. Executar dart analyze no backend e flutter analyze no frontend; reiniciar ambos.
-2. Conferir e-mail/órgãos no cabeçalho, menu em janela larga/estreita e retorno de telas.
-3. Conferir filtros, seleção de órgão e progresso com mais de uma consulta.
-4. Abrir catálogo de Assuntos/Tipos; pesquisar ID e texto, navegar páginas e abrir propriedades. Tentar atribuição de outro órgão não autorizado deve falhar.
-5. Editar um rascunho, navegar pelo menu e voltar: preenchimento deve permanecer. Voltar da revisão/sair da conta deve confirmar descarte.
-6. Salvar, revisar resumo, submeter em consulta de teste e conferir bloqueio de edição em outra aba. Manter teste de revisão concorrente existente.
-7. Conferir data de finalização no fuso do navegador e textos longos.
-
-Limite da validação nesta alteração: ambiente de edição sem Dart/Flutter ou SQL Server; não houve execução de analyze, build ou integração. Fazer essas verificações antes do merge.
+A homologação funcional e visual principal da interface foi concluída, incluindo autenticação, navegação, manifestação/submissão e autorização por órgão. Testes automatizados e analisadores continuam sendo tratados separadamente das verificações manuais.
 
 ## Ajustes após homologação visual
 
