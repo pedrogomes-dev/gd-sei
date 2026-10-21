@@ -40,7 +40,7 @@ class UserFilters extends StatelessWidget {
     }
 
     return DropdownButtonFormField<int>(
-      value: idOrgao,
+      initialValue: idOrgao,
       isExpanded: true,
       decoration: const InputDecoration(labelText: 'Órgão'),
       items: opcoes,

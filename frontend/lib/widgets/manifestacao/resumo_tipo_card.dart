@@ -37,7 +37,6 @@ class ResumoTipoCard extends StatelessWidget {
   }
 
   TableRow linhaDecisao(BuildContext context, dynamic decisao) {
-    final idAssunto = decisao['id_assunto'];
     final codigo = decisao['codigo_estruturado'];
     final justificativa = decisao['justificativa']?.toString() ?? '';
 

@@ -90,7 +90,7 @@ class _InicioScreenState extends State<InicioScreen> {
           
         const SizedBox(height: 8),
         DropdownButtonFormField<int>(
-          value: idConsulta,
+          initialValue: idConsulta,
           isExpanded: true,
           decoration: const InputDecoration(),
           items: rodadas.map((rodada) {

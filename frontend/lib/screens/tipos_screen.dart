@@ -103,7 +103,7 @@ class _TiposScreenState extends State<TiposScreen> {
         const Text('Revise os Tipos de Processo e seus vínculos. A manifestação é compartilhada pelo órgão.',style:TextStyle(color:Colors.blueGrey)),
         const SizedBox(height:24),
         if(organs.length>1)Padding(padding:const EdgeInsets.only(bottom:24),child:DropdownButtonFormField<String>(
-          value:organ,decoration:const InputDecoration(labelText:'Órgão'),
+          initialValue:organ,decoration:const InputDecoration(labelText:'Órgão'),
           items:[const DropdownMenuItem(value:'TODOS',child:Text('Todos os meus órgãos')),...organs.entries.map((e)=>DropdownMenuItem(value:e.key,child:Text(e.value)))],
           onChanged:(v)=>setState((){organ=v!;}))),
         ...groups.values.map((g){
