@@ -37,19 +37,7 @@ atualizar a publicação. O 009 cria apenas os objetos ausentes e não modifica
 dados, pais existentes ou referências já instaladas. Não corrige automaticamente
 objetos existentes com tipos divergentes.
 
-Na inspeção de 19/10/2026, `assunto.id_assunto_pai` existia, mas a coluna não
-existia em `ref_assunto`, e a publicação não copiava os pais. O complemento adiciona
-a coluna na referência sem inferir ou preencher valores. Não altera snapshots.
-Para completar referências já carregadas, é necessário um procedimento
-administrativo de carga da hierarquia oficial: UPDATE/DELETE das `ref_*` são
-bloqueados. Não desabilite triggers como parte da instalação. A origem da carga
-histórica de pais foi informada pelo responsável: um UPDATE em `assunto`
-calculou o código do pai removendo o trecho após o último ponto e associou
-o pai pelo código e pela mesma versão. O script fornecido continha COMMIT
-e ROLLBACK comentados; sua apresentação não comprova a confirmação da transação.
-Essa inferência histórica não integra a instalação nem a publicação. Os IDs
-de pai armazenados devem ser conferidos pelo responsável e fornecidos na carga
-explícita da referência, preservando a regra de `AGENTS.md`.
+A referência atual foi conferida pelo responsável e `id_assunto_pai` está correto. Para novas instalações, os pais devem continuar sendo carregados explicitamente a partir da fonte autorizada; não inferir hierarquia pelo código. UPDATE/DELETE das `ref_*` permanecem bloqueados e não se deve desabilitar triggers para contornar essa regra.
 
 A publicação atualizada copia o pai junto com cada Assunto para a mesma versão.
 Rejeita pai ausente ou igual ao próprio Assunto e impede a perda silenciosa de
@@ -73,5 +61,4 @@ Em banco descartável, execute `database/tests/publicacao_hierarquia.sql` após
 001, 009 e 002. Ele verifica publicação dos pais em duas versões e preservação
 do histórico. Depois homologue a instalação completa, avaliações e submissão.
 
-Nesta alteração, os metadados foram consultados no banco existente apenas por
-leitura. Instalação/migração e testes SQL com escrita não foram executados.
+A instalação completa em banco novo ainda deve ser homologada com escrita em ambiente descartável. Essa pendência não invalida a conferência das referências atuais.
