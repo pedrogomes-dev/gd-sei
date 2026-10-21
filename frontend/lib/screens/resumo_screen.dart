@@ -41,26 +41,34 @@ class _ResumoScreenState extends State<ResumoScreen> {
     final fim = (inicio + tiposPorPagina).clamp(0, total);
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
-      child: Wrap(
+      child: Row(
         spacing: 16,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
+        //runSpacing: 8,
+        //crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
-              'Página ${atual + 1} de $paginas · Exibindo ${inicio + 1}–$fim de $total Tipos de Processo'),
-          TextButton(
+              'Exibindo ${inicio + 1}–$fim de $total Tipos de Processo'),
+         const Spacer(),
+         Column(children: [
+          Row(children: [IconButton(
             onPressed:
                 finalizando || atual == 0 ? null : () => mudarPagina(atual - 1),
-            child: const Text('Anterior'),
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Anterior',
           ),
-          TextButton(
+          IconButton(
             onPressed: finalizando || atual + 1 >= paginas
                 ? null
                 : () => mudarPagina(atual + 1),
-            child: const Text('Próxima'),
-          ),
-        ],
-      ),
+            icon: const Icon(Icons.arrow_forward),
+            tooltip: 'Próxima',
+          ),]),
+            
+          Text(' ${atual + 1} de $paginas'),
+         ],)
+         
+         
+      ]),
     );
   }
 
