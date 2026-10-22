@@ -4,6 +4,13 @@ Fluxo: branches de trabalho → `dev` → PR para `main`.
 `dev` recebe desenvolvimento/testes; `main` é a linha estável. O CI executa
 `backend` e `frontend` em pushes e PRs para ambas. Não há deploy automático.
 
+Após promover ou integrar alterações pela `main`, sincronizar também a `dev`
+com essa integração antes de continuar o desenvolvimento. Um merge na `main`
+não atualiza automaticamente a `dev` nem a aplicação já em execução. Reiniciar
+backend e frontend após trocar de branch, especialmente em mudanças de login.
+A opção **Administração → Processamento das submissões** exige usuário administrador;
+o seletor de testes respeita o perfil real do usuário escolhido.
+
 | Configuração | Desenvolvimento | Produção |
 | --- | --- | --- |
 | APP_ENV | development | production |
