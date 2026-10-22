@@ -10,9 +10,9 @@ DEV_AUTH_ENABLED=true
 COOKIE_SECURE=false
 ```
 
-Acesso pelo frontend: e-mail `pg@setic.ro.gov.br`, token `123456`. O token é um bypass explícito somente de desenvolvimento, sem envio de e-mail. A configuração padrão no exemplo é desativada. O backend recusa habilitar fora de APP_ENV=development. Em produção desativar o bypass e usar COOKIE_SECURE=true/HTTPS.
+Na tela de login, selecione **Personificar usuário ativo** e clique em **Entrar como usuário selecionado**. A lista só inclui usuários ativos; o backend confere novamente o ID no momento do login. O token conhecido `123456` continua como bypass de desenvolvimento, sem envio de e-mail. O exemplo permanece desativado. O backend recusa habilitar fora de APP_ENV=development. Em produção, DEV_AUTH_ENABLED=false e COOKIE_SECURE=true/HTTPS. Veja [ambientes.md](ambientes.md) para o fluxo dev/main e a pendência de proteção no GitHub.
 
-A sessão usa cookie HttpOnly independente do token temporário, dura oito horas e é revogada no logout. Nesta etapa fica em memória: reiniciar o backend exige novo login. A autenticação por e-mail já está implementada e homologada. O bypass fixo permanece somente para desenvolvimento e nunca deve ser habilitado em ambiente público.
+A sessão usa cookie HttpOnly independente do token temporário, dura oito horas e é revogada no logout. Nesta etapa fica em memória: reiniciar o backend exige novo login. A autenticação por e-mail já está implementada e homologada. A sessão usa o perfil e os órgãos reais do usuário escolhido, sem permissões adicionais; LOGIN_DEV audita o ID escolhido. O bypass permanece somente para desenvolvimento e nunca deve ser habilitado em ambiente público.
 
 Execute o backend e o Flutter Web conforme README. Use localhost nos dois, sem misturar localhost com 127.0.0.1. Origem do frontend deve corresponder a ALLOWED_ORIGIN.
 

@@ -55,7 +55,7 @@ class Router {
       return;
     }
     if (metodo == 'GET' && caminho == '/api/auth/config') {
-      json(request, {'acesso_temporario': auth.enabled});
+      json(request, await auth.configurarAcesso());
       return;
     }
     if (metodo == 'POST' && caminho == '/api/auth/codigo') {

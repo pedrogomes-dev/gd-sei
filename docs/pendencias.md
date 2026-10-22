@@ -60,6 +60,10 @@ O comportamento atual do `StatusTag` deve ser preservado. Não existe pendência
 
 ## 3. Produção
 
+Proteção da `main` aplicada e conferida em 22/10/2026: PR, CI backend/frontend,
+zero aprovações, branch atualizada e aplicação também a administradores.
+Detalhes e configuração dev/produção em `docs/ambientes.md`.
+
 A formalização operacional está em `docs/producao.md`.
 
 Antes da disponibilização em produção, ainda é necessário:
