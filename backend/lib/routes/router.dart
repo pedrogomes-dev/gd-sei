@@ -246,11 +246,12 @@ class Router {
       json(request, await administracao.listarProcessamento(idAdministrador));
       return;
     }
-    final processamento = RegExp(r'^/api/admin/processamento/(\d+)/atualizar$')
-        .firstMatch(caminho);
+    final processamento =
+        RegExp(r'^/api/admin/processamento/(\d+)/avaliar$').firstMatch(caminho);
     if (metodo == 'POST' && processamento != null) {
       final idAtribuicao = lerIdentificador(processamento.group(1)!);
-      await administracao.atualizarProcessamento(idAdministrador, idAtribuicao);
+      await administracao.avaliarProcessamento(
+          idAdministrador, idAtribuicao, await body(request));
       json(request, {'ok': true});
       return;
     }
