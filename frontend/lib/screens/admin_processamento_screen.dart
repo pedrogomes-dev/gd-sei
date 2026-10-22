@@ -59,15 +59,17 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
     }
   }
 
-  Future<void> atualizar(dynamic item) async {
+  Future<void> avaliar(dynamic item, String parecer, {int? idAssunto}) async {
     setState(() {
       salvando = true;
       erro = null;
     });
     try {
-      await api
-          .atualizarProcessamento(int.parse(item['id_atribuicao'].toString()));
-      await carregar();
+      await api.avaliarProcessamento(
+          int.parse(item['id_atribuicao'].toString()), parecer,
+          idAssunto: idAssunto);
+      final resultado = await api.listarProcessamento();
+      if (mounted) setState(() => itens = resultado);
     } catch (e) {
       if (mounted) setState(() => erro = e.toString());
     } finally {
@@ -76,7 +78,7 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
   }
 
   String grupo(dynamic item) => '${item['id_consulta']}/${item['id_orgao']}';
-  bool atualizado(dynamic item) => item['situacao'] == 'ATUALIZADO';
+  bool concluido(dynamic item) => item['situacao'] == 'CONCLUIDO';
 
   List<dynamic> pesquisados() => itens.where((item) {
         final texto =
@@ -95,15 +97,15 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
       ),
       (
         'PENDENTE',
-        'Pendentes de atualização',
-        encontrados.where((item) => !atualizado(item)).length,
+        'Pendentes de avaliação',
+        encontrados.where((item) => !concluido(item)).length,
         Icons.pending_actions,
         Colors.amber.shade900
       ),
       (
-        'ATUALIZADO',
-        'Atualizados',
-        encontrados.where(atualizado).length,
+        'CONCLUIDO',
+        'Concluídos',
+        encontrados.where(concluido).length,
         Icons.task_alt,
         Colors.green.shade800
       ),
@@ -147,13 +149,13 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
     ]));
   }
 
-  String dadosAtualizacao(dynamic item) {
-    final data = DateTime.tryParse(item['data_atualizacao']?.toString() ?? '')
-        ?.toLocal();
+  String dadosAvaliacao(dynamic item) {
+    final data =
+        DateTime.tryParse(item['data_avaliacao']?.toString() ?? '')?.toLocal();
     final quando = data == null
         ? 'Data indisponível'
         : '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year} ${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}';
-    return '${item['responsavel'] ?? 'Usuário ${item['id_usuario_atualizacao']}'} · $quando';
+    return '${item['responsavel'] ?? 'Administrador'} · $quando';
   }
 
   Widget decisao(dynamic item) {
@@ -164,64 +166,106 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
     return const Text('Não informada');
   }
 
-  Widget tabela(List<dynamic> linhas) {
-    return LayoutBuilder(
-        builder: (context, tamanho) => SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                  width: tamanho.maxWidth < 1600 ? 1600 : tamanho.maxWidth,
-                  child: DataTable(
-                    columnSpacing: 20,
-                    dataRowMinHeight: 72,
-                    dataRowMaxHeight: 100,
-                    columns: const [
-                      DataColumn(label: Text('ID')),
-                      DataColumn(label: Text('Tipo de Processo')),
-                      DataColumn(label: Text('Decisão submetida')),
-                      DataColumn(label: Text('Processamento')),
-                      DataColumn(label: Text('Ação'))
-                    ],
-                    rows: [
-                      for (final item in linhas)
-                        DataRow(cells: [
-                          DataCell(
-                              Text(item['id_tipo_procedimento'].toString())),
-                          DataCell(SizedBox(
-                              width: 250,
-                              child: Text(item['nome'].toString(),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis))),
-                          DataCell(decisao(item)),
-                          DataCell(Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                StatusTag(
-                                    atualizado(item) ? 'AVALIADO' : 'PENDENTE',
-                                    label: atualizado(item)
-                                        ? 'Atualizado'
-                                        : 'Pendente de atualização'),
-                                if (atualizado(item))
-                                  Text(dadosAtualizacao(item),
-                                      style: const TextStyle(fontSize: 12)),
-                              ])),
-                          DataCell(atualizado(item)
-                              ? const SizedBox.shrink()
-                              : OutlinedButton(
-                                  onPressed:
-                                      salvando ? null : () => atualizar(item),
-                                  child: const Text('Marcar como atualizado'))),
-                        ])
-                    ],
-                  )),
-            ));
+  Widget resultadoAceite(bool recusado, bool completo,
+      {bool submissao = false}) {
+    if (recusado)
+      return StatusTag('PENDENTE',
+          label: submissao ? 'Parcialmente aceita' : 'Parcialmente aceito');
+    if (completo)
+      return StatusTag('AVALIADO', label: submissao ? 'Aceita' : 'Aceito');
+    return const StatusTag('PENDENTE', label: 'Aceite pendente');
+  }
+
+  Widget parecer(dynamic tipo, Map<String, dynamic> avaliacao,
+      {int? idAssunto}) {
+    final valor = avaliacao['parecer'];
+    if (valor != null) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        StatusTag(valor == 'ACEITO' ? 'AVALIADO' : 'INATIVO',
+            label: valor == 'ACEITO' ? 'Aceito' : 'Recusado'),
+        Text(dadosAvaliacao(avaliacao), style: const TextStyle(fontSize: 12)),
+      ]);
+    }
+    return Wrap(spacing: 12, runSpacing: 8, children: [
+      OutlinedButton.icon(
+          onPressed: salvando
+              ? null
+              : () => avaliar(tipo, 'ACEITO', idAssunto: idAssunto),
+          icon: const Icon(Icons.check),
+          label: const Text('Aceitar')),
+      OutlinedButton.icon(
+          onPressed: salvando
+              ? null
+              : () => avaliar(tipo, 'RECUSADO', idAssunto: idAssunto),
+          icon: const Icon(Icons.close),
+          label: const Text('Recusar')),
+    ]);
+  }
+
+  Widget processo(dynamic item) {
+    final assuntos = item['assuntos'] as List? ?? [];
+    return Card(
+        child: ExpansionTile(
+      key: PageStorageKey('avaliacao-${item['id_atribuicao']}'),
+      title: Text('ID ${item['id_tipo_procedimento']} — ${item['nome']}'),
+      subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const SizedBox(height: 8),
+        Wrap(spacing: 12, runSpacing: 8, children: [
+          decisao(item),
+          StatusTag(concluido(item) ? 'AVALIADO' : 'PENDENTE',
+              label: concluido(item)
+                  ? 'Avaliação concluída'
+                  : 'Avaliação pendente'),
+          resultadoAceite(
+              item['resultado'] == 'PARCIALMENTE_ACEITO', concluido(item)),
+        ]),
+        Text(
+            '${item['avaliados']} de ${item['total_avaliacoes']} decisões avaliadas'),
+      ]),
+      children: [
+        Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Parecer sobre a decisão do Tipo',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  if ((item['justificativa_tipo']?.toString() ?? '').isNotEmpty)
+                    Text(item['justificativa_tipo'].toString()),
+                  const SizedBox(height: 8),
+                  parecer(item, {
+                    'parecer': item['parecer_tipo'],
+                    'responsavel': item['responsavel_tipo'],
+                    'data_avaliacao': item['data_avaliacao_tipo']
+                  }),
+                  const SizedBox(height: 16),
+                  if (assuntos.isEmpty)
+                    const Text('Sem decisões sobre Assuntos nesta submissão.'),
+                  for (final assunto in assuntos) ...[
+                    const Divider(),
+                    Text(
+                        '${assunto['codigo_estruturado']} — ${assunto['descricao']}'),
+                    const SizedBox(height: 8),
+                    Align(
+                        alignment: Alignment.centerLeft,
+                        child: StatusTag(assunto['acao'].toString())),
+                    if ((assunto['justificativa']?.toString() ?? '').isNotEmpty)
+                      Text(assunto['justificativa'].toString()),
+                    const SizedBox(height: 8),
+                    parecer(item, Map<String, dynamic>.from(assunto as Map),
+                        idAssunto: int.parse(assunto['id_assunto'].toString())),
+                    const SizedBox(height: 12),
+                  ],
+                ])),
+      ],
+    ));
   }
 
   Widget submissao(List<dynamic> linhas) {
     final primeiro = linhas.first;
     final todos =
         itens.where((item) => grupo(item) == grupo(primeiro)).toList();
-    final concluidos = todos.where(atualizado).length;
+    final concluidos = todos.where(concluido).length;
     final concluida = concluidos == todos.length;
     return SectionCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -236,11 +280,15 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
           runSpacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('$concluidos de ${todos.length} atualizados'),
+            Text('$concluidos de ${todos.length} Tipos avaliados'),
             StatusTag(concluida ? 'AVALIADO' : 'PENDENTE',
                 label: concluida
                     ? 'Processamento concluído'
                     : 'Processamento pendente'),
+            resultadoAceite(
+                todos.any((item) => item['resultado'] == 'PARCIALMENTE_ACEITO'),
+                concluida,
+                submissao: true),
             TextButton(
                 onPressed: () => Navigator.pushNamed(context,
                     '/resumo?consulta=${primeiro['id_consulta']}&orgao=${primeiro['id_orgao']}'),
@@ -249,7 +297,7 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
       Text(
           'Exibindo ${linhas.length} de ${todos.length} itens desta submissão nesta página.'),
       const SizedBox(height: 16),
-      tabela(linhas),
+      for (final item in linhas) processo(item),
     ]));
   }
 
@@ -313,7 +361,7 @@ class _AdminProcessamentoScreenState extends State<AdminProcessamentoScreen> {
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             children: [
               const Text(
-                  'Controle interno da atualização realizada externamente pela SETIC. Não altera o SEI.'),
+                  'Avalie as decisões submetidas sobre cada Tipo e seus Assuntos. Conclusão e aceite são independentes. Não altera o SEI.'),
               const SizedBox(height: 16),
               if (erro != null)
                 SectionCard(

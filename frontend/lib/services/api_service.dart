@@ -30,8 +30,12 @@ class ApiService {
       await request('/api/auth/me') as Map<String, dynamic>;
   Future<List<dynamic>> listarProcessamento() async =>
       await request('/api/admin/processamento') as List<dynamic>;
-  Future<void> atualizarProcessamento(int idAtribuicao) async {
-    await request('/api/admin/processamento/$idAtribuicao/atualizar', data: {});
+  Future<void> avaliarProcessamento(int idAtribuicao, String parecer,
+      {int? idAssunto}) async {
+    await request('/api/admin/processamento/$idAtribuicao/avaliar', data: {
+      'parecer': parecer,
+      if (idAssunto != null) 'id_assunto': idAssunto,
+    });
   }
 
   Future<List<dynamic>> listarRodadas() async {

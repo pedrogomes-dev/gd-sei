@@ -15,7 +15,21 @@ class ApiProcessamento extends ApiService {
       'sigla': 'ORG0',
       'consulta': 'Rodada 1',
       'decisao_tipo': 'MANTER',
-      'situacao': 'PENDENTE'
+      'situacao': 'PENDENTE',
+      'assuntos': [
+        {
+          'id_assunto': 10,
+          'codigo_estruturado': '010',
+          'descricao': 'Assunto A',
+          'acao': 'MANTER'
+        },
+        {
+          'id_assunto': 11,
+          'codigo_estruturado': '011',
+          'descricao': 'Assunto B',
+          'acao': 'REMOVER'
+        },
+      ],
     },
     {
       'id_atribuicao': 2,
@@ -26,9 +40,9 @@ class ApiProcessamento extends ApiService {
       'sigla': 'ORG0',
       'consulta': 'Rodada 1',
       'decisao_tipo': 'DESCONTINUAR',
-      'situacao': 'ATUALIZADO',
-      'responsavel': 'Admin',
-      'data_atualizacao': '2026-10-22T12:00:00Z'
+      'parecer_tipo': 'ACEITO',
+      'responsavel_tipo': 'Admin',
+      'data_avaliacao_tipo': '2026-10-22T12:00:00Z'
     },
     {
       'id_atribuicao': 3,
@@ -50,14 +64,41 @@ class ApiProcessamento extends ApiService {
         'orgaos': []
       };
   @override
-  Future<List<dynamic>> listarProcessamento() async =>
-      itens.map((i) => Map<String, dynamic>.from(i)).toList();
+  Future<List<dynamic>> listarProcessamento() async => itens.map((i) {
+        final assuntos = i['assuntos'] as List? ?? [];
+        final avaliados = assuntos.where((s) => s['parecer'] != null).length +
+            (i['parecer_tipo'] == null ? 0 : 1);
+        final completo = avaliados == assuntos.length + 1;
+        final parcial = i['parecer_tipo'] == 'RECUSADO' ||
+            assuntos.any((s) => s['parecer'] == 'RECUSADO');
+        var resultado = completo ? 'ACEITO' : 'PENDENTE';
+        if (parcial) resultado = 'PARCIALMENTE_ACEITO';
+        return {
+          ...i,
+          'avaliados': avaliados,
+          'total_avaliacoes': assuntos.length + 1,
+          'situacao': completo ? 'CONCLUIDO' : 'PENDENTE',
+          'resultado': resultado
+        };
+      }).toList();
   @override
-  Future<void> atualizarProcessamento(int id) async {
-    itens.firstWhere((i) => i['id_atribuicao'] == id).addAll({
-      'situacao': 'ATUALIZADO',
+  Future<void> avaliarProcessamento(int id, String parecer,
+      {int? idAssunto}) async {
+    final tipo = itens.firstWhere((i) => i['id_atribuicao'] == id);
+    if (idAssunto == null) {
+      tipo.addAll({
+        'parecer_tipo': parecer,
+        'responsavel_tipo': 'Admin',
+        'data_avaliacao_tipo': '2026-10-22T12:00:00Z'
+      });
+      return;
+    }
+    (tipo['assuntos'] as List)
+        .firstWhere((s) => s['id_assunto'] == idAssunto)
+        .addAll({
+      'parecer': parecer,
       'responsavel': 'Admin',
-      'data_atualizacao': '2026-10-22T12:00:00Z'
+      'data_avaliacao': '2026-10-22T12:00:00Z'
     });
   }
 }
@@ -85,43 +126,62 @@ void main() {
   testWidgets('filtros e pesquisa mantêm o contexto e os totais da submissão',
       (tester) async {
     await exibir(tester, ApiProcessamento());
-    expect(find.text('Processo A'), findsNWidgets(2));
-    await filtrar(tester, 'Atualizados');
-    expect(find.text('Processo A'), findsNothing);
-    expect(find.text('Processo B'), findsOneWidget);
-    expect(find.text('1 de 2 atualizados'), findsOneWidget);
+    expect(find.text('ID 7 — Processo A'), findsNWidgets(2));
+    await filtrar(tester, 'Concluídos');
+    expect(find.text('ID 7 — Processo A'), findsNothing);
+    expect(find.text('ID 8 — Processo B'), findsOneWidget);
+    expect(find.text('1 de 2 Tipos avaliados'), findsOneWidget);
     expect(find.text('Processamento pendente'), findsOneWidget);
-    await filtrar(tester, 'Pendentes de atualização');
-    expect(find.text('Processo B'), findsNothing);
-    expect(find.text('Processo A'), findsNWidgets(2));
+    await filtrar(tester, 'Pendentes de avaliação');
+    expect(find.text('ID 8 — Processo B'), findsNothing);
+    expect(find.text('ID 7 — Processo A'), findsNWidgets(2));
     await filtrar(tester, 'Todos');
     await tester.enterText(find.byType(TextField), '8');
     await tester.pumpAndSettle();
-    expect(find.text('Processo B'), findsOneWidget);
-    expect(find.text('Processo A'), findsNothing);
+    expect(find.text('ID 8 — Processo B'), findsOneWidget);
+    expect(find.text('ID 7 — Processo A'), findsNothing);
   });
   testWidgets(
-      'marcar atualiza visualmente e conclui apenas a submissão correspondente',
+      'aceite individual conclui somente após todos os pareceres e propaga recusa',
       (tester) async {
     final api = ApiProcessamento();
     await exibir(tester, api);
-    final botao = find.text('Marcar como atualizado').first;
-    await tester.ensureVisible(botao);
-    await tester.tap(botao);
+    final titulo = find.text('ID 7 — Processo A').first;
+    await tester.ensureVisible(titulo);
+    await tester.tap(titulo);
     await tester.pumpAndSettle();
-    expect(find.text('2 de 2 atualizados'), findsOneWidget);
+    Future<void> decidir(String texto) async {
+      final botao = find.text(texto).first;
+      await tester.ensureVisible(botao);
+      await tester.tap(botao);
+      await tester.pumpAndSettle();
+    }
+
+    await decidir('Aceitar'); // Tipo
+    expect(find.text('Processamento concluído'), findsNothing);
+    await decidir('Recusar'); // Assunto A
+    expect(find.text('Parcialmente aceito'), findsOneWidget);
+    expect(find.text('Parcialmente aceita'), findsOneWidget);
+    expect(find.text('Processamento concluído'), findsNothing);
+    await decidir('Aceitar'); // Assunto B
+    expect(find.text('2 de 2 Tipos avaliados'), findsOneWidget);
     expect(find.text('Processamento concluído'), findsOneWidget);
     expect(find.text('Processamento pendente'), findsOneWidget);
-    expect(find.text('Marcar como atualizado'), findsOneWidget);
-    expect(api.itens[2]['situacao'], 'PENDENTE');
+    expect(find.text('Parcialmente aceita'), findsOneWidget);
+    expect(api.itens[2]['parecer_tipo'], isNull);
+    expect(find.text('Aceitar'), findsNothing);
   });
-  testWidgets('largura reduzida mantém tabela rolável sem overflow',
-      (tester) async {
+  testWidgets('largura reduzida mantém avaliação sem overflow', (tester) async {
     await exibir(tester, ApiProcessamento(), tamanho: const Size(390, 844));
     await tester.drag(find.byType(ListView).last, const Offset(0, -800));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.byType(DataTable), findsNWidgets(2));
+    final titulo = find.text('ID 7 — Processo A').first;
+    await tester.ensureVisible(titulo);
+    await tester.tap(titulo);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(ExpansionTile), findsNWidgets(3));
   });
   testWidgets('paginação preserva totais completos da submissão',
       (tester) async {
@@ -137,15 +197,15 @@ void main() {
       });
     }
     await exibir(tester, api);
-    expect(find.text('Tipo 20'), findsNothing);
-    expect(find.text('0 de 21 atualizados'), findsOneWidget);
+    expect(find.text('ID 120 — Tipo 20'), findsNothing);
+    expect(find.text('0 de 21 Tipos avaliados'), findsOneWidget);
     await tester.dragUntilVisible(find.text('Próxima'),
         find.byType(ListView).last, const Offset(0, -600));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Próxima'));
     await tester.pumpAndSettle();
-    expect(find.text('Tipo 20'), findsOneWidget);
-    expect(find.text('0 de 21 atualizados'), findsOneWidget);
+    expect(find.text('ID 120 — Tipo 20'), findsOneWidget);
+    expect(find.text('0 de 21 Tipos avaliados'), findsOneWidget);
     expect(find.text('Processamento pendente'), findsOneWidget);
   });
 }
