@@ -132,6 +132,79 @@ class AdministracaoController {
     return '%$texto%';
   }
 
+  Future<List<Map<String, dynamic>>> listarProcessamento(
+      int idAdministrador) async {
+    await verificarAdministrador(idAdministrador);
+    const sql = '''
+      SELECT a.id_atribuicao, a.id_consulta, a.id_orgao, a.versao,
+        a.id_tipo_procedimento, t.nome, o.sigla, c.nome AS consulta,
+        m.decisao_tipo,
+        CASE WHEN p.id_atribuicao IS NULL THEN 'PENDENTE' ELSE 'ATUALIZADO' END AS situacao,
+        p.id_usuario_atualizacao, u.nome AS responsavel,
+        CONVERT(varchar(33), p.data_atualizacao, 126) + 'Z' AS data_atualizacao
+      FROM dbo.consulta_orgao_tipo a
+      JOIN dbo.consulta_orgao g ON g.id_consulta = a.id_consulta AND g.id_orgao = a.id_orgao
+      JOIN dbo.consulta c ON c.id_consulta = a.id_consulta AND c.versao = a.versao
+      JOIN dbo.orgao o ON o.id_orgao = a.id_orgao
+      JOIN dbo.tipo_procedimento t ON t.versao = a.versao AND t.id_tipo_procedimento = a.id_tipo_procedimento
+      LEFT JOIN dbo.manifestacao_tipo m ON m.id_atribuicao = a.id_atribuicao AND m.versao = a.versao
+      LEFT JOIN dbo.processamento_submissao p ON p.id_atribuicao = a.id_atribuicao
+      LEFT JOIN dbo.usuario u ON u.id_usuario = p.id_usuario_atualizacao
+      WHERE g.status = 'FINALIZADA'
+      ORDER BY a.id_consulta DESC, o.sigla, a.id_orgao, t.nome, a.id_atribuicao
+    ''';
+    return banco.query(sql, operation: 'listar_processamento');
+  }
+
+  Future<void> atualizarProcessamento(
+      int idAdministrador, int idAtribuicao) async {
+    await verificarAdministrador(idAdministrador);
+    if (!Validacoes.inteiroSqlValido(idAtribuicao) || idAtribuicao < 1) {
+      throw ApiError(400, 'Atribuição inválida.');
+    }
+    const sql = '''
+      SET NOCOUNT ON; SET XACT_ABORT ON;
+      BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @administrador int = ?, @atribuicao int = ?, @status varchar(12);
+        IF NOT EXISTS (SELECT 1 FROM dbo.usuario WITH(HOLDLOCK)
+          WHERE id_usuario = @administrador AND sin_ativo = 'S' AND sin_admin = 'S')
+          THROW 51500, 'Administrador nao autorizado.', 1;
+        SELECT @status = g.status FROM dbo.consulta_orgao_tipo a WITH(HOLDLOCK)
+          JOIN dbo.consulta_orgao g WITH(HOLDLOCK)
+            ON g.id_consulta = a.id_consulta AND g.id_orgao = a.id_orgao
+          WHERE a.id_atribuicao = @atribuicao;
+        IF @status IS NULL THROW 51501, 'Atribuicao inexistente.', 1;
+        IF @status <> 'FINALIZADA' THROW 51502, 'Manifestacao ainda nao submetida.', 1;
+        IF NOT EXISTS (SELECT 1 FROM dbo.processamento_submissao WITH(UPDLOCK,HOLDLOCK)
+          WHERE id_atribuicao = @atribuicao)
+          INSERT dbo.processamento_submissao(id_atribuicao, id_usuario_atualizacao)
+            VALUES (@atribuicao, @administrador);
+        COMMIT;
+      END TRY
+      BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK;
+        THROW;
+      END CATCH;
+    ''';
+    try {
+      await banco.query(sql,
+          params: [idAdministrador, idAtribuicao],
+          operation: 'atualizar_processamento');
+    } on DatabaseFailure catch (erro) {
+      switch (erro.code) {
+        case 51500:
+          throw ApiError(403, 'Acesso restrito à administração.');
+        case 51501:
+          throw ApiError(404, 'Atribuição não encontrada.');
+        case 51502:
+          throw ApiError(409, 'A manifestação ainda não foi submetida.');
+        default:
+          rethrow;
+      }
+    }
+  }
+
   Future<Map<String, dynamic>> consultarDistribuicao(
       int idAdministrador) async {
     await verificarAdministrador(idAdministrador);

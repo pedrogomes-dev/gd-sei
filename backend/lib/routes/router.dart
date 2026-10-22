@@ -16,26 +16,31 @@ class Router {
   final CatalogoController catalogo;
   final AdministracaoController administracao;
   final InicioController inicio;
-  Router(this.auth,this.consultas,this.manifestacoes,this.catalogo,this.administracao,this.inicio);
-  Future<Map<String,dynamic>> body(HttpRequest request) async {
-    var length=0;
-    final bytes=<int>[];
-    await for(final chunk in request) {
-      length+=chunk.length;
-      if(length>262144) throw ApiError(413,'Requisição muito grande');
+  Router(this.auth, this.consultas, this.manifestacoes, this.catalogo,
+      this.administracao, this.inicio);
+  Future<Map<String, dynamic>> body(HttpRequest request) async {
+    var length = 0;
+    final bytes = <int>[];
+    await for (final chunk in request) {
+      length += chunk.length;
+      if (length > 262144) throw ApiError(413, 'Requisição muito grande');
       bytes.addAll(chunk);
     }
     try {
-      final decoded=jsonDecode(utf8.decode(bytes));
-      if(decoded is! Map<String,dynamic>) throw const FormatException();
+      final decoded = jsonDecode(utf8.decode(bytes));
+      if (decoded is! Map<String, dynamic>) throw const FormatException();
       return decoded;
-    } catch (_) { throw ApiError(400,'JSON inválido'); }
+    } catch (_) {
+      throw ApiError(400, 'JSON inválido');
+    }
   }
-  void json(HttpRequest request,Object value) {
-    request.response.headers.contentType=ContentType.json;
-    request.response.headers.set('Cache-Control','no-store');
+
+  void json(HttpRequest request, Object value) {
+    request.response.headers.contentType = ContentType.json;
+    request.response.headers.set('Cache-Control', 'no-store');
     request.response.write(jsonEncode(value));
   }
+
   Future<void> route(HttpRequest request) async {
     final caminho = request.uri.path;
     final metodo = request.method;
@@ -55,7 +60,10 @@ class Router {
     }
     if (metodo == 'POST' && caminho == '/api/auth/codigo') {
       await auth.solicitarCodigo(request, await body(request));
-      json(request, {'mensagem': 'Se o e-mail estiver cadastrado e ativo, você receberá um código de acesso.'});
+      json(request, {
+        'mensagem':
+            'Se o e-mail estiver cadastrado e ativo, você receberá um código de acesso.'
+      });
       return;
     }
     if (metodo == 'POST' && caminho == '/api/auth/entrar') {
@@ -79,7 +87,8 @@ class Router {
       return;
     }
     if (metodo == 'GET' && caminho == '/api/inicio') {
-      final idConsulta = lerIdentificador(request.uri.queryParameters['consulta'] ?? '');
+      final idConsulta =
+          lerIdentificador(request.uri.queryParameters['consulta'] ?? '');
       json(request, await inicio.consultar(idUsuario, idConsulta));
       return;
     }
@@ -92,19 +101,24 @@ class Router {
       return;
     }
 
-    final rotaCatalogo = RegExp(r'^/api/catalogo/(assuntos|tipos)$').firstMatch(caminho);
+    final rotaCatalogo =
+        RegExp(r'^/api/catalogo/(assuntos|tipos)$').firstMatch(caminho);
     if (metodo == 'GET' && rotaCatalogo != null) {
       await consultarCatalogo(request, rotaCatalogo.group(1)!);
       return;
     }
 
-    final rotaTipo = RegExp(r'^/api/tipos/(\d+)(/visualizar|/manifestacao|/assuntos)?$').firstMatch(caminho);
+    final rotaTipo =
+        RegExp(r'^/api/tipos/(\d+)(/visualizar|/manifestacao|/assuntos)?$')
+            .firstMatch(caminho);
     if (rotaTipo != null) {
       await rotasTipoProcesso(request, idUsuario, rotaTipo);
       return;
     }
 
-    final rotaConsulta = RegExp(r'^/api/consultas/(\d+)/orgaos/(\d+)/(resumo|finalizar)$').firstMatch(caminho);
+    final rotaConsulta =
+        RegExp(r'^/api/consultas/(\d+)/orgaos/(\d+)/(resumo|finalizar)$')
+            .firstMatch(caminho);
     if (rotaConsulta != null) {
       await rotasConsulta(request, idUsuario, rotaConsulta);
       return;
@@ -139,6 +153,7 @@ class Router {
 
   Future<void> consultarCatalogo(HttpRequest request, String categoria) async {
     final filtros = request.uri.queryParameters;
+
     final situacao = filtros['estado'] ?? 'TODOS';
     if (!['TODOS', 'S', 'N'].contains(situacao)) {
       throw ApiError(400, 'Estado inválido.');
@@ -154,7 +169,8 @@ class Router {
 
     final pesquisa = lerPesquisa(request);
     final inicio = lerInicioPagina(request);
-    final resultado = await catalogo.consultar(categoria, pesquisa, inicio, versao, situacao);
+    final resultado =
+        await catalogo.consultar(categoria, pesquisa, inicio, versao, situacao);
     json(request, resultado);
   }
 
@@ -179,7 +195,8 @@ class Router {
     if (metodo == 'GET' && operacao == '/assuntos') {
       final pesquisa = lerPesquisa(request);
       final inicio = lerInicioPagina(request);
-      final resultado = await manifestacoes.pesquisarAssuntos(idUsuario, idAtribuicao, pesquisa, inicio);
+      final resultado = await manifestacoes.pesquisarAssuntos(
+          idUsuario, idAtribuicao, pesquisa, inicio);
       json(request, resultado);
       return;
     }
@@ -203,7 +220,8 @@ class Router {
     final operacao = rota.group(3);
 
     if (request.method == 'GET' && operacao == 'resumo') {
-      final resumo = await manifestacoes.consultarResumo(idUsuario, idConsulta, idOrgao);
+      final resumo =
+          await manifestacoes.consultarResumo(idUsuario, idConsulta, idOrgao);
       json(request, resumo);
       return;
     }
@@ -216,20 +234,36 @@ class Router {
     throw ApiError(404, 'Rota não disponível');
   }
 
-  Future<void> rotasAdministracao(HttpRequest request, int idAdministrador) async {
+  Future<void> rotasAdministracao(
+      HttpRequest request, int idAdministrador) async {
     await administracao.verificarAdministrador(idAdministrador);
 
     final caminho = request.uri.path;
     final metodo = request.method;
     final filtros = request.uri.queryParameters;
 
+    if (metodo == 'GET' && caminho == '/api/admin/processamento') {
+      json(request, await administracao.listarProcessamento(idAdministrador));
+      return;
+    }
+    final processamento = RegExp(r'^/api/admin/processamento/(\d+)/atualizar$')
+        .firstMatch(caminho);
+    if (metodo == 'POST' && processamento != null) {
+      final idAtribuicao = lerIdentificador(processamento.group(1)!);
+      await administracao.atualizarProcessamento(idAdministrador, idAtribuicao);
+      json(request, {'ok': true});
+      return;
+    }
+
     if (metodo == 'GET' && caminho == '/api/admin/distribuicao') {
       json(request, await administracao.consultarDistribuicao(idAdministrador));
       return;
     }
     if (metodo == 'POST' && caminho == '/api/admin/distribuicao/vincular') {
-      json(request, await administracao.vincularDistribuicaoEmLote(
-        idAdministrador, await body(request)));
+      json(
+          request,
+          await administracao.vincularDistribuicaoEmLote(
+              idAdministrador, await body(request)));
       return;
     }
     final rotaDistribuicao =
@@ -251,7 +285,8 @@ class Router {
 
     if (metodo == 'POST' && caminho == '/api/admin/usuarios') {
       final dados = await body(request);
-      final usuario = await administracao.salvarUsuario(idAdministrador, 0, dados);
+      final usuario =
+          await administracao.salvarUsuario(idAdministrador, 0, dados);
       json(request, usuario);
       return;
     }
@@ -281,7 +316,11 @@ class Router {
       }
 
       final usuarios = await administracao.listarUsuarios(
-        idAdministrador, pesquisa, situacao, idOrgao, inicio,
+        idAdministrador,
+        pesquisa,
+        situacao,
+        idOrgao,
+        inicio,
       );
       json(request, usuarios);
       return;
@@ -300,30 +339,27 @@ class Router {
 
     final historico = resultado.group(2) == '/historico';
     if (metodo == 'GET' && historico) {
-      final eventos = await administracao.consultarHistorico(idAdministrador, idUsuario, inicio);
+      final eventos = await administracao.consultarHistorico(
+          idAdministrador, idUsuario, inicio);
       json(request, eventos);
       return;
     }
 
     if (metodo == 'GET' && !historico) {
-      final usuario = await administracao.buscarUsuario(idAdministrador, idUsuario);
+      final usuario =
+          await administracao.buscarUsuario(idAdministrador, idUsuario);
       json(request, usuario);
       return;
     }
 
     if (metodo == 'POST' && !historico) {
       final dados = await body(request);
-      final usuario = await administracao.salvarUsuario(idAdministrador, idUsuario, dados);
+      final usuario =
+          await administracao.salvarUsuario(idAdministrador, idUsuario, dados);
       json(request, usuario);
       return;
     }
 
     throw ApiError(404, 'Rota administrativa não disponível.');
   }
-
 }
-
-
-
-
-
