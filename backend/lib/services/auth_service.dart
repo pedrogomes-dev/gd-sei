@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:dotenv/dotenv.dart';
 
 import '../config/settings.dart';
 import '../models/api_error.dart';
@@ -13,31 +14,43 @@ class AuthService {
   final DatabaseRepository db;
   final EmailService emailService;
   final CodigosAcesso codigos;
-  final Map<String, ({int userId, int version, DateTime expires})> _sessions = {};
+  final Map<String, ({int userId, int version, DateTime expires})> _sessions =
+      {};
   final bool enabled;
   final bool secureCookie;
 
-  AuthService(this.db, {EmailService? email, CodigosAcesso? armazenamento})
+  AuthService(this.db,
+      {EmailService? email, CodigosAcesso? armazenamento, DotEnv? configuracao})
       : emailService = email ?? EmailService(),
         codigos = armazenamento ?? CodigosAcesso(),
-        enabled = loadSettings()['DEV_AUTH_ENABLED'] == 'true',
-        secureCookie = loadSettings()['COOKIE_SECURE'] != 'false' {
-    final desenvolvimento = loadSettings()['APP_ENV'] == 'development';
+        enabled =
+            (configuracao ?? loadSettings())['DEV_AUTH_ENABLED'] == 'true',
+        secureCookie =
+            (configuracao ?? loadSettings())['COOKIE_SECURE'] != 'false' {
+    final desenvolvimento =
+        (configuracao ?? loadSettings())['APP_ENV'] == 'development';
     if (enabled && !desenvolvimento) {
       throw StateError('Acesso temporário exige APP_ENV=development');
     }
     if (!secureCookie && !desenvolvimento) {
-      throw StateError('Fora de desenvolvimento, configure COOKIE_SECURE=true e HTTPS.');
+      throw StateError(
+          'Fora de desenvolvimento, configure COOKIE_SECURE=true e HTTPS.');
     }
   }
 
-  Cookie cookie(String value, {bool expired = false}) => Cookie('sei_session', value)
-    ..httpOnly = true ..secure = secureCookie ..sameSite = SameSite.lax
-    ..path = '/api' ..maxAge = expired ? 0 : 28800;
+  Cookie cookie(String value, {bool expired = false}) =>
+      Cookie('sei_session', value)
+        ..httpOnly = true
+        ..secure = secureCookie
+        ..sameSite = SameSite.lax
+        ..path = '/api'
+        ..maxAge = expired ? 0 : 28800;
 
   String lerEmail(Map<String, dynamic> dados) {
     final valor = dados['email'];
-    if (valor is! String || valor.trim().length > 250 || !Validacoes.emailValido(valor)) {
+    if (valor is! String ||
+        valor.trim().length > 250 ||
+        !Validacoes.emailValido(valor)) {
       throw ApiError(400, 'Informe um e-mail válido.');
     }
     return valor.trim().toLowerCase();
@@ -49,11 +62,13 @@ class AuthService {
       FROM dbo.usuario
       WHERE email_normalizado = ? AND sin_ativo = 'S'
     ''';
-    final usuarios = await db.query(sql, params: [email], operation: 'login_buscar_usuario');
+    final usuarios =
+        await db.query(sql, params: [email], operation: 'login_buscar_usuario');
     return usuarios.isEmpty ? null : usuarios.first;
   }
 
-  Future<void> solicitarCodigo(HttpRequest request, Map<String, dynamic> dados) async {
+  Future<void> solicitarCodigo(
+      HttpRequest request, Map<String, dynamic> dados) async {
     final email = lerEmail(dados);
     final ip = request.connectionInfo?.remoteAddress.address ?? 'desconhecido';
     emailService.verificarConfiguracao();
@@ -75,7 +90,8 @@ class AuthService {
     }
   }
 
-  Future<void> entrarEmail(HttpRequest request, Map<String, dynamic> dados) async {
+  Future<void> entrarEmail(
+      HttpRequest request, Map<String, dynamic> dados) async {
     final email = lerEmail(dados);
     final codigo = dados['codigo'];
     if (codigo is! String) throw ApiError(401, 'Código inválido ou expirado.');
@@ -83,7 +99,8 @@ class AuthService {
     final usuario = await buscarUsuario(email);
     if (usuario == null ||
         int.parse(usuario['id_usuario'].toString()) != registro.idUsuario ||
-        int.parse(usuario['versao_sessao'].toString()) != registro.versaoSessao) {
+        int.parse(usuario['versao_sessao'].toString()) !=
+            registro.versaoSessao) {
       throw ApiError(401, 'Acesso alterado. Solicite um novo código.');
     }
     await criarSessao(request, usuario, 'LOGIN');
@@ -91,26 +108,52 @@ class AuthService {
 
   Future<void> login(HttpRequest request, Map<String, dynamic> body) async {
     if (!enabled) throw ApiError(403, 'Acesso temporário desativado');
-    if (body['email'] != 'pg@setic.ro.gov.br' || body['token'] != '123456') {
-      throw ApiError(401, 'E-mail ou token inválido');
+    if (body['token'] != '123456') {
+      throw ApiError(401, 'Token de desenvolvimento inválido');
     }
-    final usuario = await buscarUsuario('pg@setic.ro.gov.br');
-    if (usuario == null) throw ApiError(403, 'Usuário não cadastrado ou inativo');
-    await criarSessao(request, usuario, 'LOGIN_DEV');
+    final idUsuario = body['id_usuario'];
+    if (!Validacoes.inteiroSqlValido(idUsuario)) {
+      throw ApiError(400, 'Selecione um usuário ativo.');
+    }
+    const sql = '''
+      SELECT id_usuario, versao_sessao FROM dbo.usuario
+      WHERE id_usuario = ? AND sin_ativo = 'S'
+    ''';
+    final usuarios = await db.query(sql,
+        params: [idUsuario as int], operation: 'login_dev_buscar_usuario');
+    if (usuarios.isEmpty)
+      throw ApiError(403, 'Usuário não cadastrado ou inativo');
+    await criarSessao(request, usuarios.first, 'LOGIN_DEV');
   }
 
-  Future<void> criarSessao(HttpRequest request, Map<String, dynamic> usuario, String evento) async {
+  Future<Map<String, dynamic>> configurarAcesso() async {
+    if (!enabled) return {'acesso_temporario': false};
+    const sql = '''
+      SELECT id_usuario, nome, email FROM dbo.usuario
+      WHERE sin_ativo = 'S' ORDER BY nome, email, id_usuario
+    ''';
+    final usuarios =
+        await db.query(sql, operation: 'login_dev_listar_usuarios');
+    return {'acesso_temporario': true, 'usuarios': usuarios};
+  }
+
+  Future<void> criarSessao(
+      HttpRequest request, Map<String, dynamic> usuario, String evento) async {
     final idUsuario = int.parse(usuario['id_usuario'].toString());
     final versaoSessao = int.parse(usuario['versao_sessao'].toString());
     final random = Random.secure();
-    final token = base64UrlEncode(List.generate(32, (_) => random.nextInt(256)));
-    _sessions.removeWhere((_, sessao) => !sessao.expires.isAfter(DateTime.now().toUtc()));
+    final token =
+        base64UrlEncode(List.generate(32, (_) => random.nextInt(256)));
+    _sessions.removeWhere(
+        (_, sessao) => !sessao.expires.isAfter(DateTime.now().toUtc()));
     const sql = '''
       INSERT dbo.auditoria(id_usuario, evento)
       VALUES (?, ?)
     ''';
-    await db.query(sql, params: [idUsuario, evento], operation: 'login_gravar_auditoria');
-    for (final anterior in request.cookies.where((item) => item.name == 'sei_session')) {
+    await db.query(sql,
+        params: [idUsuario, evento], operation: 'login_gravar_auditoria');
+    for (final anterior
+        in request.cookies.where((item) => item.name == 'sei_session')) {
       _sessions.remove(anterior.value);
     }
     _sessions[token] = (
@@ -136,10 +179,13 @@ class AuthService {
       WHERE id_usuario = ? AND sin_ativo = 'S'
     ''';
     final usuarios = await db.query(sql, params: [sessao.userId]);
-    if (usuarios.isEmpty || int.parse(usuarios.first['versao_sessao'].toString()) != sessao.version) {
+    if (usuarios.isEmpty ||
+        int.parse(usuarios.first['versao_sessao'].toString()) !=
+            sessao.version) {
       _sessions.remove(chave);
       request.response.cookies.add(cookie('', expired: true));
-      throw ApiError(401, 'Acesso desativado ou permissões alteradas. Faça login novamente.');
+      throw ApiError(401,
+          'Acesso desativado ou permissões alteradas. Faça login novamente.');
     }
     return sessao.userId;
   }

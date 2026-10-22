@@ -6,14 +6,15 @@ import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final ApiService? api;
+  const LoginScreen({super.key, this.api});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final api = ApiService();
+  late final api = widget.api ?? ApiService();
   final email = TextEditingController();
   final codigo = TextEditingController();
   late final configuracao = api.configurarAcesso();
@@ -23,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool codigoSolicitado = false;
   String? erro;
   String? mensagem;
+  int? usuarioDesenvolvimento;
 
   @override
   void dispose() {
@@ -58,7 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         codigoSolicitado = true;
         codigo.clear();
-        mensagem = 'Se o e-mail estiver cadastrado e ativo, você receberá um código válido por 10 minutos.';
+        mensagem =
+            'Se o e-mail estiver cadastrado e ativo, você receberá um código válido por 10 minutos.';
         iniciarContagem();
       });
     } catch (falha) {
@@ -69,8 +72,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> entrar({bool temporario = false}) async {
+    if (temporario && usuarioDesenvolvimento == null) return;
     if (!temporario && codigo.text.trim().length != 6) {
-      setState(() => erro = 'Informe o código de 6 dígitos recebido por e-mail.');
+      setState(
+          () => erro = 'Informe o código de 6 dígitos recebido por e-mail.');
       return;
     }
     setState(() {
@@ -79,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       if (temporario) {
-        await api.login('pg@setic.ro.gov.br', '123456');
+        await api.loginDesenvolvimento(usuarioDesenvolvimento!);
       } else {
         await api.entrarEmail(email.text.trim(), codigo.text.trim());
       }
@@ -104,17 +109,50 @@ class _LoginScreenState extends State<LoginScreen> {
     return FutureBuilder<Map<String, dynamic>>(
       future: configuracao,
       builder: (context, resultado) {
-        if (resultado.data?['acesso_temporario'] != true) return const SizedBox.shrink();
-        return TextButton(
-          onPressed: ocupado ? null : () => entrar(temporario: true),
-          child: const Text('Acesso temporário de desenvolvimento'),
-        );
+        if (resultado.data?['acesso_temporario'] != true)
+          return const SizedBox.shrink();
+        final usuarios = resultado.data?['usuarios'] as List? ?? [];
+        return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 16),
+              const Text('Acesso de testes — desenvolvimento'),
+              const SizedBox(height: 8),
+              if (usuarios.isEmpty)
+                const Text('Nenhum usuário ativo disponível.')
+              else
+                DropdownButtonFormField<int>(
+                  initialValue: usuarioDesenvolvimento,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                      labelText: 'Personificar usuário ativo'),
+                  items: [
+                    for (final usuario in usuarios)
+                      DropdownMenuItem(
+                        value: int.parse(usuario['id_usuario'].toString()),
+                        child: Text('${usuario['nome']} — ${usuario['email']}',
+                            overflow: TextOverflow.ellipsis),
+                      )
+                  ],
+                  onChanged: ocupado
+                      ? null
+                      : (id) => setState(() => usuarioDesenvolvimento = id),
+                ),
+              TextButton(
+                onPressed: ocupado || usuarioDesenvolvimento == null
+                    ? null
+                    : () => entrar(temporario: true),
+                child: const Text('Entrar como usuário selecionado'),
+              ),
+            ]);
       },
     );
   }
 
   Widget formulario() {
-    final reenviar = segundosReenvio > 0 ? 'Reenviar em $segundosReenvio s' : 'Reenviar código';
+    final reenviar = segundosReenvio > 0
+        ? 'Reenviar em $segundosReenvio s'
+        : 'Reenviar código';
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -126,7 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
           semanticLabel: 'Gestão Documental SEI',
         ),
         const SizedBox(height: 24),
-        const Text('Acesso por e-mail', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+        const Text('Acesso por e-mail',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
         const SizedBox(height: 16),
         TextField(
           controller: email,
@@ -136,29 +175,58 @@ class _LoginScreenState extends State<LoginScreen> {
           autofillHints: const [AutofillHints.email],
           decoration: const InputDecoration(labelText: 'E-mail cadastrado'),
           onSubmitted: (_) {
-            if (!ocupado && !codigoSolicitado && segundosReenvio == 0) solicitarCodigo();
+            if (!ocupado && !codigoSolicitado && segundosReenvio == 0)
+              solicitarCodigo();
           },
         ),
         if (codigoSolicitado) ...[
-          Align(alignment: Alignment.centerRight, child: TextButton(onPressed: ocupado ? null : alterarEmail, child: const Text('Alterar e-mail'))),
+          Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                  onPressed: ocupado ? null : alterarEmail,
+                  child: const Text('Alterar e-mail'))),
           TextField(
             controller: codigo,
             enabled: !ocupado,
             keyboardType: TextInputType.number,
             autofillHints: const [AutofillHints.oneTimeCode],
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6)
+            ],
             decoration: const InputDecoration(labelText: 'Código de 6 dígitos'),
-            onSubmitted: (_) { if (!ocupado) entrar(); },
+            onSubmitted: (_) {
+              if (!ocupado) entrar();
+            },
           ),
         ],
-        if (mensagem != null) Padding(padding: const EdgeInsets.only(top: 16), child: Text(mensagem!)),
-        if (erro != null) Padding(padding: const EdgeInsets.only(top: 16), child: Text(erro!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+        if (mensagem != null)
+          Padding(
+              padding: const EdgeInsets.only(top: 16), child: Text(mensagem!)),
+        if (erro != null)
+          Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Text(erro!,
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.error))),
         const SizedBox(height: 16),
         if (codigoSolicitado) ...[
-          FilledButton(onPressed: ocupado ? null : () => entrar(), child: Text(ocupado ? 'Aguarde…' : 'Entrar')),
-          TextButton(onPressed: ocupado || segundosReenvio > 0 ? null : solicitarCodigo, child: Text(reenviar)),
+          FilledButton(
+              onPressed: ocupado ? null : () => entrar(),
+              child: Text(ocupado ? 'Aguarde…' : 'Entrar')),
+          TextButton(
+              onPressed:
+                  ocupado || segundosReenvio > 0 ? null : solicitarCodigo,
+              child: Text(reenviar)),
         ] else
-          FilledButton(onPressed: ocupado || segundosReenvio > 0 ? null : solicitarCodigo, child: Text(ocupado ? 'Enviando…' : segundosReenvio > 0 ? reenviar : 'Receber código')),
+          FilledButton(
+              onPressed:
+                  ocupado || segundosReenvio > 0 ? null : solicitarCodigo,
+              child: Text(ocupado
+                  ? 'Enviando…'
+                  : segundosReenvio > 0
+                      ? reenviar
+                      : 'Receber código')),
         acessoTemporario(),
       ],
     );
@@ -179,7 +247,11 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: SizedBox(width: 450, child: Card(child: Padding(padding: const EdgeInsets.all(24), child: formulario()))),
+          child: SizedBox(
+              width: 450,
+              child: Card(
+                  child: Padding(
+                      padding: const EdgeInsets.all(24), child: formulario()))),
         ),
       ),
     );

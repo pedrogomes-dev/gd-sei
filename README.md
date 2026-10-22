@@ -60,6 +60,9 @@ Referências aceitam INSERT controlado, mas UPDATE/DELETE são bloqueados confor
 
 ## Git
 
+Desenvolvimento em `dev`, promoção por PR para `main`. Configuração dos ambientes,
+login de testes e situação da proteção: [docs/ambientes.md](docs/ambientes.md).
+
 Runner padrão, comandos de testes, CI mínimo e limites das verificações:
 [docs/testes_ci.md](docs/testes_ci.md). O CI usa Dart 3.13.2 e Flutter 3.47.2.
 
