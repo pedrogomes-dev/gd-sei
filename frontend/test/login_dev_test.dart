@@ -24,7 +24,29 @@ class ApiTeste extends ApiService {
   }
 }
 
+class ApiContrato extends ApiService {
+  String? caminho;
+  Map<String, dynamic>? dados;
+
+  @override
+  Future<dynamic> request(String path,
+      {Map<String, dynamic>? data,
+      Duration timeout = const Duration(seconds: 20)}) async {
+    caminho = path;
+    dados = data;
+    return {};
+  }
+}
+
 void main() {
+  test('cliente envia o usuário selecionado para o login de desenvolvimento',
+      () async {
+    final api = ApiContrato();
+    await api.loginDesenvolvimento(2);
+    expect(api.caminho, '/api/auth/dev');
+    expect(api.dados, {'id_usuario': 2, 'token': '123456'});
+  });
+
   Future<void> exibir(WidgetTester tester, ApiTeste api) async {
     await tester.pumpWidget(MaterialApp(home: LoginScreen(api: api), routes: {
       '/inicio': (_) => const Scaffold(body: Text('Início do teste')),
