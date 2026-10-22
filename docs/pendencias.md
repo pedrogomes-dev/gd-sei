@@ -36,7 +36,7 @@ As referências atuais, inclusive a hierarquia de Assuntos, foram conferidas pel
 ## 2. Qualidade técnica
 
 - Processamento administrativo das submissões: implementação e testes em
-  `docs/processamento_submissoes.md`. Falta aplicar/homologar o incremental 010
+  `docs/processamento_submissoes.md`. Falta aplicar/homologar o incremental 011
   em banco de testes e conferir a tela com sessões reais no navegador.
 
 | Prioridade | Pendência | Situação |
@@ -76,7 +76,8 @@ Antes da disponibilização em produção, ainda é necessário:
 - Gestão de rodadas e aplicação da distribuição pela interface.
 - Tipos de Documento × Assuntos.
 - Reabertura de manifestação.
-- Decisão final SETIC.
+- Consolidação de decisões entre órgãos e eventual execução externa pela SETIC
+  (o aceite/recusa individual já está implementado; falta homologar o incremental 011).
 - Integração automática de alterações no SEI.
 - Persistência compartilhada de sessões/códigos e múltiplas instâncias.
 - Relatório de último acesso/quantidade de acessos.
