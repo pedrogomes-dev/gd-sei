@@ -126,8 +126,9 @@ class ApiService {
     return await request(endereco) as Map<String, dynamic>;
   }
 
-  Future<void> login(String email, String token) async {
-    await request('/api/auth/dev', data: {'email': email, 'token': token});
+  Future<void> loginDesenvolvimento(int idUsuario) async {
+    await request('/api/auth/dev',
+        data: {'id_usuario': idUsuario, 'token': '123456'});
   }
 
   Future<Map<String, dynamic>> configurarAcesso() async {

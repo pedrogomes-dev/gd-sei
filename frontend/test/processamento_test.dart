@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sei_validacao_frontend/screens/admin_processamento_screen.dart';
 import 'package:sei_validacao_frontend/services/api_service.dart';
+import 'package:sei_validacao_frontend/main.dart';
+import 'package:sei_validacao_frontend/widgets/app_shell.dart';
 import 'package:sei_validacao_frontend/widgets/inicio/indicador_card.dart';
 
 class ApiProcessamento extends ApiService {
@@ -104,6 +106,40 @@ class ApiProcessamento extends ApiService {
 }
 
 void main() {
+  testWidgets('rota principal aponta para a tela de processamento',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+      final app = const SeiApp().build(context) as MaterialApp;
+      final rota = app.onGenerateRoute!(
+              const RouteSettings(name: '/admin/processamento'))
+          as MaterialPageRoute<void>;
+      final area = rota.builder(context) as SelectionArea;
+      expect(area.child, isA<AdminProcessamentoScreen>());
+      return const SizedBox.shrink();
+    })));
+  });
+
+  testWidgets('administrador abre processamento pelo menu', (tester) async {
+    final api = ApiProcessamento();
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: AppShell(title: 'Início', api: api, child: const SizedBox.shrink()),
+      routes: {
+        '/admin/processamento': (_) => AdminProcessamentoScreen(api: api)
+      },
+    ));
+    await tester.pumpAndSettle();
+    final menu = find.widgetWithText(ListTile, 'Processamento das submissões');
+    await tester.ensureVisible(menu);
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+    expect(find.byType(AdminProcessamentoScreen), findsOneWidget);
+    expect(find.text('ID 7 — Processo A'), findsNWidgets(2));
+  });
+
   Future<void> exibir(WidgetTester tester, ApiProcessamento api,
       {Size tamanho = const Size(1600, 1000)}) async {
     tester.view.physicalSize = tamanho;
