@@ -35,6 +35,10 @@ As referências atuais, inclusive a hierarquia de Assuntos, foram conferidas pel
 
 ## 2. Qualidade técnica
 
+- Processamento administrativo das submissões: implementação e testes em
+  `docs/processamento_submissoes.md`. Falta aplicar/homologar o incremental 010
+  em banco de testes e conferir a tela com sessões reais no navegador.
+
 | Prioridade | Pendência | Situação |
 | --- | --- | --- |
 | Alta | Autorização com sessões reais | Comum não deve consultar/gravar distribuição, administrar usuários ou acessar avaliações de outro órgão. Admin sem vínculo consulta resumo, mas não edita/submete avaliações. Testes HTTP da distribuição usam sessão/banco simulados. |

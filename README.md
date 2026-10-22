@@ -60,6 +60,9 @@ Referências aceitam INSERT controlado, mas UPDATE/DELETE são bloqueados confor
 
 ## Git
 
+Processamento posterior à submissão pela SETIC:
+[docs/processamento_submissoes.md](docs/processamento_submissoes.md).
+
 Runner padrão, comandos de testes, CI mínimo e limites das verificações:
 [docs/testes_ci.md](docs/testes_ci.md). O CI usa Dart 3.13.2 e Flutter 3.47.2.
 
