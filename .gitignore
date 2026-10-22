@@ -13,6 +13,8 @@
 *.mdf
 *.ldf
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
 .DS_Store
 backend/vendor/dart_odbc/pubspec.lock

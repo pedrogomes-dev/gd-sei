@@ -13,6 +13,9 @@ Estão implementados e homologados os fluxos principais de autenticação por e-
 
 ## Executar
 
+Para iniciar backend e frontend juntos pelo Run and Debug do VS Code, veja
+[docs/vscode.md](docs/vscode.md).
+
 Instale Dart >=3.4 e Flutter estável compatível. No backend:
 
 ```bash
