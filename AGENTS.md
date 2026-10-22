@@ -245,7 +245,16 @@ Verificar o estado real da `main`.
 
 Nunca assumir que uma branch ou PR continua aberto. Antes de afirmar qualquer estado do Git ou GitHub, verificar.
 
-Criar nova branch a partir da `main` atualizada para cada alteração independente.
+`dev` é a branch de desenvolvimento. Criar branches de trabalho a partir da
+`dev` atualizada e integrar nela; promover `dev` para `main` por Pull Request.
+`main` exige PR e os checks de CI `backend` e `frontend`, sem aprovação obrigatória
+de outra pessoa. A proteção depende de configuração/recursos do GitHub; não
+presumir que foi ativada apenas por estar documentada.
+
+O acesso de testes exige `APP_ENV=development` e `DEV_AUTH_ENABLED=true` e permite
+personificar apenas usuários ativos, com seus perfis e órgãos reais. Produção
+deve usar `DEV_AUTH_ENABLED=false` e cookie seguro. O backend usa a configuração
+do ambiente, nunca o nome da branch. Não expor o ambiente de testes publicamente.
 
 Evitar continuar adicionando commits a um PR que já foi mergeado.
 

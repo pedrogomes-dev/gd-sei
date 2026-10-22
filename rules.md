@@ -28,6 +28,8 @@ Não misturar evoluções futuras com defeitos do MVP.
 
 Implementar diretamente correções pequenas, confirmadas e de baixo risco, desde que não dependam de decisões funcionais ou migrações.
 
-Para mudanças relevantes, criar branches específicas e PRs separados, sempre a partir da `main` atualizada.
+Para mudanças relevantes, criar branches específicas e PRs separados a partir da
+`dev` atualizada. Promover `dev` para `main` por PR com CI passando, sem aprovação
+obrigatória de outra pessoa. Conferir a proteção efetiva da `main` no GitHub.
 
 Não realizar merge automaticamente.
