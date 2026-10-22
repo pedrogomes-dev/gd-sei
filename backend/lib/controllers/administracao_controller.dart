@@ -132,6 +132,160 @@ class AdministracaoController {
     return '%$texto%';
   }
 
+  Future<List<Map<String, dynamic>>> listarProcessamento(
+      int idAdministrador) async {
+    await verificarAdministrador(idAdministrador);
+    const sql = '''
+      SELECT a.id_atribuicao, a.id_consulta, a.id_orgao, a.versao,
+        a.id_tipo_procedimento, t.nome, o.sigla, c.nome AS consulta,
+        m.decisao_tipo, m.justificativa_tipo,
+        p.parecer AS parecer_tipo, u.nome AS responsavel_tipo,
+        CONVERT(varchar(33), p.data_avaliacao, 126) + 'Z' AS data_avaliacao_tipo
+      FROM dbo.consulta_orgao_tipo a
+      JOIN dbo.consulta_orgao g ON g.id_consulta = a.id_consulta AND g.id_orgao = a.id_orgao
+      JOIN dbo.consulta c ON c.id_consulta = a.id_consulta AND c.versao = a.versao
+      JOIN dbo.orgao o ON o.id_orgao = a.id_orgao
+      JOIN dbo.tipo_procedimento t ON t.versao = a.versao AND t.id_tipo_procedimento = a.id_tipo_procedimento
+      LEFT JOIN dbo.manifestacao_tipo m ON m.id_atribuicao = a.id_atribuicao AND m.versao = a.versao
+      LEFT JOIN dbo.avaliacao_setic_tipo p ON p.id_atribuicao = a.id_atribuicao
+      LEFT JOIN dbo.usuario u ON u.id_usuario = p.id_usuario_avaliacao
+      WHERE g.status = 'FINALIZADA'
+      ORDER BY a.id_consulta DESC, o.sigla, a.id_orgao, t.nome, a.id_atribuicao
+    ''';
+    final tipos = await banco.query(sql, operation: 'listar_processamento');
+    const sqlAssuntos = '''
+      SELECT a.id_atribuicao, v.id_assunto, s.codigo_estruturado, s.descricao,
+        v.acao, v.justificativa, p.parecer, u.nome AS responsavel,
+        CONVERT(varchar(33), p.data_avaliacao, 126) + 'Z' AS data_avaliacao
+      FROM dbo.consulta_orgao_tipo a
+      JOIN dbo.consulta_orgao g ON g.id_consulta = a.id_consulta AND g.id_orgao = a.id_orgao
+      JOIN dbo.manifestacao_tipo m ON m.id_atribuicao = a.id_atribuicao AND m.versao = a.versao
+      JOIN dbo.manifestacao_vinculo v ON v.id_atribuicao = m.id_atribuicao AND v.versao = m.versao
+      JOIN dbo.assunto s ON s.id_assunto = v.id_assunto AND s.versao = v.versao
+      LEFT JOIN dbo.avaliacao_setic_assunto p ON p.id_atribuicao = v.id_atribuicao AND p.id_assunto = v.id_assunto
+      LEFT JOIN dbo.usuario u ON u.id_usuario = p.id_usuario_avaliacao
+      WHERE g.status = 'FINALIZADA' AND m.decisao_tipo = 'MANTER'
+      ORDER BY a.id_atribuicao, s.codigo_estruturado, v.id_assunto
+    ''';
+    final assuntos = await banco.query(sqlAssuntos,
+        operation: 'listar_assuntos_processamento');
+    for (final tipo in tipos) {
+      final vinculados = assuntos
+          .where((s) =>
+              s['id_atribuicao'].toString() == tipo['id_atribuicao'].toString())
+          .toList();
+      final avaliados = vinculados.where((s) => s['parecer'] != null).length +
+          (tipo['parecer_tipo'] == null ? 0 : 1);
+      final recusado = tipo['parecer_tipo'] == 'RECUSADO' ||
+          vinculados.any((s) => s['parecer'] == 'RECUSADO');
+      final concluido = avaliados == vinculados.length + 1;
+      var resultado = concluido ? 'ACEITO' : 'PENDENTE';
+      if (recusado) resultado = 'PARCIALMENTE_ACEITO';
+      tipo.addAll({
+        'assuntos': vinculados,
+        'avaliados': avaliados,
+        'total_avaliacoes': vinculados.length + 1,
+        'situacao': concluido ? 'CONCLUIDO' : 'PENDENTE',
+        'resultado': resultado,
+      });
+    }
+    return tipos;
+  }
+
+  Future<void> avaliarProcessamento(
+      int idAdministrador, int idAtribuicao, Map<String, dynamic> dados) async {
+    await verificarAdministrador(idAdministrador);
+    if (!Validacoes.inteiroSqlValido(idAtribuicao) || idAtribuicao < 1) {
+      throw ApiError(400, 'Atribuição inválida.');
+    }
+    final parecer = dados['parecer'];
+    if (parecer != 'ACEITO' && parecer != 'RECUSADO')
+      throw ApiError(400, 'Parecer inválido.');
+    final temAssunto = dados.containsKey('id_assunto');
+    final idAssunto = dados['id_assunto'];
+    if (temAssunto && !Validacoes.inteiroSqlValido(idAssunto))
+      throw ApiError(400, 'Assunto inválido.');
+    const sql = '''
+      SET NOCOUNT ON; SET XACT_ABORT ON;
+      BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @administrador int = ?, @atribuicao int = ?, @parecer varchar(8) = ?,
+          @tem_assunto bit = ?, @assunto int = ?, @status varchar(12), @decisao varchar(15), @anterior varchar(8);
+        IF NOT EXISTS (SELECT 1 FROM dbo.usuario WITH(HOLDLOCK)
+          WHERE id_usuario = @administrador AND sin_ativo = 'S' AND sin_admin = 'S')
+          THROW 51500, 'Administrador nao autorizado.', 1;
+        SELECT @status = g.status FROM dbo.consulta_orgao_tipo a WITH(HOLDLOCK)
+          JOIN dbo.consulta_orgao g WITH(HOLDLOCK)
+            ON g.id_consulta = a.id_consulta AND g.id_orgao = a.id_orgao
+          WHERE a.id_atribuicao = @atribuicao;
+        IF @status IS NULL THROW 51501, 'Atribuicao inexistente.', 1;
+        IF @status <> 'FINALIZADA' THROW 51502, 'Manifestacao ainda nao submetida.', 1;
+        SELECT @decisao = m.decisao_tipo FROM dbo.manifestacao_tipo m WITH(HOLDLOCK)
+          JOIN dbo.consulta_orgao_tipo a ON a.id_atribuicao = m.id_atribuicao AND a.versao = m.versao
+          WHERE m.id_atribuicao = @atribuicao;
+        IF @decisao IS NULL OR @decisao NOT IN ('MANTER','DESCONTINUAR')
+          THROW 51505, 'Decisao do Tipo nao submetida.', 1;
+        IF @tem_assunto = 1
+        BEGIN
+          IF @decisao <> 'MANTER' OR NOT EXISTS (
+            SELECT 1 FROM dbo.manifestacao_vinculo v WITH(HOLDLOCK)
+            JOIN dbo.consulta_orgao_tipo a ON a.id_atribuicao = v.id_atribuicao AND a.versao = v.versao
+            JOIN dbo.assunto s ON s.id_assunto = v.id_assunto AND s.versao = v.versao
+            WHERE v.id_atribuicao = @atribuicao AND v.id_assunto = @assunto)
+            THROW 51503, 'Assunto nao pertence a decisao submetida.', 1;
+          SELECT @anterior = parecer FROM dbo.avaliacao_setic_assunto WITH(UPDLOCK,HOLDLOCK)
+            WHERE id_atribuicao = @atribuicao AND id_assunto = @assunto;
+          IF @anterior IS NOT NULL AND @anterior <> @parecer THROW 51504, 'Avaliacao ja registrada.', 1;
+          IF @anterior IS NULL
+            INSERT dbo.avaliacao_setic_assunto(id_atribuicao,id_assunto,parecer,id_usuario_avaliacao)
+              VALUES(@atribuicao,@assunto,@parecer,@administrador);
+        END
+        ELSE
+        BEGIN
+          SELECT @anterior = parecer FROM dbo.avaliacao_setic_tipo WITH(UPDLOCK,HOLDLOCK)
+            WHERE id_atribuicao = @atribuicao;
+          IF @anterior IS NOT NULL AND @anterior <> @parecer THROW 51504, 'Avaliacao ja registrada.', 1;
+          IF @anterior IS NULL
+            INSERT dbo.avaliacao_setic_tipo(id_atribuicao,parecer,id_usuario_avaliacao)
+              VALUES(@atribuicao,@parecer,@administrador);
+        END;
+        COMMIT;
+      END TRY
+      BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK;
+        THROW;
+      END CATCH;
+    ''';
+    try {
+      await banco.query(sql,
+          params: [
+            idAdministrador,
+            idAtribuicao,
+            parecer as String,
+            temAssunto ? 1 : 0,
+            temAssunto ? idAssunto as int : 0
+          ],
+          operation: 'avaliar_processamento');
+    } on DatabaseFailure catch (erro) {
+      switch (erro.code) {
+        case 51500:
+          throw ApiError(403, 'Acesso restrito à administração.');
+        case 51501:
+          throw ApiError(404, 'Atribuição não encontrada.');
+        case 51502:
+          throw ApiError(409, 'A manifestação ainda não foi submetida.');
+        case 51503:
+          throw ApiError(404, 'Assunto não pertence à decisão submetida.');
+        case 51504:
+          throw ApiError(409, 'Avaliação já registrada. Atualize a tela.');
+        case 51505:
+          throw ApiError(409, 'Decisão do Tipo não submetida.');
+        default:
+          rethrow;
+      }
+    }
+  }
+
   Future<Map<String, dynamic>> consultarDistribuicao(
       int idAdministrador) async {
     await verificarAdministrador(idAdministrador);

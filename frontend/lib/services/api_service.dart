@@ -28,6 +28,16 @@ class ApiService {
 
   Future<Map<String, dynamic>> profile() async =>
       await request('/api/auth/me') as Map<String, dynamic>;
+  Future<List<dynamic>> listarProcessamento() async =>
+      await request('/api/admin/processamento') as List<dynamic>;
+  Future<void> avaliarProcessamento(int idAtribuicao, String parecer,
+      {int? idAssunto}) async {
+    await request('/api/admin/processamento/$idAtribuicao/avaliar', data: {
+      'parecer': parecer,
+      if (idAssunto != null) 'id_assunto': idAssunto,
+    });
+  }
+
   Future<List<dynamic>> listarRodadas() async {
     return await request('/api/inicio/rodadas') as List<dynamic>;
   }
@@ -116,9 +126,8 @@ class ApiService {
     return await request(endereco) as Map<String, dynamic>;
   }
 
-  Future<void> loginDesenvolvimento(int idUsuario) async {
-    await request('/api/auth/dev',
-        data: {'id_usuario': idUsuario, 'token': '123456'});
+  Future<void> login(String email, String token) async {
+    await request('/api/auth/dev', data: {'email': email, 'token': token});
   }
 
   Future<Map<String, dynamic>> configurarAcesso() async {

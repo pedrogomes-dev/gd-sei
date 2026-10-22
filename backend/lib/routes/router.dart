@@ -153,6 +153,7 @@ class Router {
 
   Future<void> consultarCatalogo(HttpRequest request, String categoria) async {
     final filtros = request.uri.queryParameters;
+
     final situacao = filtros['estado'] ?? 'TODOS';
     if (!['TODOS', 'S', 'N'].contains(situacao)) {
       throw ApiError(400, 'Estado inválido.');
@@ -240,6 +241,20 @@ class Router {
     final caminho = request.uri.path;
     final metodo = request.method;
     final filtros = request.uri.queryParameters;
+
+    if (metodo == 'GET' && caminho == '/api/admin/processamento') {
+      json(request, await administracao.listarProcessamento(idAdministrador));
+      return;
+    }
+    final processamento =
+        RegExp(r'^/api/admin/processamento/(\d+)/avaliar$').firstMatch(caminho);
+    if (metodo == 'POST' && processamento != null) {
+      final idAtribuicao = lerIdentificador(processamento.group(1)!);
+      await administracao.avaliarProcessamento(
+          idAdministrador, idAtribuicao, await body(request));
+      json(request, {'ok': true});
+      return;
+    }
 
     if (metodo == 'GET' && caminho == '/api/admin/distribuicao') {
       json(request, await administracao.consultarDistribuicao(idAdministrador));

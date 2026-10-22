@@ -60,6 +60,8 @@ Referências aceitam INSERT controlado, mas UPDATE/DELETE são bloqueados confor
 
 ## Git
 
+Processamento posterior à submissão pela SETIC:
+[docs/processamento_submissoes.md](docs/processamento_submissoes.md).
 Desenvolvimento em `dev`, promoção por PR para `main`. Configuração dos ambientes,
 login de testes e situação da proteção: [docs/ambientes.md](docs/ambientes.md).
 
