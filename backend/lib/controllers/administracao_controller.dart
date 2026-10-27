@@ -137,7 +137,11 @@ class AdministracaoController {
     await verificarAdministrador(idAdministrador);
     const sql = '''
       SELECT a.id_atribuicao, a.id_consulta, a.id_orgao, a.versao,
-        a.id_tipo_procedimento, t.nome, o.sigla, c.nome AS consulta,
+        a.id_tipo_procedimento, t.nome, t.descricao, t.sin_interno,
+        t.sin_ouvidoria, t.sin_individual, t.sin_ouvidoria_anonimo,
+        t.id_hipotese_legal_sugestao, t.sta_nivel_acesso_sugestao,
+        t.sta_grau_sigilo_sugestao, h.nome AS hipotese_legal_nome,
+        h.base_legal AS hipotese_legal_base, o.sigla, c.nome AS consulta,
         m.decisao_tipo, m.justificativa_tipo,
         p.parecer AS parecer_tipo, u.nome AS responsavel_tipo,
         CONVERT(varchar(33), p.data_avaliacao, 126) + 'Z' AS data_avaliacao_tipo
@@ -146,6 +150,7 @@ class AdministracaoController {
       JOIN dbo.consulta c ON c.id_consulta = a.id_consulta AND c.versao = a.versao
       JOIN dbo.orgao o ON o.id_orgao = a.id_orgao
       JOIN dbo.tipo_procedimento t ON t.versao = a.versao AND t.id_tipo_procedimento = a.id_tipo_procedimento
+      LEFT JOIN dbo.hipotese_legal h ON h.id_hipotese_legal = t.id_hipotese_legal_sugestao
       LEFT JOIN dbo.manifestacao_tipo m ON m.id_atribuicao = a.id_atribuicao AND m.versao = a.versao
       LEFT JOIN dbo.avaliacao_setic_tipo p ON p.id_atribuicao = a.id_atribuicao
       LEFT JOIN dbo.usuario u ON u.id_usuario = p.id_usuario_avaliacao
@@ -154,7 +159,7 @@ class AdministracaoController {
     ''';
     final tipos = await banco.query(sql, operation: 'listar_processamento');
     const sqlAssuntos = '''
-      SELECT a.id_atribuicao, v.id_assunto, s.codigo_estruturado, s.descricao,
+      SELECT a.id_atribuicao, s.*,
         v.acao, v.justificativa, p.parecer, u.nome AS responsavel,
         CONVERT(varchar(33), p.data_avaliacao, 126) + 'Z' AS data_avaliacao
       FROM dbo.consulta_orgao_tipo a

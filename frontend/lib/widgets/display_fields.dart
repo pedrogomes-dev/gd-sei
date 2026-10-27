@@ -5,7 +5,8 @@ class ApiErrorMessage extends StatelessWidget {
   final Object error;
   final VoidCallback onRetry;
 
-  const ApiErrorMessage({super.key, required this.error, required this.onRetry});
+  const ApiErrorMessage(
+      {super.key, required this.error, required this.onRetry});
 
   void tentarNovamente(BuildContext context) {
     if (error is ApiException && (error as ApiException).statusCode == 401) {
@@ -28,14 +29,19 @@ class ApiErrorMessage extends StatelessWidget {
   }
 }
 
-// As etiquetas sempre combinam texto, ícone e cor.
+// Status combinam texto, ícone e cor; decisões podem usar etiqueta neutra.
 class StatusTag extends StatelessWidget {
   final String status;
   final String? label;
-  const StatusTag(this.status, {super.key, this.label});
+  final bool neutro;
+  const StatusTag(this.status, {super.key, this.label, this.neutro = false});
   @override
   Widget build(BuildContext context) {
     final (text, color, icon) = switch (status) {
+      'APROVACAO_PENDENTE' => ('Pendente', Colors.grey, Icons.pending_outlined),
+      'APROVADO' => ('Aprovado', Colors.green, Icons.check_circle_outline),
+      'PARCIAL' => ('Parcial', Colors.amber, Icons.pending_outlined),
+      'RECUSADO' => ('Recusado', Colors.red, Icons.cancel_outlined),
       'ATIVO' => ('Ativo', Colors.green, Icons.check_circle_outline),
       'INATIVO' => ('Inativo', Colors.red, Icons.block),
       'MANTER' => ('Manter', Colors.blue, Icons.check_circle_outline),
@@ -44,15 +50,34 @@ class StatusTag extends StatelessWidget {
       'VISUALIZADO' => ('Visualizado', Colors.blue, Icons.visibility_outlined),
       'FINALIZADA' => ('Finalizada', Colors.green, Icons.lock_outline),
       'AVALIADO' => ('Avaliado', Colors.green, Icons.check_circle_outline),
-      'DESCONTINUAR' => ('Descontinuar', Colors.blueGrey, Icons.cancel_outlined),
+      'DESCONTINUAR' => (
+          'Descontinuar',
+          Colors.blueGrey,
+          Icons.cancel_outlined
+        ),
       'EM_AVALIACAO' => ('Em avaliação', Colors.amber, Icons.pending_outlined),
-      'NAO_VISUALIZADO' => ('Não visualizado', Colors.red, Icons.visibility_off_outlined),
+      'NAO_VISUALIZADO' => (
+          'Não visualizado',
+          Colors.red,
+          Icons.visibility_off_outlined
+        ),
       'RASCUNHO' => ('Rascunho', Colors.amber, Icons.edit_outlined),
       _ => ('Pendente', Colors.amber, Icons.pending_outlined),
     };
+    if (neutro) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(label ?? text,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+      );
+    }
     return Chip(
-      visualDensity:VisualDensity.compact,
-      materialTapTargetSize:MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       avatar: Icon(icon, size: 18, color: color.shade800),
       label: Text(label ?? text, style: TextStyle(color: color.shade900)),
       backgroundColor: color.shade50,
@@ -87,30 +112,33 @@ const propertyLabels = <String, String>{
 };
 
 Widget propertyTile(MapEntry<String, dynamic> entry) {
-  if(entry.key=='sta_destinacao')return destinationTile(entry.value);
+  if (entry.key == 'sta_destinacao') return destinationTile(entry.value);
   final raw = entry.value?.toString() ?? '—';
   final value = entry.key.startsWith('sin_')
       ? switch (raw) { 'S' => 'Sim', 'N' => 'Não', _ => raw }
       : raw;
-  return ListTile(dense: true,
-    title: Text(propertyLabels[entry.key] ?? entry.key), subtitle: Text(value));
+  return ListTile(
+      dense: true,
+      title: Text(propertyLabels[entry.key] ?? entry.key),
+      subtitle: Text(value));
 }
-
 
 // SEI: E = Eliminação; G = Guarda Permanente (IBICT/Arquivo Nacional).
 // https://hipatia.ibict.br/wp-content/uploads/tainacan-items/1362/3292/META-2-Entrega-1-RELATORIO-METADADOS_SEI_v5-AN.pdf
 (String, IconData) destinacaoAssunto(dynamic raw) {
-  final code=raw?.toString().trim().toUpperCase()??'';
-  return switch(code) {
-    'E'=>('Eliminação',Icons.delete_outline),
-    'G'=>('Guarda permanente',Icons.archive_outlined),
-    ''=>('Não informada',Icons.help_outline),
-    _=>('Código $code',Icons.help_outline),
+  final code = raw?.toString().trim().toUpperCase() ?? '';
+  return switch (code) {
+    'E' => ('Eliminação', Icons.delete_outline),
+    'G' => ('Guarda permanente', Icons.archive_outlined),
+    '' => ('Não informada', Icons.help_outline),
+    _ => ('Código $code', Icons.help_outline),
   };
 }
 
 Widget destinationTile(dynamic raw) {
   final (label, icon) = destinacaoAssunto(raw);
-  return ListTile(leading:Icon(icon),title:const Text('Destinação final'),subtitle:Text(label));
+  return ListTile(
+      leading: Icon(icon),
+      title: const Text('Destinação final'),
+      subtitle: Text(label));
 }
-

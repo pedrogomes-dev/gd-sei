@@ -136,7 +136,7 @@ class _AppShellState extends State<AppShell> {
                                         'admin-distribuicao',
                                         '/admin/distribuicao'),
                                     item(
-                                        'Processamento das submissões',
+                                        'Submissões',
                                         Icons.task_alt,
                                         'admin-processamento',
                                         '/admin/processamento'),
