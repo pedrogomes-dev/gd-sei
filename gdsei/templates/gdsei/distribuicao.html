@@ -1,0 +1,99 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>Atribuição de Tipos aos órgãos</h1>
+<p>Distribuição de referência · versão {{ versao }}. Não altera avaliações existentes.</p>
+<section class="card">
+{% include 'gdsei/componentes/busca.html' %}
+<div class="indicadores">
+<a class="indicador" href="{% filtro vinculo='TODOS' estado='TODOS' %}">Todos<span>{{ totais.todos }}</span>
+</a>
+<a class="indicador" href="{% filtro vinculo='S' %}">Vinculados<span>{{ totais.vinculados }}</span>
+</a>
+<a class="indicador" href="{% filtro vinculo='N' %}">Não vinculados<span>{{ totais.todos|add:totais.negativo_vinculados }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='S' %}">Ativos<span>{{ totais.ativos }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='N' %}">Inativos<span>{{ totais.todos|add:totais.negativo_ativos }}</span>
+</a>
+</div>
+</section>
+{% if selecionado %}
+<section class="card">
+<h2>Órgãos de {{ selecionado.nome }}</h2>
+<form method="post">
+{% csrf_token %}
+<input type="hidden" name="versao" value="{{ versao }}">
+<input type="hidden" name="tipo" value="{{ selecionado.id_tipo_procedimento }}">
+{% for anterior in selecionado.orgaos %}
+<input type="hidden" name="anteriores" value="{{ anterior }}">
+{% endfor %}
+<div class="opcoes">
+{% for orgao in orgaos %}
+<label>
+<input type="checkbox" name="orgaos" value="{{ orgao.id_orgao }}" {% if orgao.id_orgao in selecionado.orgaos %}checked{% endif %}> {{ orgao.sigla }}</label>
+{% endfor %}
+</div>
+<button name="acao" value="salvar">Salvar vínculos</button>
+</form>
+</section>
+{% endif %}
+<section class="card">
+<form method="post" data-selecao="distribuicao">
+{% csrf_token %}
+<input type="hidden" name="versao" value="{{ versao }}">
+<div class="linha">
+<button name="acao" value="lote">Vincular selecionados</button>
+<button type="button" data-limpar>Limpar seleção</button>
+<span data-contagem>0 selecionados</span>
+</div>
+<details>
+<summary>Escolher órgãos para os Tipos selecionados</summary>
+<div class="opcoes">
+{% for orgao in orgaos %}
+<label>
+<input type="checkbox" name="orgaos" value="{{ orgao.id_orgao }}"> {{ orgao.sigla }}</label>
+{% endfor %}
+</div>
+</details>
+<p>O vínculo em lote acrescenta órgãos e preserva os vínculos atuais.</p>
+<div class="tabela">
+<table>
+<thead>
+<tr>
+<th>
+<input type="checkbox" data-todos aria-label="Selecionar Tipos desta página">
+</th>
+<th>ID</th>
+<th>Tipo</th>
+<th>Ativo</th>
+<th>Órgãos</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody>
+{% for item in itens %}
+<tr>
+<td>
+<input type="checkbox" name="tipos" value="{{ item.id_tipo_procedimento }}" aria-label="Selecionar {{ item.nome }}">
+</td>
+<td>{{ item.id_tipo_procedimento }}</td>
+<td>{{ item.nome }}</td>
+<td>{{ item.sin_ativo }}</td>
+<td>{{ item.orgaos|length }} · {{ item.orgaos_nomes|join:', ' }}</td>
+<td>
+<a href="{% filtro tipo=item.id_tipo_procedimento %}">Editar vínculos</a>
+</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="6">Nenhum Tipo encontrado.</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</form>
+{% include 'gdsei/componentes/paginacao.html' %}
+</section>
+{% endblock %}

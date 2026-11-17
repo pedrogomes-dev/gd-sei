@@ -18,3 +18,9 @@
 !.vscode/extensions.json
 .DS_Store
 backend/vendor/dart_odbc/pubspec.lock
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.runtime/
+staticfiles/

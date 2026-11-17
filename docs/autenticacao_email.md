@@ -1,3 +1,7 @@
+> Histórico da implementação Dart/Flutter. Para executar a versão Django desta branch,
+> consulte [migracao_django.md](migracao_django.md). As regras funcionais e SQL continuam válidas;
+> os comandos e detalhes de runtime abaixo não se aplicam à versão Django.
+
 # Acesso por e-mail
 
 O usuário informa seu e-mail cadastrado, recebe um código de seis dígitos e entra na aplicação. Somente usuários ativos recebem e-mail. A resposta da solicitação é a mesma para endereços cadastrados, inativos e desconhecidos.

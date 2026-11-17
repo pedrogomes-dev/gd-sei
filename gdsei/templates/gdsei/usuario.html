@@ -1,0 +1,36 @@
+{% extends 'gdsei/base.html' %}
+{% block content %}
+<h1>
+{% if id_usuario %}Editar usuário{% else %}Novo usuário{% endif %}
+</h1>
+<section class="card">
+<form method="post" data-edicao>
+{% csrf_token %}
+<input type="hidden" name="revisao" value="{{ item.revisao }}">
+<label>Nome<input name="nome" maxlength="150" value="{{ item.nome }}" required>
+</label>
+<label>E-mail<input type="email" name="email" maxlength="250" value="{{ item.email }}" required>
+</label>
+<div class="linha">
+<label>Ativo<select name="sin_ativo">
+<option value="S" {% if item.sin_ativo == 'S' %}selected{% endif %}>Sim</option>
+<option value="N" {% if item.sin_ativo == 'N' %}selected{% endif %}>Não</option>
+</select>
+</label>
+<label>Administrador<select name="sin_admin">
+<option value="N" {% if item.sin_admin == 'N' %}selected{% endif %}>Não</option>
+<option value="S" {% if item.sin_admin == 'S' %}selected{% endif %}>Sim</option>
+</select>
+</label>
+</div>
+<h2>Órgãos vinculados</h2>
+<div class="opcoes">
+{% for orgao in orgaos %}
+<label>
+<input type="checkbox" name="orgaos" value="{{ orgao.id_orgao }}" {% if orgao.id_orgao in item.orgaos %}checked{% endif %}> {{ orgao.sigla }}</label>
+{% endfor %}
+</div>
+<button>Salvar usuário</button>
+</form>
+</section>
+{% endblock %}

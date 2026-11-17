@@ -1,3 +1,7 @@
+> Histórico da implementação Dart/Flutter. Para executar a versão Django desta branch,
+> consulte [migracao_django.md](migracao_django.md). As regras funcionais e SQL continuam válidas;
+> os comandos e detalhes de runtime abaixo não se aplicam à versão Django.
+
 # Produção — GD-SEI
 
 Este documento formaliza os requisitos mínimos para disponibilização do GD-SEI em produção. Não substitui os procedimentos corporativos de infraestrutura, banco de dados, segurança, backup ou mudança.

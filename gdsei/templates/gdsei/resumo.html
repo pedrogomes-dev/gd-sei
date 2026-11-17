@@ -1,0 +1,41 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>Resumo da manifestação</h1>
+<section class="card">
+{% include 'gdsei/componentes/progresso.html' %}
+<h2>{{ grupo.sigla }}</h2>
+<p>{{ grupo.consulta }} · {% status grupo.status %}
+</p>
+{% if pode_finalizar %}
+<form method="post" data-confirmar="Confirma a submissão? A manifestação ficará bloqueada para edição.">
+{% csrf_token %}
+<input type="hidden" name="revisao" value="{{ grupo.revisao }}">
+<button>Submeter manifestação</button>
+</form>
+{% else %}
+<p>
+{% if grupo.status == 'FINALIZADA' %}Manifestação submetida.{% else %}A submissão exige todos os Tipos visualizados e todas as decisões salvas, por usuário vinculado ao órgão.{% endif %}
+</p>
+{% endif %}
+</section>
+{% for tipo in itens %}
+<section class="card">
+<h2>{{ tipo.nome }}</h2>
+{% status tipo.decisao_tipo %}
+<p>{{ tipo.justificativa_tipo|default_if_none:'' }}</p>
+<p>{{ tipo.observacao|default_if_none:'' }}</p>
+<p>{{ tipo.pendentes }} decisões pendentes</p>
+{% if grupo.pode_revisar == 'S' %}
+<a href="{% url 'tipo' tipo.id_atribuicao %}">Consultar avaliação</a>
+{% endif %}
+{% for assunto in tipo.decisoes %}
+<div class="assunto">{{ assunto.codigo_estruturado }} — {{ assunto.descricao }} {% status assunto.acao %}
+<p>{{ assunto.justificativa|default_if_none:'' }}</p>
+{% informacoes assunto assunto.id_assunto %}
+</div>
+{% endfor %}
+</section>
+{% endfor %}
+{% include 'gdsei/componentes/paginacao.html' %}
+{% endblock %}

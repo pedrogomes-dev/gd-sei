@@ -1,0 +1,59 @@
+{% load static componentes %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>
+{% block title %}GD-SEI{% endblock %}
+</title>
+<link rel="stylesheet" href="{% static 'gdsei/app.css' %}">
+<script src="{% static 'gdsei/app.js' %}" defer>
+</script>
+</head>
+<body>
+<header>
+<a class="marca" href="{% url 'inicio' %}">
+<img src="{% static 'gdsei/logo.png' %}" height="36" alt="Gestão Documental SEI">
+</a>
+{% if request.usuario %}
+<div>
+<span>{{ request.usuario.nome }}</span>
+<small>{{ request.usuario.email }}</small>
+</div>
+<form action="{% url 'sair' %}" method="post">
+{% csrf_token %}
+<button>Sair</button>
+</form>
+{% endif %}
+</header>
+<div class="layout">
+{% if request.usuario %}
+<nav aria-label="Navegação principal">
+<strong>VALIDAÇÃO</strong>
+<a href="{% url 'inicio' %}">Início</a>
+<a href="{% url 'tipos' %}">Tipos de Processo atribuídos</a>
+<strong>CATÁLOGO</strong>
+<a href="{% url 'catalogo' 'assuntos' %}">Assuntos</a>
+<a href="{% url 'catalogo' 'tipos' %}">Tipos de Processo</a>
+{% if request.usuario.sin_admin == 'S' %}
+<strong>ADMINISTRAÇÃO</strong>
+<a href="{% url 'usuarios' %}">Usuários</a>
+<a href="{% url 'distribuicao' %}">Atribuição</a>
+<a href="{% url 'processamento' %}">Processamento das submissões</a>
+{% endif %}
+</nav>
+{% endif %}
+<main>
+{% if aviso %}
+<div class="aviso" role="status">{{ aviso }}</div>
+{% endif %}
+{% if erro %}
+<div class="erro" role="alert">{{ erro }}</div>
+{% endif %}
+{% block content %}
+{% endblock %}
+</main>
+</div>
+</body>
+</html>

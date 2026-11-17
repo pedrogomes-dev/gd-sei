@@ -1,0 +1,21 @@
+{% extends 'gdsei/base.html' %}
+{% block content %}
+<h1>Histórico de {{ item.nome }}</h1>
+{% for evento in itens %}
+<section class="card">
+<h2>{{ evento.evento }}</h2>
+<p>{{ evento.responsavel_nome }} · {{ evento.data_evento }}</p>
+<details>
+<summary>Antes</summary>
+<pre>{{ evento.antes }}</pre>
+</details>
+<details>
+<summary>Depois</summary>
+<pre>{{ evento.depois }}</pre>
+</details>
+</section>
+{% empty %}
+<section class="card">Nenhum evento encontrado.</section>
+{% endfor %}
+{% include 'gdsei/componentes/paginacao.html' %}
+{% endblock %}

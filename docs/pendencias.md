@@ -1,91 +1,43 @@
-# Pendências — 21/10/2026
+# Pendências — migração Django (17/11/2026)
 
-Referência de desenvolvimento: `AGENTS.md`.
+Referências: AGENTS.md e [migracao_django.md](migracao_django.md).
+Implementação nesta branch ainda não equivale a homologação/implantação.
 
-O fluxo principal do MVP está implementado e homologado. Não permanecem como pendências: autenticação SMTP real, manifestação/submissão, autorização entre usuário comum/admin/órgãos e homologação visual principal.
+## 1. Defeitos confirmados
 
-| Prioridade | Pendência | Evidência |
-| --- | --- | --- |
-| Média | Cores semânticas de avaliação | StatusTag usa azul-cinza para DESCONTINUAR e âmbar para EM_AVALIACAO; AGENTS.md pede verde e marrom. |
+Nenhum defeito adicional confirmado pelos checks executados da migração.
+Isso não afirma ausência de defeitos nos cenários ainda não homologados.
 
-Texto/binário vazio no ODBC foi corrigido e verificado no SQL Server. Catálogo,
-administração e nova distribuição reutilizam IndicadorCard. Esses itens não
-permanecem como defeitos abertos.
+## 2. Testes e homologações pendentes
 
-Runner padrão do backend e os cinco apontamentos dos analisadores foram corrigidos.
-`dart test` executa seis testes; `flutter test` executa treze; ambos os analisadores
-estão sem apontamentos. CI mínimo preparado, ainda sem execução remota.
-Resultados e limites do format check incremental em `docs/testes_ci.md`.
+- ALTO: escrita no SQL Server de testes, procedures, revisões e concorrência;
+  testes automatizados de escrita usam banco simulado.
+- ALTO: autorização com sessões reais em todos os fluxos, SMTP, revogação e logout.
+- ALTO: duas sessões administrativas e carga de atribuições simultânea.
+- MÉDIO: navegador desktop/estreito, interação JavaScript, modais, seleção em lote
+  entre páginas/filtros e preservação de edição após erro.
+- MÉDIO: comparação funcional completa com a release Dart/Flutter anterior.
 
-O botão de nova tentativa em Início/Tipos/Resumo e submissão agora abre o login
-para HTTP 401 e limpa a pilha protegida. Quatro testes de navegação/repetição
-passaram; falta homologar com sessão real. Outros erros mantêm a recarga.
-O logout agora aceita sessão já encerrada e limpa o cookie. Os testes HTTP
-cobrem saída sem sessão, cookie desconhecido/revogado, repetição e auditoria
-de sessão válida; falta homologar o menu Sair no navegador.
-## 1. Pendências de alta prioridade
+Conferência integrada de leitura no banco existente passou para as nove telas
+descritas na documentação da migração. Não executou gravações nem validou SMTP.
 
-| Prioridade | Pendência | Situação |
-| --- | --- | --- |
-| Alta | Instalação/publicação em banco descartável | Scripts e roteiros existem; falta executar e validar a sequência completa em banco novo. |
-| Alta | Distribuição com duas sessões e carga 006 | Testes técnicos existem; falta cenário concorrente real com duas sessões administrativas e carga/procedure 006. |
-| Alta | Implantação OpenShift | Dockerfiles e proxy estão versionados; build, implantação e smoke test no cluster ainda não foram executados. |
+## 3. Documentação e instalação
 
-As referências atuais, inclusive a hierarquia de Assuntos, foram conferidas pelo responsável e estão corretas.
-
-## 2. Qualidade técnica
-
-- Processamento administrativo das submissões: implementação e testes em
-  `docs/processamento_submissoes.md`. Falta aplicar/homologar o incremental 011
-  em banco de testes e conferir a tela com sessões reais no navegador.
-
-| Prioridade | Pendência | Situação |
-| --- | --- | --- |
-| Alta | Autorização com sessões reais | Comum não deve consultar/gravar distribuição, administrar usuários ou acessar avaliações de outro órgão. Admin sem vínculo consulta resumo, mas não edita/submete avaliações. Testes HTTP da distribuição usam sessão/banco simulados. |
-| Alta | Distribuição com duas sessões e carga 006 | Teste SQL passou em tabelas temporárias para conflitos, autorização, versão, rollback e auditoria. Conferir duas sessões reais, carga simultânea e permissões da credencial de produção. |
-| Alta | Decisão do Tipo e submissão | Confirmar 008 instalada, manter/descontinuar, justificativas, Tipo sem vínculos, concorrência, órgão 0 e bloqueio após finalizar. |
-| Alta | Instalação/publicação em banco descartável | 009, atualização de 002 e database/tests/publicacao_hierarquia.sql estão versionados. Instalação/migração com escrita ainda não executada. |
-| Média | Interface, filtros e totais no navegador | Conferir seleção de Tipos entre páginas/filtros, checkbox do cabeçalho, limpar seleção e vínculo em lote preservando vínculos. Conferir também Home/Tipos, catálogo e administração. Testes do diálogo e integração SQL executados; inspeção visual da tela completa não executada. |
-| Média | Cobertura automatizada e CI | Runner Dart e workflow mínimo preparados. Falta executar o CI remoto e ampliar cobertura dos fluxos completos. SQL permanece como executáveis separados, fora do CI. |
-
-Comandos da funcionalidade: `dart test test/distribuicao_test.dart`,
-`dart run test/distribuicao_sql.dart`, `flutter test` e
-`flutter build web`. Analisadores agora sem apontamentos.
-Detalhes em `docs/distribuicao_tipos.md`. Dados persistentes não foram alterados.
-| Média | Runner de testes do backend | Adequar os testes ao runner padrão `dart test` com `package:test`, preservando integrações que precisem permanecer executáveis separadamente. |
-| Média | CI | Criar pipeline mínima para análise, testes e build de backend/frontend, sem deploy automático. |
-| Baixa | Avisos dos analisadores | Corrigir avisos conhecidos de dotenv, variável não utilizada e APIs Flutter obsoletas. |
-
-O comportamento atual do `StatusTag` deve ser preservado. Não existe pendência de alteração de suas cores.
-
-## 3. Produção
-
-Proteção da `main` aplicada e conferida em 22/10/2026: PR, CI backend/frontend,
-zero aprovações, branch atualizada e aplicação também a administradores.
-Detalhes e configuração dev/produção em `docs/ambientes.md`.
-
-A formalização operacional está em `docs/producao.md`.
-
-Antes da disponibilização em produção, ainda é necessário:
-
-- concluir a homologação da instalação em banco novo;
-- concluir o teste concorrente da distribuição;
-- implantar e validar no OpenShift;
-- conferir as permissões SQL efetivas da credencial de produção;
-- manter backend com uma única réplica enquanto sessões/códigos forem armazenados em memória.
+- ALTO: homologar instalação SQL completa em banco novo e esquema até 011.
+- ALTO: construir a imagem Django e conferir implantação, HTTPS/proxy e permissões
+  do diretório de sessões no ambiente corporativo. Não houve deploy/OpenShift.
+- MÉDIO: homologar configuração SQL/SMTP da raiz e checklist de transição/rollback.
+- MÉDIO: revisar consumidores externos/favoritos das rotas antigas antes de
+  substituir a release. API Dart não permanece ativa.
+- BAIXO: documentos históricos marcados com Dart/Flutter servem de referência
+  funcional, não como comandos de execução da versão Django.
 
 ## 4. Funcionalidades futuras dependentes de decisão
 
-- Exportação/consolidação entre órgãos para comparação de decisões e divergências.
-- Gestão de rodadas e aplicação da distribuição pela interface.
-- Tipos de Documento × Assuntos.
-- Reabertura de manifestação.
-- Consolidação de decisões entre órgãos e eventual execução externa pela SETIC
-  (o aceite/recusa individual já está implementado; falta homologar o incremental 011).
-- Integração automática de alterações no SEI.
-- Persistência compartilhada de sessões/códigos e múltiplas instâncias.
-- Relatório de último acesso/quantidade de acessos.
-- Política de correção/substituição de referências imutáveis.
-- Referência oficial para códigos de grau de sigilo.
+- Integração/atualização automática no SEI e consolidação de divergências.
+- Reabertura ou edição de pareceres administrativos já registrados.
+- Gestão de rodadas/cargas pela interface e Tipos de Documento × Assuntos.
+- Códigos/sessões distribuídos e múltiplas réplicas/processos de autenticação.
+- Exportações e relatórios adicionais.
 
-Registrar ambiente, data e resultado das homologações restantes. Não marcar um item como homologado apenas porque existe código, roteiro ou PR.
+Não confundir essas evoluções com defeitos do MVP nem implementá-las nesta migração.

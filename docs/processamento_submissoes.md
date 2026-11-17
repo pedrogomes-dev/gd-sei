@@ -1,4 +1,8 @@
-﻿# Avaliação administrativa das submissões
+> Histórico da implementação Dart/Flutter. Para executar a versão Django desta branch,
+> consulte [migracao_django.md](migracao_django.md). As regras funcionais e SQL continuam válidas;
+> os comandos e detalhes de runtime abaixo não se aplicam à versão Django.
+
+# Avaliação administrativa das submissões
 
 Administração → **Processamento das submissões** considera apenas manifestações
 `FINALIZADA`. O agrupamento é `id_consulta`/`id_orgao`; cada Tipo é identificado

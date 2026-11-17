@@ -1,3 +1,7 @@
+> Histórico da implementação Dart/Flutter. Para executar a versão Django desta branch,
+> consulte [migracao_django.md](migracao_django.md). As regras funcionais e SQL continuam válidas;
+> os comandos e detalhes de runtime abaixo não se aplicam à versão Django.
+
 # Acesso temporário e consulta de Tipos
 
 Executar uma vez `database/004_consultas.sql` no banco `sei_gd`. Cria usuário pg@setic.ro.gov.br, órgãos, consultas, atribuições, visualizações e auditoria. Não atribui órgãos ou Tipos automaticamente. A base versionada já carregada é preservada.

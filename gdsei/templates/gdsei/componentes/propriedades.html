@@ -1,0 +1,15 @@
+<button type="button" class="info" data-dialog="info-{{ identificador }}" aria-label="Consultar propriedades">ⓘ</button>
+<dialog id="info-{{ identificador }}">
+<div class="linha">
+<h2>Propriedades</h2>
+<button type="button" data-fechar>Fechar</button>
+</div>
+<dl class="propriedades">
+{% for label, valor in propriedades %}
+<div>
+<dt>{{ label }}</dt>
+<dd>{{ valor|default_if_none:'—' }}</dd>
+</div>
+{% endfor %}
+</dl>
+</dialog>

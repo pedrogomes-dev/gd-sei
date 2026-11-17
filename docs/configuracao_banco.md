@@ -1,3 +1,7 @@
+> Histórico da implementação Dart/Flutter. Para executar a versão Django desta branch,
+> consulte [migracao_django.md](migracao_django.md). As regras funcionais e SQL continuam válidas;
+> os comandos e detalhes de runtime abaixo não se aplicam à versão Django.
+
 # Conexão SQL Server
 
 O driver fica apenas no backend Dart; o navegador usa HTTP/JSON. Usamos `dart_odbc` 6.2.1 com Microsoft ODBC Driver 18 for SQL Server. Instale esse driver na máquina do backend; no Linux também instale unixODBC e disponibilize libodbc.so (em Debian/Ubuntu: unixodbc-dev).

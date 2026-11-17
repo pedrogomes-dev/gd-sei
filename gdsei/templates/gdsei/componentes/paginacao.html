@@ -1,0 +1,12 @@
+{% load componentes %}
+{% if itens.paginator.num_pages > 1 %}
+<div class="linha paginacao">
+<span>Página {{ itens.number }} de {{ itens.paginator.num_pages }} · {{ itens.paginator.count }} registros</span>
+{% if itens.has_previous %}
+<a class="botao" href="{% numero_pagina itens.previous_page_number %}">Anterior</a>
+{% endif %}
+{% if itens.has_next %}
+<a class="botao" href="{% numero_pagina itens.next_page_number %}">Próxima</a>
+{% endif %}
+</div>
+{% endif %}

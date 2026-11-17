@@ -1,3 +1,7 @@
+> Histórico da implementação Dart/Flutter. Para executar a versão Django desta branch,
+> consulte [migracao_django.md](migracao_django.md). As regras funcionais e SQL continuam válidas;
+> os comandos e detalhes de runtime abaixo não se aplicam à versão Django.
+
 # Runner, analisadores e CI — 21/10/2026
 
 Branch criada de `origin/main` atualizada: `chore/testes-analise-ci`.

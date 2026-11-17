@@ -15,17 +15,17 @@ O sistema não altera diretamente o SEI.
 
 ## Stack
 
-- Backend: Dart
-- Frontend: Flutter Web
-- Banco: Microsoft SQL Server
-- Comunicação: HTTP/JSON
-- Arquitetura: monolítica
+- Aplicação: Python 3.12 e Django 5.2 LTS
+- Interface: templates Django, CSS e JavaScript nativo pontual
+- Banco: Microsoft SQL Server, por mssql-django/pyodbc
+- Arquitetura: monolítica, renderização no servidor
 
-Backend organizado preferencialmente em: routes, controllers, services, repositories e models.
-
-Frontend deve permanecer simples, utilizando preferencialmente StatefulWidget, setState, FutureBuilder, componentes Flutter nativos e componentes compartilhados já existentes no projeto.
-
-Não introduzir gerenciamento de estado, frameworks, bibliotecas ou camadas adicionais sem necessidade concreta.
+Não manter backend Dart ou frontend Flutter ativos. O código anterior está no
+histórico Git. Não introduzir SPA, framework de frontend, API genérica ou camadas
+adicionais sem necessidade concreta. Views pequenas e funções por domínio em
+`gdsei/`; SQL parametrizado em `gdsei/sql.py`; componentes compartilhados em
+templates/tags e CSS. Reutilizar procedures existentes, sem reescrever regras
+transacionais no frontend. Não executar `migrate` no banco legado automaticamente.
 
 ## Princípios de desenvolvimento
 
@@ -45,7 +45,7 @@ Não transformar uma solução simples em uma arquitetura genérica.
 
 Evitar ternários aninhados, funções muito extensas, condicionais profundamente aninhadas, duplicação de regras e complexidade ciclomática desnecessária.
 
-Prefira funções pequenas e semanticamente claras. Por exemplo, `DataCell(evaluationTag(row))` é preferível a construir toda a regra de estado dentro da árvore de widgets.
+Prefira funções pequenas e semanticamente claras. Por exemplo, `{% status tipo.estado %}` é preferível a construir toda a regra de estado dentro da árvore de widgets.
 
 ### Regras centralizadas
 
@@ -95,7 +95,9 @@ Quando `id_assunto_pai` estiver disponível, ele é a fonte de verdade para nave
 
 Manter consistência visual entre as telas. Antes de criar um componente visual, verificar se já existe equivalente.
 
-Componentes importantes: `StatusTag`, `IndicadorCard`, `SectionCard` e `AppShell`.
+Padrões equivalentes a `StatusTag`, `IndicadorCard`, `SectionCard` e `AppShell`:
+`gdsei/templatetags/componentes.py`, templates `componentes/`, classes CSS
+`status`, `indicador`, `card` e o template `base.html`.
 
 Reutilizá-los sempre que adequado.
 
@@ -207,21 +209,19 @@ Durante a implementação:
 
 Uma tarefa não deve ser declarada concluída apenas porque o código parece correto.
 
-Após alterações no backend Dart, executar quando aplicável:
+Após alterações, executar com o ambiente virtual Python:
 
 ```bash
-dart format .
-dart analyze
-dart test
+python -m ruff format --check gdsei config manage.py
+python -m ruff check gdsei config manage.py
+python manage.py check
+python manage.py test gdsei
+python manage.py collectstatic --noinput
 ```
 
-Após alterações no frontend:
-
-```bash
-dart format .
-flutter analyze
-flutter test
-```
+Integração de leitura opcional: `python manage.py check_database --pages`.
+Não roda migrações nem grava dados persistentes. Testes automatizados simulados
+não equivalem a homologação com SMTP, banco real e navegador.
 
 Se o projeto não possuir testes automatizados suficientes, ainda executar o analisador.
 

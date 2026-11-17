@@ -1,0 +1,55 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>Processamento das submissões</h1>
+<p>Consulte as decisões dos órgãos e registre o parecer administrativo. Não altera o SEI.</p>
+<section class="card">
+{% include 'gdsei/componentes/busca.html' %}
+<div class="indicadores">
+<a class="indicador" href="{% filtro estado='TODOS' %}">Todos<span>{{ totais.todos }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='PENDENTE' %}">Pendentes<span>{{ totais.pendentes }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='CONCLUIDO' %}">Concluídos<span>{{ totais.concluidos }}</span>
+</a>
+</div>
+</section>
+{% for grupo in grupos %}
+<section class="card">
+<h2>{{ grupo.primeiro.sigla }} — {{ grupo.primeiro.consulta }}</h2>
+<p>Manifestação finalizada · {{ grupo.concluidos }} de {{ grupo.total }} Tipos avaliados</p>
+{% if grupo.concluidos == grupo.total %}
+{% status 'CONCLUIDO' 'Processamento concluído' %}
+{% else %}
+{% status 'PENDENTE' 'Processamento pendente' %}
+{% endif %} {% status grupo.resultado %}
+<a href="{% url 'resumo' grupo.primeiro.id_consulta grupo.primeiro.id_orgao %}">Consultar submissão</a>
+{% for tipo in grupo.itens %}
+<details>
+<summary>ID {{ tipo.id_tipo_procedimento }} — {{ tipo.nome }} · {{ tipo.avaliados }} de {{ tipo.total_avaliacoes }} decisões avaliadas {% status tipo.resultado %}
+</summary>
+<div class="assunto">
+{% informacoes tipo tipo.id_atribuicao %}
+<h3>Decisão sobre o Tipo: {% status tipo.decisao_tipo %}
+</h3>
+<p>{{ tipo.justificativa_tipo|default_if_none:'' }}</p>
+{% include 'gdsei/componentes/parecer.html' with parecer=tipo.parecer_tipo responsavel=tipo.responsavel_tipo data=tipo.data_avaliacao_tipo atribuicao=tipo.id_atribuicao assunto=None %}
+{% for assunto in tipo.assuntos %}
+<div class="assunto">
+<h3>{{ assunto.codigo_estruturado }} — {{ assunto.descricao }}</h3>
+{% informacoes assunto assunto.id_assunto %} {% status assunto.acao %}
+<p>{{ assunto.justificativa|default_if_none:'' }}</p>
+{% include 'gdsei/componentes/parecer.html' with parecer=assunto.parecer responsavel=assunto.responsavel data=assunto.data_avaliacao atribuicao=tipo.id_atribuicao assunto=assunto.id_assunto %}
+</div>
+{% empty %}
+<p>Sem decisões sobre Assuntos nesta submissão.</p>
+{% endfor %}
+</div>
+</details>
+{% endfor %}
+</section>
+{% empty %}
+<section class="card">Nenhuma submissão finalizada encontrada.</section>
+{% endfor %}
+{% include 'gdsei/componentes/paginacao.html' %}
+{% endblock %}

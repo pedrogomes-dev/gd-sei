@@ -1,0 +1,36 @@
+{% extends 'gdsei/base.html' %}
+{% block content %}
+<section class="card login">
+<h1>Acesso por e-mail</h1>
+<form method="post">
+{% csrf_token %}
+<label>E-mail cadastrado<input type="email" name="email" maxlength="250" value="{{ email }}" required autocomplete="email">
+</label>
+<button name="acao" value="solicitar">Receber / reenviar código</button>
+</form>
+{% if email %}
+<form method="post">
+{% csrf_token %}
+<input type="hidden" name="email" value="{{ email }}">
+<label>Código de 6 dígitos<input name="codigo" pattern="[0-9]{6}" maxlength="6" required inputmode="numeric" autocomplete="one-time-code">
+</label>
+<button name="acao" value="codigo">Entrar</button>
+</form>
+{% endif %}
+{% if dev %}
+<hr>
+<h2>Acesso de desenvolvimento</h2>
+<form method="post">
+{% csrf_token %}
+<label>Personificar usuário ativo<select name="id_usuario" required>
+<option value="">Selecione</option>
+{% for usuario in usuarios %}
+<option value="{{ usuario.id_usuario }}">{{ usuario.nome }} — {{ usuario.email }}</option>
+{% endfor %}
+</select>
+</label>
+<button name="acao" value="dev" {% if not usuarios %}disabled{% endif %}>Entrar como usuário selecionado</button>
+</form>
+{% endif %}
+</section>
+{% endblock %}

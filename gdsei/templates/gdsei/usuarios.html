@@ -1,0 +1,61 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>Usuários</h1>
+<section class="card">
+{% include 'gdsei/componentes/busca.html' %}
+<form method="get" class="linha">
+<input type="hidden" name="q" value="{{ request.GET.q }}">
+<label>Órgão<select name="orgao">
+<option value="">Todos</option>
+{% for orgao in orgaos %}
+<option value="{{ orgao.id_orgao }}" {% if request.GET.orgao == orgao.id_orgao|stringformat:'s' %}selected{% endif %}>{{ orgao.sigla }}</option>
+{% endfor %}
+</select>
+</label>
+<button>Filtrar</button>
+</form>
+<div class="indicadores">
+<a class="indicador" href="{% filtro estado='TODOS' %}">Todos<span>{{ totais.todos }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='S' %}">Ativos<span>{{ totais.ativos }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='N' %}">Inativos<span>{{ totais.inativos }}</span>
+</a>
+</div>
+<a class="botao" href="{% url 'novo_usuario' %}">Novo usuário</a>
+</section>
+<section class="card">
+<div class="tabela">
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>E-mail</th>
+<th>Ativo</th>
+<th>Admin</th>
+<th>Órgãos</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody>
+{% for item in itens %}
+<tr>
+<td>{{ item.nome }}</td>
+<td>{{ item.email }}</td>
+<td>{{ item.sin_ativo }}</td>
+<td>{{ item.sin_admin }}</td>
+<td>
+{% for orgao in item.orgaos %}{{ orgao.sigla }} {% endfor %}
+</td>
+<td>
+<a href="{% url 'usuario' item.id_usuario %}">Editar</a> · <a href="{% url 'historico' item.id_usuario %}">Histórico</a>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% include 'gdsei/componentes/paginacao.html' %}
+</section>
+{% endblock %}

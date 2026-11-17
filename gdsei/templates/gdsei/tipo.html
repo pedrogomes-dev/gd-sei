@@ -1,0 +1,89 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>{{ tipo.nome }}</h1>
+<section class="card">
+<div class="linha">
+<span>ID {{ tipo.id_tipo_procedimento }} · Versão {{ tipo.versao }}</span>
+{% status tipo.status %}
+{% informacoes tipo 'tipo' %}
+<a href="{% url 'resumo' tipo.id_consulta tipo.id_orgao %}">Resumo e submissão</a>
+</div>
+{% if tipo.visualizado != 'S' %}
+<form method="post">
+{% csrf_token %}
+<button name="acao" value="visualizar">Marcar como visualizado</button>
+</form>
+{% endif %}
+</section>
+<form method="post" data-edicao>
+{% csrf_token %}
+<input type="hidden" name="revisao" value="{{ manifestacao.revisao }}">
+<fieldset {% if not editavel %}disabled{% endif %}>
+<section class="card">
+<h2>Decisão sobre o Tipo</h2>
+<label>Decisão<select name="decisao_tipo" required {% if tipo.visualizado != 'S' %}data-visualizar="{% url 'visualizar' tipo.id_atribuicao %}"{% endif %}>
+<option value="">Selecione</option>
+<option value="MANTER" {% if manifestacao.decisao_tipo == 'MANTER' %}selected{% endif %}>Manter</option>
+<option value="DESCONTINUAR" {% if manifestacao.decisao_tipo == 'DESCONTINUAR' %}selected{% endif %}>Sugerir descontinuação</option>
+</select>
+</label>
+<label>Justificativa do Tipo<textarea name="justificativa_tipo" maxlength="2000">{{ manifestacao.justificativa_tipo|default_if_none:'' }}</textarea>
+</label>
+<label>Observação<textarea name="observacao" maxlength="5000">{{ manifestacao.observacao|default_if_none:'' }}</textarea>
+</label>
+</section>
+<section class="card">
+<h2>Assuntos vinculados</h2>
+<p>Na descontinuação, as decisões sobre vínculos não integram a submissão.</p>
+{% for assunto in assuntos %}
+<div class="assunto">
+<div class="linha">
+<strong>{{ assunto.codigo_estruturado }} — {{ assunto.descricao }}</strong>
+{% informacoes assunto assunto.id_assunto %}
+</div>
+<label>Decisão<select name="acao_{{ assunto.id_assunto }}">
+<option value="">Pendente</option>
+{% if assunto.inclusao %}
+<option value="ADICIONAR" selected>Incluir</option>
+{% else %}
+<option value="MANTER" {% if assunto.acao == 'MANTER' %}selected{% endif %}>Manter</option>
+<option value="REMOVER" {% if assunto.acao == 'REMOVER' %}selected{% endif %}>Remover</option>
+{% endif %}
+</select>
+</label>
+<label>Justificativa<textarea name="justificativa_{{ assunto.id_assunto }}" maxlength="2000">{{ assunto.justificativa|default_if_none:'' }}</textarea>
+</label>
+</div>
+{% empty %}
+<p>Tipo sem vínculos originais.</p>
+{% endfor %}
+</section>
+<section class="card">
+<h2>Incluir Assuntos</h2>
+<label>Buscar Assunto<input type="search" data-filtrar="candidatos" placeholder="Código, descrição ou ID">
+</label>
+<div id="candidatos" class="opcoes">
+{% for assunto in candidatos %}
+<details style="margin-left:{{ assunto.recuo|default:0 }}px" data-pesquisa="{{ assunto.id_assunto }} {{ assunto.codigo_estruturado }} {{ assunto.descricao }}">
+<summary>
+{% if assunto.sin_estrutural == 'S' %}
+<button type="button" class="info" data-estrutural title="Item apenas estrutural. Não pode ser vinculado a Tipos de Processo.">⚯</button>
+{% endif %}{{ assunto.codigo_estruturado }} — {{ assunto.descricao }}</summary>
+{% informacoes assunto assunto.id_assunto %}
+{% if assunto.sin_estrutural == 'S' %}
+<p>Item apenas estrutural. Não pode ser vinculado a Tipos de Processo.</p>
+{% else %}
+<label>
+<input type="checkbox" name="incluir" value="{{ assunto.id_assunto }}" {% if assunto.selecionado %}checked{% endif %}> Incluir este Assunto</label>
+<label>Justificativa<textarea name="nova_justificativa_{{ assunto.id_assunto }}" maxlength="2000">{{ assunto.justificativa }}</textarea>
+</label>
+{% endif %}
+</details>
+{% endfor %}
+</div>
+</section>
+<button name="acao" value="salvar">Salvar decisões</button>
+</fieldset>
+</form>
+{% endblock %}

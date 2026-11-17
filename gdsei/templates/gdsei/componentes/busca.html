@@ -1,0 +1,11 @@
+<form method="get" class="linha busca">
+<label>Buscar por nome, código ou ID<input name="q" maxlength="250" value="{{ request.GET.q }}">
+</label>
+<button>Buscar</button>
+{% if request.GET.estado %}
+<input type="hidden" name="estado" value="{{ request.GET.estado }}">
+{% endif %}
+{% if request.GET.versao %}
+<input type="hidden" name="versao" value="{{ request.GET.versao }}">
+{% endif %}
+</form>

@@ -1,0 +1,12 @@
+.git
+.venv
+.runtime
+.env
+.env.*
+__pycache__
+*.pyc
+staticfiles
+docs
+database
+backend
+frontend

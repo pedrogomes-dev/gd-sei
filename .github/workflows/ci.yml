@@ -10,47 +10,43 @@ on:
 permissions:
   contents: read
 
+env:
+  APP_ENV: development
+  DEV_AUTH_ENABLED: 'false'
+  COOKIE_SECURE: 'false'
+
 jobs:
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
-          fetch-depth: 0
-      - uses: dart-lang/setup-dart@v1
-        with:
-          sdk: '3.13.2'
-      - run: dart pub get
-      - name: Format check (arquivos alterados)
-        env:
-          FORMAT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: bash ../.github/scripts/check-format.sh backend
-      - run: dart analyze
-      - run: dart test
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pip check
+      - run: python -m ruff format --check gdsei config manage.py
+      - run: python -m ruff check gdsei config manage.py
+      - run: python manage.py check
+      - run: python manage.py collectstatic --noinput
+      - run: python manage.py test gdsei
 
   frontend:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: frontend
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
-          fetch-depth: 0
-      - uses: subosito/flutter-action@v2
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v6
         with:
-          channel: stable
-          flutter-version: '3.47.2'
-      - run: flutter pub get
-      - name: Format check (arquivos alterados)
-        env:
-          FORMAT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: bash ../.github/scripts/check-format.sh frontend
-      - run: flutter analyze
-      - run: flutter test
-      - run: flutter build web
+          node-version: '22'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python manage.py check
+      - run: python manage.py collectstatic --noinput
+      - run: node --check gdsei/static/gdsei/app.js
+      - run: python manage.py test gdsei.tests.test_aplicacao.AplicacaoTests

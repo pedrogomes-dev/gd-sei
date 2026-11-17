@@ -1,0 +1,54 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>Tipos de Processo atribuídos</h1>
+<section class="card">
+{% include 'gdsei/componentes/progresso.html' %}
+{% include 'gdsei/componentes/busca.html' %}
+<div class="indicadores">
+<a class="indicador" href="{% filtro estado='TODOS' %}">Todos<span>{{ totais.TODOS }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='NAO_VISUALIZADO' %}">Pendentes<span>{{ totais.NAO_VISUALIZADO }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='EM_AVALIACAO' %}">Em avaliação<span>{{ totais.EM_AVALIACAO }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='AVALIADO' %}">Avaliados<span>{{ totais.AVALIADO }}</span>
+</a>
+</div>
+</section>
+<section class="card">
+<div class="tabela">
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Órgão / Rodada</th>
+<th>Avaliação</th>
+<th>Submissão</th>
+</tr>
+</thead>
+<tbody>
+{% for item in itens %}
+<tr>
+<td>
+<a href="{% url 'tipo' item.id_atribuicao %}">{{ item.id_tipo_procedimento }} — {{ item.nome }}</a>
+</td>
+<td>{{ item.sigla }} · {{ item.consulta }}</td>
+<td>
+{% status item.estado %}
+</td>
+<td>
+<a href="{% url 'resumo' item.id_consulta item.id_orgao %}">Resumo e submissão</a> {% status item.status %}
+</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="4">Nenhum Tipo encontrado.</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% include 'gdsei/componentes/paginacao.html' %}
+</section>
+{% endblock %}

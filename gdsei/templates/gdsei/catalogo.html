@@ -1,0 +1,50 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>Catálogo de {{ categoria }}</h1>
+<section class="card">
+{% include 'gdsei/componentes/busca.html' %}
+<form method="get" class="linha">
+<input type="hidden" name="q" value="{{ request.GET.q }}">
+<label>Versão<input type="number" name="versao" min="0" value="{{ versao }}">
+</label>
+<button>Consultar versão</button>
+</form>
+<div class="indicadores">
+<a class="indicador" href="{% filtro estado='TODOS' %}">Todos<span>{{ totais.todos }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='S' %}">Ativos<span>{{ totais.ativos }}</span>
+</a>
+<a class="indicador" href="{% filtro estado='N' %}">Inativos<span>{{ totais.inativos }}</span>
+</a>
+</div>
+</section>
+<section class="card">
+{% for item in itens %}
+<div style="margin-left:{{ item.recuo|default:0 }}px">
+<details>
+<summary>
+{% if item.sin_estrutural == 'S' %}
+<button type="button" class="info" data-estrutural title="Item apenas estrutural. Não pode ser vinculado a Tipos de Processo.">⚯</button>
+{% endif %}
+{% firstof item.codigo_estruturado item.id_tipo_procedimento %} — {% firstof item.descricao item.nome %}
+</summary>
+<div class="assunto">
+{% informacoes item 'registro' %}
+{% for vinculo in item.vinculos %}
+<p>
+{% if categoria == 'tipos' %}↳ {{ vinculo.assunto_codigo }} — {{ vinculo.assunto_descricao }} {% informacoes vinculo vinculo.id_assunto %}
+{% else %}↳ {{ vinculo.id_tipo_procedimento }} — {{ vinculo.tipo_nome }} · {{ vinculo.orgaos|join:', ' }}{% endif %}
+</p>
+{% empty %}
+<p>Sem vínculos.</p>
+{% endfor %}
+</div>
+</details>
+</div>
+{% empty %}
+<p>Nenhum registro encontrado.</p>
+{% endfor %}
+{% include 'gdsei/componentes/paginacao.html' %}
+</section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% load componentes %}
+{% if parecer %}
+{% status parecer %}
+<small>{{ responsavel }} · {{ data|default_if_none:'—' }}</small>
+{% else %}
+<form method="post" class="linha">
+{% csrf_token %}
+<input type="hidden" name="atribuicao" value="{{ atribuicao }}">
+{% if assunto != None %}
+<input type="hidden" name="assunto" value="{{ assunto }}">
+{% endif %}
+<button name="parecer" value="ACEITO">Adotar</button>
+<button name="parecer" value="RECUSADO">Recusar</button>
+</form>
+{% endif %}

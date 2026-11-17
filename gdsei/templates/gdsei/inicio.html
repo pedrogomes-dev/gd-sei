@@ -1,0 +1,62 @@
+{% extends 'gdsei/base.html' %}
+{% load componentes %}
+{% block content %}
+<h1>Início</h1>
+<section class="card">
+<h2>Rodada de Avaliação</h2>
+<form method="get" class="linha">
+<select name="consulta" aria-label="Rodada">
+{% for item in rodadas %}
+<option value="{{ item.id_consulta }}" {% if item.id_consulta == rodada.id_consulta %}selected{% endif %}>{{ item.nome }} · Base versão {{ item.versao }}</option>
+{% endfor %}
+</select>
+<button>Consultar</button>
+</form>
+</section>
+<div class="indicadores">
+{% for titulo, quantidade in totais.items %}
+<div class="indicador">
+<strong>{{ titulo|capfirst }}</strong>
+<span>{{ quantidade }}</span>
+</div>
+{% endfor %}
+</div>
+<section class="card">
+<h2>Acompanhamento dos órgãos</h2>
+<div class="tabela">
+<table>
+<thead>
+<tr>
+<th>Órgão</th>
+<th>Atribuídos</th>
+<th>Aguardando</th>
+<th>Revisados</th>
+<th>Progresso</th>
+<th>Submissão</th>
+</tr>
+</thead>
+<tbody>
+{% for orgao in orgaos %}
+<tr>
+<td>
+<a href="{% url 'resumo' rodada.id_consulta orgao.id_orgao %}">{{ orgao.sigla }}</a>
+</td>
+<td>{{ orgao.atribuidos }}</td>
+<td>{{ orgao.pendentes }}</td>
+<td>{{ orgao.revisados }}</td>
+<td>
+<progress value="{{ orgao.progresso }}" max="100">{{ orgao.progresso }}%</progress> {{ orgao.progresso }}%</td>
+<td>
+{% status orgao.status %}
+</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="6">Nenhuma rodada/atribuição disponível para seu acesso.</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+{% endblock %}
